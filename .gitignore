@@ -21,7 +21,3 @@ me/
 
 # Cursor project cache
 .cursor/
-
-# Large build artifacts (over 100MB; GitHub file limit)
-**/gsr_curseforge.zip
-**/gsr_prism.zip

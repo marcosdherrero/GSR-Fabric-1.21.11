@@ -1,3 +1,3 @@
 # Build outputs (1.21.11)
 
-Large build artifacts over 100MB (gsr_curseforge.zip, gsr_prism.zip) are excluded from the repo due to GitHub's file limit. Build locally to generate them.
+Build outputs stored via Git LFS. Build locally with `./gradlew build` to regenerate.

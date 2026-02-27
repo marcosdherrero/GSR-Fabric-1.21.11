@@ -1,0 +1,14 @@
+{
+  "sources": [
+    {
+      "type": "directory",
+      "source": "gui/sprites",
+      "prefix": ""
+    },
+    {
+      "type": "single",
+      "resource": "gsr/gsr_icon",
+      "sprite": "gsr/gsr_icon"
+    }
+  ]
+}

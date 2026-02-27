@@ -1,0 +1,27 @@
+# Gradle
+.gradle/
+build/
+
+# Minecraft run directory (local dev)
+run/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/settings.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Stray build artifacts (should not be in repo)
+me/
+
+# Cursor project cache
+.cursor/
+
+# Stray / test directories (not part of GSR mod)
+peanut_butter_jelly/
+peanut_jar/

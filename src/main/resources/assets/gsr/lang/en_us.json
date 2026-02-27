@@ -1,0 +1,16 @@
+{
+  "key.gsr.new_gsr_world": "New GSR World",
+  "key.gsr.open_gsr_options": "Open GSR Options",
+  "key.gsr.open_gsr_config": "Open GSR Config (G+C)",
+  "key.gsr.toggle_gsr_hud": "Show GSR HUD (Toggle)",
+  "key.gsr.press_to_show_gsr_hud": "Show GSR HUD (Hold)",
+  "key.category.gsr": "GSR",
+  "key.category.gsr.category": "GSR",
+  "key.gsr.category": "GSR Key Binds",
+  "key.gsr.press_key": "Press a key...",
+  "key.gsr.open_keybinds_hint": "Open Options → Controls and click 'GSR Key Binds' to change keybinds (or use the GSR section in the list).",
+  "key.gsr.open_keybinds_tooltip": "Opens the same keybind screen as Options → Controls → GSR Key Binds.",
+  "gsr.gui.run_manager.in_group": "In group",
+  "gsr.gui.run_manager.out_of_group": "Out of group",
+  "gsr.gui.run_manager.excluded_from_run": "Excluded from run:"
+}

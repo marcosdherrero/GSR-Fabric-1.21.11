@@ -1,0 +1,17 @@
+filename = 'Essential_1-3-10-6_fabric_1-21-11.jar'
+name = 'essential-container'
+side = ''
+x-prismlauncher-loaders = [ 'fabric' ]
+x-prismlauncher-mc-versions = [ '1.21.11' ]
+x-prismlauncher-release-type = 'release'
+x-prismlauncher-version-number = 'Essential 1.3.10.6 [Fabric 1.21.11]'
+
+[download]
+hash = '8d380acb2ef7637488f98a32352c4145048e420e'
+hash-format = 'sha1'
+mode = 'metadata:curseforge'
+url = ''
+
+[update.curseforge]
+file-id = 7648577
+project-id = 546670

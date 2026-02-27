@@ -22,6 +22,6 @@ me/
 # Cursor project cache
 .cursor/
 
-# Stray / test directories (not part of GSR mod)
-peanut_butter_jelly/
-peanut_jar/
+# Large build artifacts (over 100MB; GitHub file limit)
+**/gsr_curseforge.zip
+**/gsr_prism.zip

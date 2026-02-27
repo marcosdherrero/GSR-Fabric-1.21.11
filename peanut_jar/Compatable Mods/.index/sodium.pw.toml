@@ -1,0 +1,17 @@
+filename = 'sodium-fabric-0.8.6+mc1.21.11.jar'
+name = 'Sodium'
+side = ''
+x-prismlauncher-loaders = [ 'quilt', 'fabric' ]
+x-prismlauncher-mc-versions = [ '1.21.11' ]
+x-prismlauncher-release-type = 'release'
+x-prismlauncher-version-number = 'Sodium 0.8.6 for Fabric'
+
+[download]
+hash = 'fa686304c63efea0456af91a0b6352f032e61e66'
+hash-format = 'sha1'
+mode = 'metadata:curseforge'
+url = ''
+
+[update.curseforge]
+file-id = 7669896
+project-id = 394468

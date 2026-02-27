@@ -1,0 +1,17 @@
+filename = 'replaymod-1.21.11-2.6.25.jar'
+name = 'ReplayMod'
+side = 'client'
+x-prismlauncher-loaders = [ 'fabric' ]
+x-prismlauncher-mc-versions = [ '1.21.11', '1.21.11' ]
+x-prismlauncher-release-type = 'release'
+x-prismlauncher-version-number = '1.21.11-2.6.25'
+
+[download]
+hash = 'c86080f60e579c6404d0c7350e18de6c78bbb23454150d991fa96ccfcd7f3f6b3124b056e132a49e5d0b48c305e06715537ccc82fcbd44fcab7256894ba21e9b'
+hash-format = 'sha512'
+mode = 'url'
+url = 'https://cdn.modrinth.com/data/Nv2fQJo5/versions/lrnVIO9F/replaymod-1.21.11-2.6.25.jar'
+
+[update.modrinth]
+mod-id = 'Nv2fQJo5'
+version = 'lrnVIO9F'

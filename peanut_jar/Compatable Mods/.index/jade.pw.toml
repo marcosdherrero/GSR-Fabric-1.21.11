@@ -1,0 +1,17 @@
+filename = 'Jade-1.21.11-Fabric-21.1.2.jar'
+name = 'Jade'
+side = ''
+x-prismlauncher-loaders = [ 'quilt', 'fabric' ]
+x-prismlauncher-mc-versions = [ '1.21.11', '1.21.11' ]
+x-prismlauncher-release-type = 'beta'
+x-prismlauncher-version-number = '21.1.2+fabric'
+
+[download]
+hash = '148944c6958aa65ce1e1debd72fd54aff1b23e6e93afd2c3e62918972795b37539108663b4ef8d652d09bd415f5cc35196c1b429b2c0bf2cb057024cd2ea30e9'
+hash-format = 'sha512'
+mode = 'url'
+url = 'https://cdn.modrinth.com/data/nvQzSEkH/versions/552ldiCx/Jade-1.21.11-Fabric-21.1.2.jar'
+
+[update.modrinth]
+mod-id = 'nvQzSEkH'
+version = '552ldiCx'

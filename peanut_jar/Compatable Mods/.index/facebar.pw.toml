@@ -1,0 +1,17 @@
+filename = 'facebar-0.1.2.jar'
+name = 'facebar'
+side = 'client'
+x-prismlauncher-loaders = [ 'fabric' ]
+x-prismlauncher-mc-versions = [ '1.21.11', '1.21.11' ]
+x-prismlauncher-release-type = 'release'
+x-prismlauncher-version-number = '0.1.2'
+
+[download]
+hash = '8db469a4da90e09c94db3629b1a311b885e291f99156c4ca79cc55ecea18c6246d74e4ed14ec0e86364b68df71be6537aef2f9e0c3412ebe845379a05b652359'
+hash-format = 'sha512'
+mode = 'url'
+url = 'https://cdn.modrinth.com/data/3p7KwtVF/versions/fLr7PLkP/facebar-0.1.2.jar'
+
+[update.modrinth]
+mod-id = '3p7KwtVF'
+version = 'fLr7PLkP'

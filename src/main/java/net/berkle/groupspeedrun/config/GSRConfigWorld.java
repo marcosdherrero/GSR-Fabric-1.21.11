@@ -106,6 +106,8 @@ public class GSRConfigWorld {
     public boolean antiCheatEnabled = true;
     /** When true, run auto-starts on first movement or block break. When false, admin must press Start. Default true. */
     public boolean autoStartEnabled = true;
+    /** When true, random-seed create-world retries until the Overworld+Nether filter passes. Default true. */
+    public boolean seedFilterEnabled = true;
     /** When non-admins can use locators: 0=Never, 1=Always, 2=30 min post previous split. Default 2. */
     public int locatorNonAdminMode = 2;
     /** Effective allowNewWorldBeforeRunEnd from designated admin (highest-level admin who joined first). Sync-only; default when none. */
@@ -226,6 +228,7 @@ public class GSRConfigWorld {
         nbt.putBoolean(GSRWorldConfigParameters.K_LOCATOR_DERANKED, locatorDeranked);
         nbt.putBoolean(GSRWorldConfigParameters.K_ANTI_CHEAT_ENABLED, antiCheatEnabled);
         nbt.putBoolean(GSRWorldConfigParameters.K_AUTO_START_ENABLED, autoStartEnabled);
+        nbt.putBoolean(GSRWorldConfigParameters.K_SEED_FILTER_ENABLED, seedFilterEnabled);
         nbt.putInt(GSRWorldConfigParameters.K_LOCATOR_NON_ADMIN_MODE, locatorNonAdminMode);
         nbt.putLong(GSRWorldConfigParameters.K_T_FIRST_OVERWORLD_RETURN, timeFirstOverworldReturnAfterNether);
         nbt.putBoolean(GSRWorldConfigParameters.K_FORT_LOCATED, fortressLocated);
@@ -284,6 +287,7 @@ public class GSRConfigWorld {
         readBoolean(nbt, GSRWorldConfigParameters.K_LOCATOR_DERANKED, v -> this.locatorDeranked = v);
         readBoolean(nbt, GSRWorldConfigParameters.K_ANTI_CHEAT_ENABLED, v -> this.antiCheatEnabled = v);
         readBoolean(nbt, GSRWorldConfigParameters.K_AUTO_START_ENABLED, v -> this.autoStartEnabled = v);
+        readBoolean(nbt, GSRWorldConfigParameters.K_SEED_FILTER_ENABLED, v -> this.seedFilterEnabled = v);
         GSRNbtUtil.getInt(nbt, GSRWorldConfigParameters.K_LOCATOR_NON_ADMIN_MODE).ifPresent(v -> this.locatorNonAdminMode = Math.max(0, Math.min(2, v)));
         readBoolean(nbt, GSRWorldConfigParameters.K_EFFECTIVE_ALLOW_NEW_WORLD_BEFORE_RUN_END, v -> this.effectiveAllowNewWorldBeforeRunEnd = v);
         readLong(nbt, GSRWorldConfigParameters.K_T_FIRST_OVERWORLD_RETURN, v -> this.timeFirstOverworldReturnAfterNether = v);
@@ -375,6 +379,7 @@ public class GSRConfigWorld {
         }
         if (!loaded) {
             LOGGER.warn("GSR: No world config found (primary: {}, tried legacy json/nbt paths)", canonicalJson);
+            config.seedFilterEnabled = GSRSeedFilterSettings.isEnabled();
         } else {
             LOGGER.info("GSR: Loaded world config (startTime={}, frozen={}, victory={}, fail={}, nether={})",
                     config.startTime, config.isTimerFrozen, config.isVictorious, config.isFailed, config.timeNether);

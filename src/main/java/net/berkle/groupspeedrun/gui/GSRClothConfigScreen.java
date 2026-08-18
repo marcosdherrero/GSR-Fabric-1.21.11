@@ -22,6 +22,7 @@ import net.berkle.groupspeedrun.config.GSRLocatorNonAdminMode;
 import net.berkle.groupspeedrun.config.GSRMaxScaleDistOption;
 import net.berkle.groupspeedrun.config.GSRRowHeightOption;
 import net.berkle.groupspeedrun.config.GSRScaleOption;
+import net.berkle.groupspeedrun.config.GSRSeedFilterSettings;
 import net.berkle.groupspeedrun.config.GSRSeparatorAlphaOption;
 import net.berkle.groupspeedrun.config.GSRShipIconOption;
 import net.berkle.groupspeedrun.config.GSRSplitGapOption;
@@ -218,6 +219,17 @@ public final class GSRClothConfigScreen {
                 .setTooltip(Component.literal("When ON (default): run auto-starts on first movement or block break. When OFF: admin must press Start Run to begin."))
                 .setSaveConsumer(v -> {
                     GSRClient.clientWorldConfig.autoStartEnabled = v;
+                    if (Minecraft.getInstance().player != null) {
+                        ClientPlayNetworking.send(new GSRWorldConfigPayload(GSRWorldConfigPayload.fromConfig()));
+                    }
+                })
+                .build());
+        modSettings.addEntry(entry.startBooleanToggle(Component.literal("Seed Filter"), GSRClient.clientWorldConfig.seedFilterEnabled)
+                .setDefaultValue(true)
+                .setTooltip(Component.literal("When ON (green, default): random-seed new worlds retry until Overworld+Nether pass. When OFF (red): vanilla random. Typed seeds are never filtered."))
+                .setSaveConsumer(v -> {
+                    GSRClient.clientWorldConfig.seedFilterEnabled = v;
+                    GSRSeedFilterSettings.setEnabled(v);
                     if (Minecraft.getInstance().player != null) {
                         ClientPlayNetworking.send(new GSRWorldConfigPayload(GSRWorldConfigPayload.fromConfig()));
                     }

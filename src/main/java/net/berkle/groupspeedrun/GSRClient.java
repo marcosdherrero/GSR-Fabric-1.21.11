@@ -23,6 +23,7 @@ import net.berkle.groupspeedrun.parameter.GSRUiParameters;
 import net.berkle.groupspeedrun.config.GSRConfigPayload;
 import net.berkle.groupspeedrun.config.GSRConfigPlayer;
 import net.berkle.groupspeedrun.config.GSRConfigWorld;
+import net.berkle.groupspeedrun.config.GSRSeedFilterSettings;
 import net.berkle.groupspeedrun.data.GSRRunSaveStateNbt;
 import net.berkle.groupspeedrun.gui.preferences.GSRPreferencesScreen;
 import net.berkle.groupspeedrun.gui.GSRControlsScreen;
@@ -88,6 +89,8 @@ public class GSRClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        GSRSeedFilterSettings.load();
+        GSRClient.clientWorldConfig.seedFilterEnabled = GSRSeedFilterSettings.isEnabled();
         GSRKeyBindings.register();
         ClientPlayNetworking.registerGlobalReceiver(GSRConfigPayload.ID, (payload, context) -> {
             context.client().execute(() -> {

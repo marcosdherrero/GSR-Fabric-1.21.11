@@ -17,6 +17,7 @@ import net.minecraft.world.level.Level;
 import net.berkle.groupspeedrun.config.GSRConfigPayload;
 import net.berkle.groupspeedrun.config.GSRConfigPlayer;
 import net.berkle.groupspeedrun.config.GSRConfigWorld;
+import net.berkle.groupspeedrun.config.GSRSeedFilterSettings;
 import net.berkle.groupspeedrun.managers.GSRLocateHelper;
 import net.berkle.groupspeedrun.managers.GSRLocatorGate;
 import net.berkle.groupspeedrun.managers.GSRProfileManager;
@@ -35,6 +36,7 @@ import net.berkle.groupspeedrun.network.GSRRunRequestPayload;
 import net.berkle.groupspeedrun.network.GSRWorldConfigPayload;
 import net.berkle.groupspeedrun.parameter.GSRUiParameters;
 import net.berkle.groupspeedrun.parameter.GSRWorldConfigParameters;
+import net.berkle.groupspeedrun.util.GSRNbtUtil;
 import net.berkle.groupspeedrun.server.GSRConfigSync;
 import net.berkle.groupspeedrun.server.GSRDesignatedConfigSource;
 import net.berkle.groupspeedrun.server.GSRRunManagerNbt;
@@ -72,6 +74,10 @@ public final class GSRNetworking {
                 if (config == null) return;
                 payload.nbt().getBoolean(GSRWorldConfigPayload.KEY_ANTI_CHEAT_ENABLED).ifPresent(v -> config.antiCheatEnabled = v);
                 payload.nbt().getBoolean(GSRWorldConfigParameters.K_AUTO_START_ENABLED).ifPresent(v -> config.autoStartEnabled = v);
+                GSRNbtUtil.getBoolean(payload.nbt(), GSRWorldConfigParameters.K_SEED_FILTER_ENABLED).ifPresent(v -> {
+                    config.seedFilterEnabled = v;
+                    GSRSeedFilterSettings.setEnabled(v);
+                });
                 payload.nbt().getInt(GSRWorldConfigParameters.K_LOCATOR_NON_ADMIN_MODE).ifPresent(v -> config.locatorNonAdminMode = Math.max(0, Math.min(2, v)));
                 config.save(context.server());
                 GSRConfigSync.syncConfigWithAll(context.server());

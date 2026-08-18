@@ -20,6 +20,7 @@ import net.berkle.groupspeedrun.config.GSRConfigPayload;
 import net.berkle.groupspeedrun.config.GSRConfigPlayer;
 import net.berkle.groupspeedrun.config.GSRConfigWorld;
 import net.berkle.groupspeedrun.config.GSRLocatorNonAdminMode;
+import net.berkle.groupspeedrun.config.GSRSeedFilterSettings;
 import net.berkle.groupspeedrun.network.GSRWorldConfigPayload;
 import net.berkle.groupspeedrun.parameter.GSRButtonParameters;
 import net.berkle.groupspeedrun.parameter.GSRHudParameters;
@@ -79,6 +80,8 @@ public class GSRResetModSettingsConfirmScreen extends Screen {
         if (wc != null) {
             wc.antiCheatEnabled = true;
             wc.autoStartEnabled = true;
+            wc.seedFilterEnabled = true;
+            GSRSeedFilterSettings.setEnabled(true);
             wc.locatorNonAdminMode = GSRLocatorNonAdminMode.POST_SPLIT_30MIN.getValue();
             if (minecraft != null && minecraft.player != null) {
                 ClientPlayNetworking.send(new GSRWorldConfigPayload(GSRWorldConfigPayload.fromConfig()));

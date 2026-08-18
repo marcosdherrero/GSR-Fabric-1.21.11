@@ -138,7 +138,7 @@ public final class GSRButtonParameters {
     /** Reset Mod Settings confirm: cancel. */
     public static final String PREFERENCES_RESET_CANCEL = "Cancel";
     /** Reset Mod Settings confirm message. */
-    public static final String PREFERENCES_RESET_CONFIRM_MESSAGE = "Resets HUD Scale, Visibility, Anti-Cheat, Auto Start, Locator Non-Admin, and New World Before Run Ends to defaults.";
+    public static final String PREFERENCES_RESET_CONFIRM_MESSAGE = "Resets HUD Scale, Visibility, Anti-Cheat, Auto Start, Seed Filter, Locator Non-Admin, and New World Before Run Ends to defaults.";
 
     // --- Screen titles ---
     /** GSR Preferences screen title. */

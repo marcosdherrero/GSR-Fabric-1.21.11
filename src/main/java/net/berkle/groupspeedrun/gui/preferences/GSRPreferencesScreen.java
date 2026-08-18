@@ -21,6 +21,7 @@ import net.berkle.groupspeedrun.client.GSRKeyBindings;
 import net.berkle.groupspeedrun.config.GSRBastionIconOption;
 import net.berkle.groupspeedrun.config.GSRConfigPlayer;
 import net.berkle.groupspeedrun.config.GSRConfigWorld;
+import net.berkle.groupspeedrun.config.GSRSeedFilterSettings;
 import net.berkle.groupspeedrun.config.GSRFortressIconOption;
 import net.berkle.groupspeedrun.config.GSREndShowTicksOption;
 import net.berkle.groupspeedrun.config.GSRHudLookMode;
@@ -51,6 +52,7 @@ import net.berkle.groupspeedrun.parameter.GSRLocatorParameters;
 import net.berkle.groupspeedrun.parameter.GSRRunHistoryParameters;
 import net.berkle.groupspeedrun.timer.hud.GSRTimerHudRenderer;
 import net.berkle.groupspeedrun.parameter.GSRUiParameters;
+import net.berkle.groupspeedrun.gui.widget.GSRItemTintToggleButton;
 import net.berkle.groupspeedrun.util.GSRLocatorIconHelper;
 import net.berkle.groupspeedrun.util.GSRScrollbarHelper;
 
@@ -87,6 +89,8 @@ public final class GSRPreferencesScreen extends Screen {
     private static final ItemStack TOGGLE_ICON_ON = new ItemStack(Items.LANTERN);
     /** Cached toggle icon for OFF state. */
     private static final ItemStack TOGGLE_ICON_OFF = new ItemStack(Items.IRON_CHAIN);
+    /** Seed-filter square button face. */
+    private static final ItemStack SEED_FILTER_ICON = new ItemStack(Items.MAP);
 
     private static final int ID_HUD_SCALE = 2;
     private static final int ID_HUD_LOOK = 1;
@@ -532,6 +536,7 @@ public final class GSRPreferencesScreen extends Screen {
                 case 1 -> Component.literal("When on, the structure compass bar is at the top of the screen; when off, at the bottom.");
                 case 2 -> Component.literal("When ON (host only): using locators invalidates the run for ranking. When OFF: locator use does not invalidate.");
                 case 3 -> Component.literal("When ON (host only): allows the New World key before run ends. When OFF: New World key only works after victory or fail.");
+                case 4 -> Component.literal("When ON (green, default): random-seed new worlds retry until Overworld+Nether pass. When OFF (red): vanilla random. Typed seeds are never filtered.");
                 default -> null;
             };
         }
@@ -603,6 +608,8 @@ public final class GSRPreferencesScreen extends Screen {
             gsr$syncPlayerConfig();
         }, TOGGLE_ICON_ON, TOGGLE_ICON_OFF, GSRUiParameters.PREFERENCES_TOGGLE_NEWWORLD_ON, GSRUiParameters.PREFERENCES_TOGGLE_NEWWORLD_OFF, "ON", "OFF (default)");
         y += ROW_HEIGHT;
+        gsr$drawSeedFilterRow(context, y, leftCol, colWidth, mouseX, mouseY);
+        y += ROW_HEIGHT;
         gsr$drawButtonRow(context, GSRButtonParameters.PREFERENCES_RESET_MOD_SETTINGS, y, centeredCol, colWidth, mouseX, mouseY);
         y += ROW_HEIGHT;
         y += CATEGORY_MARGIN;
@@ -669,7 +676,7 @@ public final class GSRPreferencesScreen extends Screen {
     }
 
     private int gsr$contentHeight() {
-        int rows = 4 + 4 + 6 + 3;
+        int rows = 5 + 4 + 6 + 3;
         int categories = 4;
         int categoryMargins = (categories - 1) * CATEGORY_MARGIN;
         int dividers = (categories - 1) * (GSRUiParameters.PREFERENCES_CATEGORY_DIVIDER_HEIGHT + GSRUiParameters.PREFERENCES_CATEGORY_DIVIDER_GAP);
@@ -739,6 +746,46 @@ public final class GSRPreferencesScreen extends Screen {
         String display = value ? displayOn : displayOff;
         int textY = barTop + (BAR_HEIGHT - font.lineHeight) / 2;
         context.text(font, Component.literal(display), textLeft, textY, textColor, true);
+        return y + ROW_HEIGHT;
+    }
+
+    private boolean gsr$isSeedFilterEnabled() {
+        if (minecraft != null && minecraft.level != null && GSRClient.clientWorldConfig != null) {
+            return GSRClient.clientWorldConfig.seedFilterEnabled;
+        }
+        return GSRSeedFilterSettings.isEnabled();
+    }
+
+    private void gsr$toggleSeedFilter() {
+        boolean next = !gsr$isSeedFilterEnabled();
+        GSRSeedFilterSettings.setEnabled(next);
+        if (GSRClient.clientWorldConfig != null) {
+            GSRClient.clientWorldConfig.seedFilterEnabled = next;
+            gsr$syncWorldConfig();
+        }
+    }
+
+    private int[] gsr$seedFilterSquare(int colLeft, int y) {
+        int size = GSRUiParameters.PREFERENCES_SEED_FILTER_BUTTON_SIZE;
+        int barTop = y + LABEL_AREA_HEIGHT;
+        int x = colLeft + GSRRunHistoryParameters.CONTAINER_INSET;
+        int buttonY = barTop + Math.max(0, (BAR_HEIGHT - size) / 2);
+        return new int[] { x, buttonY, size, size };
+    }
+
+    private int gsr$drawSeedFilterRow(GuiGraphicsExtractor context, int y, int colLeft, int colWidth, int mouseX, int mouseY) {
+        int sectionTop = y;
+        int labelX = colLeft + GSRRunHistoryParameters.LIST_TEXT_INSET;
+        int labelY = sectionTop + GSRRunHistoryParameters.LIST_VERTICAL_GAP;
+        var matrices = context.pose();
+        matrices.pushMatrix();
+        matrices.translate(labelX, labelY);
+        matrices.scale(LABEL_SCALE, LABEL_SCALE);
+        context.text(font, Component.literal("Seed Filter"), 0, 0, GSRRunHistoryParameters.LABEL_COLOR, true);
+        matrices.popMatrix();
+        int[] box = gsr$seedFilterSquare(colLeft, y);
+        boolean hovered = mouseX >= box[0] && mouseX < box[0] + box[2] && mouseY >= box[1] && mouseY < box[1] + box[3];
+        GSRItemTintToggleButton.extractFace(context, box[0], box[1], box[2], gsr$isSeedFilterEnabled(), hovered, SEED_FILTER_ICON);
         return y + ROW_HEIGHT;
     }
 
@@ -842,6 +889,12 @@ public final class GSRPreferencesScreen extends Screen {
             if (inRightCol) return new int[] { 2, 3 };
         }
         y += ROW_HEIGHT;
+        int[] seedFilter = gsr$seedFilterSquare(leftCol, y);
+        if (mx >= seedFilter[0] && mx < seedFilter[0] + seedFilter[2]
+                && my >= seedFilter[1] && my < seedFilter[1] + seedFilter[3]) {
+            return new int[] { 2, 4 };
+        }
+        y += ROW_HEIGHT;
         if (my >= y + barTopOffset && my < y + barBottomOffset) {
             if (inCenteredCol) return new int[] { 4, 0 };
         }
@@ -911,6 +964,7 @@ public final class GSRPreferencesScreen extends Screen {
             case 1 -> { GSRClient.PLAYER_CONFIG.locateHudOnTop = !GSRClient.PLAYER_CONFIG.locateHudOnTop; gsr$syncPlayerConfig(); }
             case 2 -> { if (GSRClient.clientWorldConfig != null) { GSRClient.clientWorldConfig.antiCheatEnabled = !GSRClient.clientWorldConfig.antiCheatEnabled; gsr$syncWorldConfig(); } }
             case 3 -> { GSRClient.PLAYER_CONFIG.allowNewWorldBeforeRunEnd = !GSRClient.PLAYER_CONFIG.allowNewWorldBeforeRunEnd; gsr$syncPlayerConfig(); }
+            case 4 -> gsr$toggleSeedFilter();
             case 5 -> { if (GSRClient.clientWorldConfig != null) { GSRClient.clientWorldConfig.autoStartEnabled = !GSRClient.clientWorldConfig.autoStartEnabled; gsr$syncWorldConfig(); } }
         }
     }

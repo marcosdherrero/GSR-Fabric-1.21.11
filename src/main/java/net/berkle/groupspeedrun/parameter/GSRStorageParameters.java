@@ -36,6 +36,8 @@ public final class GSRStorageParameters {
 
     // --- Quick new world (gsr_folder/run_count.json) ---
     public static final String RUN_COUNT_FILE = "run_count.json";
+    /** Client/title-screen default for seed filter (create-world runs before a world exists). */
+    public static final String SEED_FILTER_FILE = "seed_filter.json";
 
     // --- Run history (gsr_folder/personal_runs/, gsr_folder/shared_runs/) ---
     /** Personal run history: runs you completed. Persists across worlds. */

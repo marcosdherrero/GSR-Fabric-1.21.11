@@ -457,10 +457,14 @@ public final class GSRPreferencesScreen extends Screen {
     }
 
     private void goBack() {
-        if (minecraft != null) {
-            if (parent != null) minecraft.setScreen(parent);
-            else minecraft.setScreen(null);
-        }
+        onClose();
+    }
+
+    @Override
+    public void onClose() {
+        if (minecraft == null) return;
+        if (parent != null) minecraft.setScreen(parent);
+        else minecraft.setScreen(null);
     }
 
     @Override
@@ -985,9 +989,6 @@ public final class GSRPreferencesScreen extends Screen {
 
         // When dropdown open, consume all clicks first so overlay selections take precedence over background buttons
         if (model.openDropdownId != GSRPreferencesScreenModel.DROPDOWN_NONE) {
-            if (now - model.lastClickHandledTimeMs < GSRUiParameters.CLICK_COOLDOWN_MS) {
-                return true;
-            }
             GSRPreferencesDropdownEntry entry = gsr$getEntry(model.openDropdownId);
             int overlayTop = Math.max(GSRUiParameters.PREFERENCES_DROPDOWN_MIN_TOP, contentTop + (contentBottom - contentTop) / 2 - GSRUiParameters.PREFERENCES_DROPDOWN_OVERLAY_HALF_HEIGHT);
             int overlayBottom = Math.min(contentBottom, overlayTop + GSRUiParameters.PREFERENCES_DROPDOWN_OVERLAY_HEIGHT);
@@ -1019,12 +1020,11 @@ public final class GSRPreferencesScreen extends Screen {
             return true;
         }
 
-        if (captured) return false;
-        if (click.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT) return super.mouseClicked(click, false);
+        if (click.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT) return super.mouseClicked(click, captured);
 
-        // Give footer buttons chance when click is in footer area (avoids content hit-test consuming footer clicks)
-        int footerY = GSRMenuComponents.singleButtonFooterLayout(width, height).footerY();
-        if (my >= footerY - 4 && super.mouseClicked(click, false)) {
+        // Footer widgets first (26.2 captured = double-click, not "already handled")
+        int footerY = GSRMenuComponents.footerLayout(width, height).footerY();
+        if (my >= footerY - 4 && super.mouseClicked(click, captured)) {
             return true;
         }
 
@@ -1050,13 +1050,6 @@ public final class GSRPreferencesScreen extends Screen {
 
         int[] hit = gsr$getButtonAt(contentLeft, contentWidthForContent, colWidth, leftCol, rightCol, centeredCol, contentTop, contentBottom, scroll, mx, my);
         if (hit != null) {
-            if (now - model.lastClickHandledTimeMs < GSRUiParameters.CLICK_COOLDOWN_MS) {
-                return true;
-            }
-            if (model.lastHoveredElement == null || model.lastHoveredElement[0] != hit[0] || model.lastHoveredElement[1] != hit[1]
-                    || now - model.lastHoveredTimeMs < GSRUiParameters.CLICK_HOVER_STABILITY_MS) {
-                return true;
-            }
             int rowType = hit[0];
             int rowId = hit[1];
             if (rowType == 1) {
@@ -1091,7 +1084,7 @@ public final class GSRPreferencesScreen extends Screen {
             }
         }
 
-        return super.mouseClicked(click, false);
+        return super.mouseClicked(click, captured);
     }
 
     @Override

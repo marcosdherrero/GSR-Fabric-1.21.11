@@ -184,8 +184,7 @@ public class GSRRunManagerScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent click, boolean captured) {
-        if (captured) return false;
-        if (click.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT) return super.mouseClicked(click, false);
+        if (click.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT) return super.mouseClicked(click, captured);
 
         int mouseX = (int) click.x();
         int mouseY = (int) click.y();

@@ -6,6 +6,7 @@ import net.berkle.groupspeedrun.config.GSRConfigWorld;
 import net.berkle.groupspeedrun.managers.GSRBroadcastManager;
 import net.berkle.groupspeedrun.managers.GSRDataStore;
 import net.berkle.groupspeedrun.managers.GSRWorldSnapshotManager;
+import net.berkle.groupspeedrun.network.GSRReloadWorldPayload;
 import net.berkle.groupspeedrun.network.GSRSplitAchievedPayload;
 import net.berkle.groupspeedrun.server.GSRConfigSync;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -35,6 +36,7 @@ public final class GSRRunLifecycle {
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null) return;
         if (!config.isRunNotStarted()) return;
+        GSRWorldSnapshotManager.takeSnapshotIfNeeded(server);
         config.startTime = System.currentTimeMillis();
         config.isTimerFrozen = false;
         config.manualPause = false;
@@ -125,21 +127,35 @@ public final class GSRRunLifecycle {
     }
 
     /**
-     * Hard reset: if the run was completed (victory/fail), save it to per-player folders,
-     * then clear run data and stats. Teleport players to spawn, clear inventory, revoke advancements.
+     * Hard reset: restore the original world snapshot (region/entities/poi/level.dat), then apply
+     * GSR player state. Aborts clearly if no backup exists instead of only teleporting to spawn.
      */
     public static void resetRun(MinecraftServer server) {
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null) return;
+        if (!GSRWorldSnapshotManager.hasValidSnapshot(server)) {
+            GSRBroadcastManager.broadcastToRunParticipants(server, Component.literal(
+                    "§c§l[GSR] Reset aborted: no original-world backup. Rejoin this world (or start a new GSR world) so a snapshot can be saved."));
+            return;
+        }
         if (config.isVictorious || config.isFailed) {
             GSRDataStore.saveCompletedRunToPlayerFolders(server);
         }
         config.resetRunData();
         GSRStats.reset();
+        applyPostResetPlayerState(server);
+        GSRWorldSnapshotManager.setRestoreFromSnapshotOnNextLoad(server);
+        config.save(server);
+        GSRConfigSync.syncConfigWithAll(server);
+        GSRBroadcastManager.broadcastToRunParticipants(server, Component.literal(
+                "§6§l[GSR] Run reset. Reloading original world backup…"));
+        requestWorldReload(server);
+    }
 
+    /** Spawn, empty inventory, survival, revoke advancements. Applied in-memory; snapshot restore reloads files. */
+    private static void applyPostResetPlayerState(MinecraftServer server) {
         ServerLevel overworld = server.overworld();
         BlockPos spawnPos = server.getRespawnData().pos();
-
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             player.stopRiding();
             player.setGameMode(GameType.SURVIVAL);
@@ -163,10 +179,19 @@ public final class GSRRunLifecycle {
                     true
             );
         }
-        GSRWorldSnapshotManager.setRestoreFromSnapshotOnNextLoad(server);
-        config.save(server);
-        GSRConfigSync.syncConfigWithAll(server);
-        GSRBroadcastManager.broadcastToRunParticipants(server, Component.literal("§6§l[GSR] Run reset."));
+    }
+
+    private static void requestWorldReload(MinecraftServer server) {
+        String levelId = GSRWorldSnapshotManager.getLevelId(server);
+        if (!server.isDedicatedServer()) {
+            var payload = new GSRReloadWorldPayload(levelId);
+            for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+                ServerPlayNetworking.send(p, payload);
+            }
+        } else {
+            GSRBroadcastManager.broadcastToRunParticipants(server, Component.literal(
+                    "§e[GSR] Restart the server to finish restoring the original world."));
+        }
     }
 
     private static void revokeAllAdvancements(ServerPlayer player, MinecraftServer server) {

@@ -29,6 +29,7 @@ import net.berkle.groupspeedrun.network.GSRLocatorActionPayload;
 import net.berkle.groupspeedrun.network.GSRLocatorFeedbackPayload;
 import net.berkle.groupspeedrun.network.GSRScreenTimePayload;
 import net.berkle.groupspeedrun.network.GSROpenScreenPayload;
+import net.berkle.groupspeedrun.network.GSRReloadWorldPayload;
 import net.berkle.groupspeedrun.network.GSRSplitAchievedPayload;
 import net.berkle.groupspeedrun.network.GSRVictoryCelebrationPayload;
 import net.berkle.groupspeedrun.network.GSRPlayerListPayload;
@@ -76,6 +77,7 @@ public class GSRMain implements ModInitializer {
         PayloadTypeRegistry.clientboundPlay().register(GSRConfigPayload.ID, GSRConfigPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(GSRConfigPayload.ID, GSRConfigPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(GSROpenScreenPayload.ID, GSROpenScreenPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(GSRReloadWorldPayload.ID, GSRReloadWorldPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(GSRRunActionPayload.ID, GSRRunActionPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(GSRLocatorActionPayload.ID, GSRLocatorActionPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(GSRLocatorFeedbackPayload.ID, GSRLocatorFeedbackPayload.CODEC);
@@ -156,6 +158,7 @@ public class GSRMain implements ModInitializer {
             // Overworld is available here; Fabric 26.1 dropped ServerWorldEvents.LOAD
             ensureWorldConfigLoaded(server);
             getTimer().primeRunIfArmed(server);
+            GSRWorldSnapshotManager.takeSnapshotIfNeeded(server);
             // Auto-resume runs frozen by server stop; manual pause stays paused until manual resume
             getTimer().tryAutoStartOrResumeOnJoin(server);
         });

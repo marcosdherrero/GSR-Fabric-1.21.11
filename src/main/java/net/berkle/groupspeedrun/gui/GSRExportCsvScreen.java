@@ -439,7 +439,6 @@ public class GSRExportCsvScreen extends Screen {
 
     @Override
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent click, boolean captured) {
-        if (captured) return false;
         double mouseX = click.x();
         double mouseY = click.y();
         long now = System.currentTimeMillis();

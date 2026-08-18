@@ -26,6 +26,7 @@ import net.berkle.groupspeedrun.config.GSRConfigWorld;
 import net.berkle.groupspeedrun.config.GSRSeedFilterSettings;
 import net.berkle.groupspeedrun.data.GSRRunSaveStateNbt;
 import net.berkle.groupspeedrun.gui.preferences.GSRPreferencesScreen;
+import net.berkle.groupspeedrun.gui.GSRBaseScreen;
 import net.berkle.groupspeedrun.gui.GSRControlsScreen;
 import net.berkle.groupspeedrun.gui.GSRLocatorsScreen;
 import net.berkle.groupspeedrun.gui.GSRNewWorldConfirmScreen;
@@ -34,6 +35,7 @@ import net.berkle.groupspeedrun.network.GSRRunActionPayload;
 import net.berkle.groupspeedrun.network.GSRScreenTimePayload;
 import net.berkle.groupspeedrun.network.GSRLocatorFeedbackPayload;
 import net.berkle.groupspeedrun.network.GSROpenScreenPayload;
+import net.berkle.groupspeedrun.network.GSRReloadWorldPayload;
 import net.berkle.groupspeedrun.network.GSRPlayerListPayload;
 import net.berkle.groupspeedrun.network.GSRRunCompletePayload;
 import net.berkle.groupspeedrun.network.GSRRunDataPayload;
@@ -60,6 +62,9 @@ public class GSRClient implements ClientModInitializer {
 
     /** When set, the next opened CreateWorldScreen will have this name pre-filled. Cleared when used. */
     public static volatile String nextGsrWorldName = null;
+
+    /** When set, TitleScreen reopens this save after a snapshot restore disconnect. */
+    public static volatile String pendingWorldReloadId = null;
 
     /** When >= 0, single-player pause screen is open: display this elapsed ms and auto-resume when closed. */
     private static long clientPausedElapsedMs = -1;
@@ -137,6 +142,12 @@ public class GSRClient implements ClientModInitializer {
                 } else if (payload.screenType() == GSROpenScreenPayload.TYPE_CONTROLS) {
                     client.setScreen(new GSRControlsScreen(client.screen));
                 }
+            });
+        });
+        ClientPlayNetworking.registerGlobalReceiver(GSRReloadWorldPayload.ID, (payload, context) -> {
+            context.client().execute(() -> {
+                pendingWorldReloadId = payload.levelId();
+                context.client().disconnectWithSavingScreen();
             });
         });
         ClientPlayNetworking.registerGlobalReceiver(GSRRunCompletePayload.ID, (payload, context) -> {
@@ -246,9 +257,13 @@ public class GSRClient implements ClientModInitializer {
                 }
             }
             if (client.player != null) {
+                Screen current = client.screen;
+                boolean gsrMenuOpen = current instanceof GSRPreferencesScreen
+                        || current instanceof GSRControlsScreen
+                        || current instanceof GSRBaseScreen;
                 boolean gPressed = GSRKeyBindings.openGsrOptionsKey != null && GSRKeyBindings.openGsrOptionsKey.isDown();
-                if (GSRKeyBindings.openGsrConfigKey != null && GSRKeyBindings.openGsrConfigKey.consumeClick() && gPressed) {
-                    client.setScreen(new GSRPreferencesScreen(client.screen));
+                if (!gsrMenuOpen && GSRKeyBindings.openGsrConfigKey != null && GSRKeyBindings.openGsrConfigKey.consumeClick() && gPressed) {
+                    client.setScreen(new GSRPreferencesScreen(current));
                     openedConfigDuringGHold = true;
                     gKeyHeldLastTick = true;
                     return;
@@ -256,11 +271,13 @@ public class GSRClient implements ClientModInitializer {
                 if (gPressed) {
                     gKeyHeldLastTick = true;
                 } else {
-                    if (gKeyHeldLastTick && !openedConfigDuringGHold) client.setScreen(new GSRControlsScreen(client.screen));
+                    if (!gsrMenuOpen && gKeyHeldLastTick && !openedConfigDuringGHold) {
+                        client.setScreen(new GSRControlsScreen(current));
+                    }
                     gKeyHeldLastTick = false;
                     openedConfigDuringGHold = false;
                 }
-                if (client.screen == null && GSRKeyBindings.newGsrWorldKey.consumeClick() && client.getSingleplayerServer() != null
+                if (current == null && GSRKeyBindings.newGsrWorldKey.consumeClick() && client.getSingleplayerServer() != null
                         && (clientWorldConfig.effectiveAllowNewWorldBeforeRunEnd || clientWorldConfig.isFailed || clientWorldConfig.isVictorious)) {
                     int runNum = GSRQuickNewWorld.getAndIncrementRunCount();
                     String hostName = client.getUser() != null ? client.getUser().getName() : "Host";

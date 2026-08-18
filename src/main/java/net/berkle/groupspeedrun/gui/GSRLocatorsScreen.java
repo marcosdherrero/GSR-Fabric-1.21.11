@@ -236,8 +236,7 @@ public class GSRLocatorsScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent click, boolean captured) {
-        if (captured) return false;
-        if (click.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT) return super.mouseClicked(click, false);
+        if (click.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT) return super.mouseClicked(click, captured);
         int mx = (int) click.x();
         int my = (int) click.y();
         long now = System.currentTimeMillis();

@@ -9,7 +9,6 @@ import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.Component;
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
 
@@ -328,7 +327,7 @@ public final class GSRStandardTooltip {
                 wrapped.add(ot);
             } else {
                 String plain = orderedTextToPlainString(ot);
-                for (FormattedCharSequence sub : textRenderer.split(FormattedText.plain(plain), maxContentW)) {
+                for (FormattedCharSequence sub : textRenderer.split(FormattedText.of(plain), maxContentW)) {
                     wrapped.add(sub);
                 }
             }
@@ -343,7 +342,7 @@ public final class GSRStandardTooltip {
             sb.appendCodePoint(codePoint);
             return true;
         });
-        return TextVisitFactory.removeFormattingCodes(FormattedText.plain(sb.toString()));
+        return sb.toString().replaceAll("§.", "");
     }
 
     /** Builds a stable key from tooltip content for scroll state. Never casts to FormattedText. */

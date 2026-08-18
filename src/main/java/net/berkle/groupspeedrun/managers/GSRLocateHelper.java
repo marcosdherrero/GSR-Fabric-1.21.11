@@ -83,7 +83,7 @@ public final class GSRLocateHelper {
             Set<Long> dudStructures = new HashSet<>();
             int chunksChecked = 0;
 
-            Structure endCityStructure = world.registryAccess().lookupOrThrow(Registries.STRUCTURE).get(Identifier.fromNamespaceAndPath("minecraft", "end_city"));
+            Structure endCityStructure = world.registryAccess().lookupOrThrow(Registries.STRUCTURE).getValue(Identifier.fromNamespaceAndPath("minecraft", "end_city"));
             if (endCityStructure == null) return null;
 
             // 1. Player position first – if within view of a city with ship, they may be inside it
@@ -188,10 +188,10 @@ public final class GSRLocateHelper {
 
     private static TagKey<Structure> tagFor(String type) {
         return switch (type.toLowerCase()) {
-            case "fortress" -> TagKey.of(Registries.STRUCTURE, Identifier.fromNamespaceAndPath("gsr", "fortress"));
-            case "bastion" -> TagKey.of(Registries.STRUCTURE, Identifier.fromNamespaceAndPath("gsr", "bastion_remnant"));
+            case "fortress" -> TagKey.create(Registries.STRUCTURE, Identifier.fromNamespaceAndPath("gsr", "fortress"));
+            case "bastion" -> TagKey.create(Registries.STRUCTURE, Identifier.fromNamespaceAndPath("gsr", "bastion_remnant"));
             case "stronghold" -> StructureTags.EYE_OF_ENDER_LOCATED;
-            case "ship" -> TagKey.of(Registries.STRUCTURE, Identifier.fromNamespaceAndPath("gsr", "end_city"));
+            case "ship" -> TagKey.create(Registries.STRUCTURE, Identifier.fromNamespaceAndPath("gsr", "end_city"));
             default -> null;
         };
     }

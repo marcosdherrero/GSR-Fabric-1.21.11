@@ -94,7 +94,6 @@ public class GSRRunHistoryScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        setAlpha(1.0f);
         model.allRuns = GSRSharedRunLoader.loadAll();
         // Active run (from world config) only visible when in that world; buildCurrentRunState returns null otherwise
         if (includeCurrentRun && minecraft != null) {

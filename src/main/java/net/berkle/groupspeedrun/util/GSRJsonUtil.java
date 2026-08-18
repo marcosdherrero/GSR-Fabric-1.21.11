@@ -55,26 +55,26 @@ public final class GSRJsonUtil {
         if (!Files.exists(path)) return new CompoundTag();
         String name = path.getFileName().toString();
         if (name.endsWith(".json")) return readNbtFromJson(path);
-        if (name.endsWith(".nbt")) return net.minecraft.nbt.NbtIo.readCompressed(path, net.minecraft.nbt.NbtSizeTracker.ofUnlimitedBytes());
+        if (name.endsWith(".nbt")) return net.minecraft.nbt.NbtIo.readCompressed(path, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
         return readNbtFromJson(path);
     }
 
     /** Converts NBT element to JSON element. */
     public static JsonElement nbtToJson(Tag nbt) {
         if (nbt == null) return com.google.gson.JsonNull.INSTANCE;
-        return switch (nbt.getType()) {
-            case Tag.COMPOUND_TYPE -> nbtCompoundToJson((CompoundTag) nbt);
-            case Tag.LIST_TYPE -> nbtListToJson((ListTag) nbt);
-            case Tag.STRING_TYPE -> new JsonPrimitive(((StringTag) nbt).asString().orElse(""));
-            case Tag.BYTE_TYPE -> new JsonPrimitive(((ByteTag) nbt).byteValue());
-            case Tag.SHORT_TYPE -> new JsonPrimitive(((ShortTag) nbt).shortValue());
-            case Tag.INT_TYPE -> new JsonPrimitive(((IntTag) nbt).intValue());
-            case Tag.LONG_TYPE -> new JsonPrimitive(((LongTag) nbt).longValue());
-            case Tag.FLOAT_TYPE -> new JsonPrimitive(((FloatTag) nbt).floatValue());
-            case Tag.DOUBLE_TYPE -> new JsonPrimitive(((DoubleTag) nbt).doubleValue());
-            case Tag.BYTE_ARRAY_TYPE -> nbtByteArrayToJson((ByteArrayTag) nbt);
-            case Tag.INT_ARRAY_TYPE -> nbtIntArrayToJson((IntArrayTag) nbt);
-            case Tag.LONG_ARRAY_TYPE -> nbtLongArrayToJson((LongArrayTag) nbt);
+        return switch (nbt.getId()) {
+            case Tag.TAG_COMPOUND -> nbtCompoundToJson((CompoundTag) nbt);
+            case Tag.TAG_LIST -> nbtListToJson((ListTag) nbt);
+            case Tag.TAG_STRING -> new JsonPrimitive(((StringTag) nbt).asString().orElse(""));
+            case Tag.TAG_BYTE -> new JsonPrimitive(((ByteTag) nbt).byteValue());
+            case Tag.TAG_SHORT -> new JsonPrimitive(((ShortTag) nbt).shortValue());
+            case Tag.TAG_INT -> new JsonPrimitive(((IntTag) nbt).intValue());
+            case Tag.TAG_LONG -> new JsonPrimitive(((LongTag) nbt).longValue());
+            case Tag.TAG_FLOAT -> new JsonPrimitive(((FloatTag) nbt).floatValue());
+            case Tag.TAG_DOUBLE -> new JsonPrimitive(((DoubleTag) nbt).doubleValue());
+            case Tag.TAG_BYTE_ARRAY -> nbtByteArrayToJson((ByteArrayTag) nbt);
+            case Tag.TAG_INT_ARRAY -> nbtIntArrayToJson((IntArrayTag) nbt);
+            case Tag.TAG_LONG_ARRAY -> nbtLongArrayToJson((LongArrayTag) nbt);
             default -> com.google.gson.JsonNull.INSTANCE;
         };
     }
@@ -96,19 +96,19 @@ public final class GSRJsonUtil {
 
     private static JsonArray nbtByteArrayToJson(ByteArrayTag arr) {
         JsonArray out = new JsonArray();
-        for (byte b : arr.getByteArray()) out.add(b);
+        for (byte b : arr.getAsByteArray()) out.add(b);
         return out;
     }
 
     private static JsonArray nbtIntArrayToJson(IntArrayTag arr) {
         JsonArray out = new JsonArray();
-        for (int v : arr.getIntArray()) out.add(v);
+        for (int v : arr.getAsIntArray()) out.add(v);
         return out;
     }
 
     private static JsonArray nbtLongArrayToJson(LongArrayTag arr) {
         JsonArray out = new JsonArray();
-        for (long v : arr.getLongArray()) out.add(v);
+        for (long v : arr.getAsLongArray()) out.add(v);
         return out;
     }
 
@@ -134,15 +134,15 @@ public final class GSRJsonUtil {
     }
 
     private static Tag jsonPrimitiveToNbt(JsonPrimitive p) {
-        if (p.isBoolean()) return ByteTag.of(p.getAsBoolean());
+        if (p.isBoolean()) return ByteTag.valueOf(p.getAsBoolean());
         if (p.isNumber()) {
             Number n = p.getAsNumber();
             long l = n.longValue();
             // Numbers outside int range must use LongTag to avoid 32-bit truncation (e.g. Unix timestamps)
-            if (l > Integer.MAX_VALUE || l < Integer.MIN_VALUE) return LongTag.of(l);
-            if (n instanceof Long || l != n.doubleValue()) return LongTag.of(l);
-            if (n instanceof Double || n instanceof Float) return DoubleTag.of(n.doubleValue());
-            return IntTag.of(n.intValue());
+            if (l > Integer.MAX_VALUE || l < Integer.MIN_VALUE) return LongTag.valueOf(l);
+            if (n instanceof Long || l != n.doubleValue()) return LongTag.valueOf(l);
+            if (n instanceof Double || n instanceof Float) return DoubleTag.valueOf(n.doubleValue());
+            return IntTag.valueOf(n.intValue());
         }
         if (p.isString()) return StringTag.valueOf(p.getAsString());
         return new CompoundTag();

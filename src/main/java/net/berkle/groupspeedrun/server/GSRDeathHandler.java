@@ -29,14 +29,14 @@ public final class GSRDeathHandler {
         config.frozenTime = elapsed;
         config.lastSplitTime = server.overworld().getGameTime();
         config.failedByPlayerName = deadPlayer.getName().getString();
-        config.failedByDeathMessage = deadPlayer.getDamageTracker().getDeathMessage().getString();
+        config.failedByDeathMessage = deadPlayer.getCombatTracker().getDeathMessage().getString();
         config.runParticipantCount = (int) server.getPlayerList().getPlayers().stream()
                 .filter(p -> !config.excludedFromRun.contains(p.getUUID())).count();
         config.save(server);
         GSRConfigSync.syncConfigWithAll(server);
 
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-            p.changeGameMode(GameType.SPECTATOR);
+            p.setGameMode(GameType.SPECTATOR);
         }
         var state = GSRDataStore.recordCurrentRun(server);
         if (state != null) {

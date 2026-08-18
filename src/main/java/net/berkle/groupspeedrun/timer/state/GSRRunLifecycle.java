@@ -138,20 +138,21 @@ public final class GSRRunLifecycle {
         GSRStats.reset();
 
         ServerLevel overworld = server.overworld();
-        BlockPos spawnPos = overworld.getSpawnPoint().getPos();
+        BlockPos spawnPos = server.getRespawnData().pos();
 
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             player.stopRiding();
-            player.changeGameMode(GameType.SURVIVAL);
-            player.getInventory().clear();
+            player.setGameMode(GameType.SURVIVAL);
+            player.getInventory().clearContent();
             player.setHealth(player.getMaxHealth());
-            player.getHungerManager().setFoodLevel(20);
-            player.getHungerManager().setSaturationLevel(5.0f);
-            player.setExperienceLevel(0);
-            player.setExperiencePoints(0);
-            player.clearStatusEffects();
+            player.getFoodData().setFoodLevel(20);
+            player.getFoodData().setSaturation(5.0f);
+            player.setExperienceLevels(0);
+            player.totalExperience = 0;
+            player.experienceProgress = 0.0f;
+            player.removeAllEffects();
             revokeAllAdvancements(player, server);
-            player.teleport(
+            player.teleportTo(
                     overworld,
                     spawnPos.getX() + 0.5,
                     spawnPos.getY(),
@@ -169,11 +170,11 @@ public final class GSRRunLifecycle {
     }
 
     private static void revokeAllAdvancements(ServerPlayer player, MinecraftServer server) {
-        for (AdvancementHolder advancement : server.getAdvancementLoader().getAdvancements()) {
-            AdvancementProgress progress = player.getAdvancementTracker().getProgress(advancement);
-            if (progress.isAnyObtained()) {
-                for (String criterion : progress.getObtainedCriteria()) {
-                    player.getAdvancementTracker().revokeCriterion(advancement, criterion);
+        for (AdvancementHolder advancement : server.getAdvancements().getAllAdvancements()) {
+            AdvancementProgress progress = player.getAdvancements().getOrStartProgress(advancement);
+            if (progress.hasProgress()) {
+                for (String criterion : progress.getCompletedCriteria()) {
+                    player.getAdvancements().revoke(advancement, criterion);
                 }
             }
         }

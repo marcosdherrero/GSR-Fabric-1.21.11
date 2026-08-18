@@ -67,7 +67,6 @@ public class GSRRunManagerScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        setAlpha(1.0f);
         dataReceived = false;
         ClientPlayNetworking.send(new GSRRunManagerRequestPayload());
 

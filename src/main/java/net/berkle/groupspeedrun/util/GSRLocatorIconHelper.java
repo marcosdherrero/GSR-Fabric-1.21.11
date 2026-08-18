@@ -23,7 +23,7 @@ public final class GSRLocatorIconHelper {
             String s = registryId.trim();
             String[] parts = s.split(":", 2);
             Identifier id = parts.length == 2 ? Identifier.fromNamespaceAndPath(parts[0], parts[1]) : Identifier.fromNamespaceAndPath("minecraft", s);
-            Item item = BuiltInRegistries.ITEM.get(id);
+            Item item = BuiltInRegistries.ITEM.getValue(id);
             if (item != null && item != Items.AIR) return new ItemStack(item);
         } catch (Exception ignored) {}
         return new ItemStack(defaultItem);

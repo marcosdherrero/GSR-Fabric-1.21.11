@@ -87,10 +87,10 @@ public final class GSRMovementAutoStartListener {
     private static String resolveTravelType(ServerPlayer player) {
         if (player.getAbilities().flying) return "fly";
         if (player.isSwimming()) return "swim";
-        if (player.isClimbing()) return "climb";
-        if (!player.isOnGround()) {
-            if (player.getItemBySlot(EquipmentSlot.CHEST).is(Items.ELYTRA)) return "fly";
-            if (player.getVelocity().y < -0.08) return "fall";
+        if (player.onClimbable()) return "climb";
+        if (!player.onGround()) {
+            if (player.getItemBySlot(EquipmentSlot.CHEST).getItem() == Items.ELYTRA) return "fly";
+            if (player.getDeltaMovement().y < -0.08) return "fall";
         }
         if (player.isSprinting()) return "sprint";
         return "walk";

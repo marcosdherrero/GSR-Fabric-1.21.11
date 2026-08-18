@@ -1,7 +1,5 @@
 package net.berkle.groupspeedrun.mixin.trackers;
 
-import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -63,7 +61,7 @@ public abstract class GSRServerPlayerEntityTracker {
             AbstractContainerMenu sh = player.containerMenu;
             if (sh != player.inventoryMenu && sh != null) {
                 try {
-                    var id = sw.registryAccess().lookupOrThrow(Registries.MENU).getId(sh.getType());
+                    var id = net.minecraft.core.registries.BuiltInRegistries.MENU.getKey(sh.getType());
                     if (id != null) GSRStats.addScreenTime(player.getUUID(), id.toString());
                 } catch (Exception ignored) {}
             }

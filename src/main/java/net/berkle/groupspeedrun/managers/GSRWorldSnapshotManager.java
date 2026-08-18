@@ -103,7 +103,7 @@ public final class GSRWorldSnapshotManager {
         if (Files.exists(snapshotDir)) return;
 
         try {
-            server.save(true, false, false);
+            server.saveAllChunks(true, false, false);
             copyDirectoryContents(worldRoot, snapshotDir);
             LOGGER.info("[GSR] World snapshot saved to {}", snapshotDir);
         } catch (IOException e) {

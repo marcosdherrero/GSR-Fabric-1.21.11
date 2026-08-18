@@ -344,12 +344,10 @@ public final class GSRUiParameters {
     public static final int PREFERENCES_TOGGLE_NEUTRAL_ON = 0xFF4CAF50;
     /** Toggle OFF color for neutral options (ARGB). Gray. */
     public static final int PREFERENCES_TOGGLE_NEUTRAL_OFF = 0xFF9E9E9E;
-    /** Seed-filter map button ON tint (ARGB). Green. */
+    /** Seed Filter toggle ON text color (ARGB). Green. */
     public static final int PREFERENCES_SEED_FILTER_ON = 0xFF4CAF50;
-    /** Seed-filter map button OFF tint (ARGB). Red. */
+    /** Seed Filter toggle OFF text color (ARGB). Red. */
     public static final int PREFERENCES_SEED_FILTER_OFF = 0xFFF44336;
-    /** Square map toggle face size (pixels). Matches the 26.2 icon-row GSR button. */
-    public static final int PREFERENCES_SEED_FILTER_BUTTON_SIZE = 20;
     /** Size of toggle button icon (pixels). */
     public static final int PREFERENCES_TOGGLE_ICON_SIZE = 16;
     /** Margin inside toggle bar around icon (pixels). */

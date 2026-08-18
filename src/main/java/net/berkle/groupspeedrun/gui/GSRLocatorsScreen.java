@@ -26,6 +26,7 @@ import net.berkle.groupspeedrun.parameter.GSRRunHistoryParameters;
 import net.berkle.groupspeedrun.parameter.GSRLocatorParameters;
 import net.berkle.groupspeedrun.parameter.GSRUiParameters;
 import net.berkle.groupspeedrun.util.GSRColorHelper;
+import net.berkle.groupspeedrun.util.GSRItemStacks;
 import net.berkle.groupspeedrun.util.GSRLocatorIconHelper;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
@@ -140,7 +141,7 @@ public class GSRLocatorsScreen extends Screen {
         int[][] bars = gsr$toggleBarBounds();
         String[] labels = { GSRButtonParameters.LOCATORS_FORTRESS, GSRButtonParameters.LOCATORS_BASTION, GSRButtonParameters.LOCATORS_STRONGHOLD, GSRButtonParameters.LOCATORS_WINGS };
         boolean[] active = (wc != null && pc != null) ? new boolean[] { wc.fortressLocated && pc.fortressLocatorOn, wc.bastionLocated && pc.bastionLocatorOn, wc.strongholdLocated && pc.strongholdLocatorOn, wc.shipLocated && pc.shipLocatorOn } : new boolean[4];
-        ItemStack[] icons = { new ItemStack(Items.BLAZE_ROD), new ItemStack(Items.PIGLIN_HEAD), new ItemStack(Items.ENDER_EYE), new ItemStack(Items.ELYTRA) };
+        ItemStack[] icons = { GSRItemStacks.of(Items.BLAZE_ROD), GSRItemStacks.of(Items.PIGLIN_HEAD), GSRItemStacks.of(Items.ENDER_EYE), GSRItemStacks.of(Items.ELYTRA) };
 
         for (int i = 0; i < 4; i++) {
             int[] b = bars[i];
@@ -175,7 +176,9 @@ public class GSRLocatorsScreen extends Screen {
         matrices.pushMatrix();
         matrices.translate(iconX + iconMargin, iconY + iconMargin);
         matrices.scale(scale, scale);
-        context.item(icon, 0, 0);
+        if (GSRItemStacks.isUsable(icon)) {
+            context.item(icon, 0, 0);
+        }
         matrices.popMatrix();
 
         int textColor = value ? TOGGLE_ON_COLOR : TOGGLE_OFF_COLOR;
@@ -323,7 +326,9 @@ public class GSRLocatorsScreen extends Screen {
         context.fill(iconCenterX - r, iconCenterY - r, iconCenterX + r, iconCenterY + r, GSRColorHelper.applyAlpha(themeColor & 0x00FFFFFF, 1.0f));
         context.fill(iconCenterX - inner, iconCenterY - inner, iconCenterX + inner, iconCenterY + inner, GSRColorHelper.applyAlpha(GSRLocatorParameters.BAR_BG, 1.0f));
         // Item centered: drawItem uses top-left, so (centerX - 8, centerY - 8) centers 16x16 item
-        context.item(stack, iconCenterX - inner, iconCenterY - inner);
+        if (GSRItemStacks.isUsable(stack)) {
+            context.item(stack, iconCenterX - inner, iconCenterY - inner);
+        }
         int textColor = active ? (0xFF000000 | (themeColor & 0x00FFFFFF)) : GSRUiParameters.LOCATORS_INACTIVE_LABEL;
         context.centeredText(font, label, iconCenterX, iconCenterY + r + 2, textColor);
     }

@@ -40,9 +40,9 @@ public abstract class GSRCreateWorldScreenMixin extends Screen {
             ci.cancel();
             return;
         }
-        if (!GSRSeedFilter.shouldFilter(uiState)) return;
+        if (!GSRSeedFilter.shouldFilter(worldCreator)) return;
         ci.cancel();
-        GSRSeedFilter.start((CreateWorldScreen) (Object) this, uiState);
+        GSRSeedFilter.start((CreateWorldScreen) (Object) this, worldCreator);
     }
 
     @Override

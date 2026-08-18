@@ -9,6 +9,7 @@ import net.berkle.groupspeedrun.config.GSRShipIconOption;
 import net.berkle.groupspeedrun.config.GSRStrongholdIconOption;
 import net.berkle.groupspeedrun.parameter.GSRLocatorParameters;
 import net.berkle.groupspeedrun.util.GSRColorHelper;
+import net.berkle.groupspeedrun.util.GSRItemStacks;
 import net.berkle.groupspeedrun.util.GSRLocatorIconHelper;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.item.Items;
@@ -97,7 +98,9 @@ public final class GSRPreferencesPreviewRenderer {
             context.fill(-r, -r, r, r, GSRColorHelper.applyAlpha(colors[i] & 0x00FFFFFF, 1f));
             context.fill(-inner, -inner, inner, inner, GSRColorHelper.applyAlpha(GSRLocatorParameters.BAR_BG, 1f));
             matrices.scale(iconScale / scale, iconScale / scale);
-            context.item(stacks[i], -inner, -inner);
+            if (GSRItemStacks.isUsable(stacks[i])) {
+                context.item(stacks[i], -inner, -inner);
+            }
             matrices.popMatrix();
         }
         matrices.popMatrix();

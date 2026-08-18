@@ -3,6 +3,7 @@ package net.berkle.groupspeedrun.gui.widget;
 import net.berkle.groupspeedrun.mixin.accessors.GSRPressableWidgetAccessor;
 import net.berkle.groupspeedrun.parameter.GSRUiParameters;
 import net.berkle.groupspeedrun.util.GSRColorHelper;
+import net.berkle.groupspeedrun.util.GSRItemStacks;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -41,7 +42,7 @@ public class GSRItemTintToggleButton extends Button {
         context.fill(x, y + size - 1, x + size, y + size, tint);
         context.fill(x, y, x + 1, y + size, tint);
         context.fill(x + size - 1, y, x + size, y + size, tint);
-        if (icon == null || icon.isEmpty()) return;
+        if (icon == null || !GSRItemStacks.isUsable(icon)) return;
         int iconSize = GSRUiParameters.PREFERENCES_TOGGLE_ICON_SIZE;
         int margin = GSRUiParameters.PREFERENCES_TOGGLE_ICON_MARGIN;
         int inner = Math.max(1, iconSize - 2 * margin);

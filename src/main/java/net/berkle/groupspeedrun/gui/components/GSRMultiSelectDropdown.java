@@ -3,6 +3,7 @@ package net.berkle.groupspeedrun.gui.components;
 import net.berkle.groupspeedrun.gui.GSRTickerState;
 import net.berkle.groupspeedrun.mixin.accessors.GSRPressableWidgetAccessor;
 import net.berkle.groupspeedrun.parameter.GSRRunHistoryParameters;
+import net.berkle.groupspeedrun.util.GSRItemStacks;
 import net.berkle.groupspeedrun.util.GSRScrollbarHelper;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -71,7 +72,7 @@ public final class GSRMultiSelectDropdown<M> {
         int selectedIdx = selectedIndices.isEmpty() ? -1 : selectedIndices.iterator().next();
         ItemStack triggerIcon = selectedIdx >= 0 ? behavior.getItemIcon(model, selectedIdx) : ItemStack.EMPTY;
         Integer triggerTint = selectedIdx >= 0 ? behavior.getItemIconTint(model, selectedIdx) : null;
-        if (!triggerIcon.isEmpty()) {
+        if (!triggerIcon.isEmpty() && GSRItemStacks.isUsable(triggerIcon)) {
             int iconSize = GSRRunHistoryParameters.TRIGGER_ICON_SIZE;
             int iconMargin = GSRRunHistoryParameters.TRIGGER_ICON_MARGIN;
             int iconX = barLeft + iconMargin;
@@ -256,7 +257,7 @@ public final class GSRMultiSelectDropdown<M> {
                 ItemStack itemIcon = !isSelectAll && !isDeselectAll ? behavior.getItemIcon(model, dataIndex) : ItemStack.EMPTY;
                 Integer itemTint = !isSelectAll && !isDeselectAll ? behavior.getItemIconTint(model, dataIndex) : null;
                 int textLeft = rowLeft + GSRRunHistoryParameters.LIST_TEXT_INSET;
-                if (!itemIcon.isEmpty()) {
+                if (!itemIcon.isEmpty() && GSRItemStacks.isUsable(itemIcon)) {
                     int iconSize = GSRRunHistoryParameters.DROPDOWN_ITEM_ICON_SIZE;
                     int iconMargin = GSRRunHistoryParameters.DROPDOWN_ITEM_ICON_MARGIN;
                     int iconX = rowLeft + GSRRunHistoryParameters.LIST_TEXT_INSET;

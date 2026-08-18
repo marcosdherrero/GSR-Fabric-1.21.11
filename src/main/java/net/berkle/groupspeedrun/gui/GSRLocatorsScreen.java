@@ -176,7 +176,9 @@ public class GSRLocatorsScreen extends Screen {
         matrices.pushMatrix();
         matrices.translate(iconX + iconMargin, iconY + iconMargin);
         matrices.scale(scale, scale);
-        context.item(icon, 0, 0);
+        if (GSRItemStacks.isUsable(icon)) {
+            context.item(icon, 0, 0);
+        }
         matrices.popMatrix();
 
         int textColor = value ? TOGGLE_ON_COLOR : TOGGLE_OFF_COLOR;
@@ -324,7 +326,9 @@ public class GSRLocatorsScreen extends Screen {
         context.fill(iconCenterX - r, iconCenterY - r, iconCenterX + r, iconCenterY + r, GSRColorHelper.applyAlpha(themeColor & 0x00FFFFFF, 1.0f));
         context.fill(iconCenterX - inner, iconCenterY - inner, iconCenterX + inner, iconCenterY + inner, GSRColorHelper.applyAlpha(GSRLocatorParameters.BAR_BG, 1.0f));
         // Item centered: drawItem uses top-left, so (centerX - 8, centerY - 8) centers 16x16 item
-        context.item(stack, iconCenterX - inner, iconCenterY - inner);
+        if (GSRItemStacks.isUsable(stack)) {
+            context.item(stack, iconCenterX - inner, iconCenterY - inner);
+        }
         int textColor = active ? (0xFF000000 | (themeColor & 0x00FFFFFF)) : GSRUiParameters.LOCATORS_INACTIVE_LABEL;
         context.centeredText(font, label, iconCenterX, iconCenterY + r + 2, textColor);
     }

@@ -384,22 +384,22 @@ public final class GSRPreferencesScreen extends Screen {
                 "When non-admins can use locator bar: Never = disabled. Always = no time gate. 30 min post split = fortress/bastion 30 min after Nether; stronghold 30 min after overworld return; wings 30 min after dragon. Host only."));
     }
 
-    /** Returns display name for default option label. Uses registry ID if non-null, else fallback item. */
+    /** Default-option label: hover name when components are bound, otherwise a readable registry id. */
     private String gsr$itemDisplayName(String registryId, net.minecraft.world.item.Item fallbackItem) {
-        if (minecraft == null) return "Default";
         ItemStack stack = registryId != null
                 ? GSRLocatorIconHelper.getItemStack(registryId, fallbackItem)
                 : GSRItemStacks.of(fallbackItem);
-        return stack.getHoverName().getString();
+        return GSRItemStacks.displayName(stack, registryId, "Default");
     }
 
-    /** Returns ItemStack for icon dropdown at index. Uses registry ID for enum value; fallback for out-of-range. */
+    /** Returns ItemStack for icon dropdown at index. Uses registry ID for enum value; never Air. */
     private static <T> ItemStack gsr$iconForIndex(T[] options, int idx, net.minecraft.world.item.Item defaultItem,
             java.util.function.Function<T, String> registryIdGetter) {
         if (idx >= 0 && idx < options.length) {
             return GSRLocatorIconHelper.getItemStack(registryIdGetter.apply(options[idx]), defaultItem);
         }
-        return GSRItemStacks.of(defaultItem);
+        ItemStack fallback = GSRItemStacks.of(defaultItem);
+        return GSRItemStacks.isUsable(fallback) ? fallback : ItemStack.EMPTY;
     }
 
     /** Returns ItemStack for Locator Non-Admin dropdown: Never=barrier, Always=compass, Post 30 Mins=clock. */
@@ -825,7 +825,7 @@ public final class GSRPreferencesScreen extends Screen {
     /** Draws a scaled item icon for toggle buttons. */
     private void gsr$drawToggleIcon(GuiGraphicsExtractor context, ItemStack stack, int x, int y, int size, int margin) {
         int inner = size - 2 * margin;
-        if (inner <= 0) return;
+        if (inner <= 0 || !GSRItemStacks.isUsable(stack)) return;
         float scale = inner / 16f;
         var matrices = context.pose();
         matrices.pushMatrix();
@@ -1251,7 +1251,9 @@ public final class GSRPreferencesScreen extends Screen {
 
                 @Override
                 public ItemStack getItemIcon(GSRPreferencesScreenModel m, int index) {
-                    return iconSupplier != null ? iconSupplier.apply(m, index) : ItemStack.EMPTY;
+                    if (iconSupplier == null) return ItemStack.EMPTY;
+                    ItemStack icon = iconSupplier.apply(m, index);
+                    return GSRItemStacks.isUsable(icon) ? icon : ItemStack.EMPTY;
                 }
 
                 @Override

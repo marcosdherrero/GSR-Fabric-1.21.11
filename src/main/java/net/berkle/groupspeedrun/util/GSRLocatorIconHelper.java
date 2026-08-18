@@ -18,14 +18,24 @@ public final class GSRLocatorIconHelper {
      * Falls back to the default item if the ID is invalid.
      */
     public static ItemStack getItemStack(String registryId, Item defaultItem) {
-        if (registryId == null || registryId.isBlank()) return GSRItemStacks.of(defaultItem);
+        ItemStack fromId = lookup(registryId);
+        if (GSRItemStacks.isUsable(fromId)) return fromId;
+        ItemStack fromDefault = GSRItemStacks.of(defaultItem);
+        return GSRItemStacks.isUsable(fromDefault) ? fromDefault : ItemStack.EMPTY;
+    }
+
+    private static ItemStack lookup(String registryId) {
+        if (registryId == null || registryId.isBlank()) return ItemStack.EMPTY;
         try {
             String s = registryId.trim();
+            if ("minecraft:air".equalsIgnoreCase(s) || "air".equalsIgnoreCase(s)) return ItemStack.EMPTY;
             String[] parts = s.split(":", 2);
             Identifier id = parts.length == 2 ? Identifier.fromNamespaceAndPath(parts[0], parts[1]) : Identifier.fromNamespaceAndPath("minecraft", s);
             Item item = BuiltInRegistries.ITEM.getValue(id);
-            if (item != null && item != Items.AIR) return GSRItemStacks.of(item);
-        } catch (Exception ignored) {}
-        return GSRItemStacks.of(defaultItem);
+            if (item == null || item == Items.AIR) return ItemStack.EMPTY;
+            return GSRItemStacks.of(item);
+        } catch (Exception ignored) {
+            return ItemStack.EMPTY;
+        }
     }
 }

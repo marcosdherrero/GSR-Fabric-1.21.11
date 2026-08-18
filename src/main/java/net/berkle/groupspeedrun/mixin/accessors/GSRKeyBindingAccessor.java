@@ -8,9 +8,9 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 /** Exposes boundKey so GSR keybind screen can set keys like vanilla. */
 @Mixin(KeyMapping.class)
 public interface GSRKeyBindingAccessor {
-    @Accessor("boundKey")
+    @Accessor("key")
     InputConstants.Key getBoundKey();
 
-    @Accessor("boundKey")
+    @Accessor("key")
     void setBoundKey(InputConstants.Key key);
 }

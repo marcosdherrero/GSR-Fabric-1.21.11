@@ -9,7 +9,7 @@ import java.util.List;
 /** Exposes CATEGORIES list so GSR can find the GSR category index for scroll-to-category. */
 @Mixin(KeyMapping.Category.class)
 public interface GSRKeyBindingCategoryAccessor {
-    @Accessor("CATEGORIES")
+    @Accessor("SORT_ORDER")
     static List<KeyMapping.Category> gsr$getCategories() {
         throw new AssertionError("Mixin failed to apply");
     }

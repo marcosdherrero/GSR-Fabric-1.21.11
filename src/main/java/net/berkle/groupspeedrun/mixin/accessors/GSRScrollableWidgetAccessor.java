@@ -8,12 +8,12 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 /** Exposes scrollbar textures and width so GSR can draw keybinds-style scrollbars. */
 @Mixin(AbstractScrollArea.class)
 public interface GSRScrollableWidgetAccessor {
-    @Accessor("SCROLLER_TEXTURE")
+    @Accessor("SCROLLER_SPRITE")
     static Identifier gsr$getScrollerTexture() {
         throw new AssertionError("Mixin failed to apply");
     }
 
-    @Accessor("SCROLLER_BACKGROUND_TEXTURE")
+    @Accessor("SCROLLER_BACKGROUND_SPRITE")
     static Identifier gsr$getScrollerBackgroundTexture() {
         throw new AssertionError("Mixin failed to apply");
     }

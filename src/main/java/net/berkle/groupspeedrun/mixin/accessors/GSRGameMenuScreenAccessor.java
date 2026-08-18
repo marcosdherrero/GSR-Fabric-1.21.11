@@ -8,9 +8,11 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 /** Exposes the Save and Quit (exit) button and GRID_MARGIN so we can simulate clicking it and match vanilla layout. */
 @Mixin(PauseScreen.class)
 public interface GSRGameMenuScreenAccessor {
-    @Accessor("exitButton")
+    @Accessor("disconnectButton")
     Button gsr$getExitButton();
 
-    @Accessor("GRID_MARGIN")
-    int gsr$getGridMargin();
+    @Accessor("BUTTON_PADDING")
+    static int gsr$getGridMargin() {
+        throw new AssertionError("Mixin failed to apply");
+    }
 }

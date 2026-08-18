@@ -8,6 +8,6 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 /** Exposes parent so GSR can check if KeyBindsScreen was opened from GSR preferences. */
 @Mixin(OptionsSubScreen.class)
 public interface GSRGameOptionsScreenAccessor {
-    @Accessor("parent")
+    @Accessor("lastScreen")
     Screen gsr$getParent();
 }

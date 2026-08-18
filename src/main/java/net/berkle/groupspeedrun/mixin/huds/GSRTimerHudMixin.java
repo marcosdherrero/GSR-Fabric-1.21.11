@@ -3,7 +3,7 @@ package net.berkle.groupspeedrun.mixin.huds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.Hud;
 import net.minecraft.client.DeltaTracker;
 import net.berkle.groupspeedrun.GSRClient;
 import net.berkle.groupspeedrun.config.GSRConfigPlayer;
@@ -20,7 +20,7 @@ import net.minecraft.world.level.Level;
 /**
  * Renders GSR timer and split list. Uses only GSRClient (clientWorldConfig, PLAYER_CONFIG).
  */
-@Mixin(Gui.class)
+@Mixin(Hud.class)
 @SuppressWarnings("null")
 public class GSRTimerHudMixin {
 

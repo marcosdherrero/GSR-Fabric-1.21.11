@@ -116,7 +116,7 @@ public final class GSRGameMenuLayout {
             lastY = y;
             prev = btn;
         }
-        return ((GSRGameMenuScreenAccessor) screen).gsr$getGridMargin();
+        return GSRGameMenuScreenAccessor.gsr$getGridMargin();
     }
 
     private static List<AbstractWidget> collectClickableWidgets(GuiEventListener parent) {

@@ -11,6 +11,6 @@ import java.util.UUID;
 /** Exposes the boss bar map so the locator HUD can offset when boss bars are visible. */
 @Mixin(BossHealthOverlay.class)
 public interface GSRBossBarHudAccessor {
-    @Accessor("bossBars")
+    @Accessor("events")
     Map<UUID, LerpingBossEvent> getBossBars();
 }

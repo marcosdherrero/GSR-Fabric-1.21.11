@@ -8,6 +8,6 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 /** Exposes controlsList so GSR can scroll to the GSR keybind category when opened from preferences. */
 @Mixin(KeyBindsScreen.class)
 public interface GSRKeybindsScreenAccessor {
-    @Accessor("controlsList")
+    @Accessor("keyBindsList")
     KeyBindsList gsr$getControlsList();
 }

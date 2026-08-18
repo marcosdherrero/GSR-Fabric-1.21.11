@@ -25,7 +25,7 @@ public abstract class GSRCreateWorldScreenMixin extends Screen {
     private static final int WORLD_NAME_MAX_LENGTH = 32;
     private static final int GLFW_MOD_CONTROL = 0x0002;
 
-    @Shadow @Final private WorldCreationUiState worldCreator;
+    @Shadow @Final private WorldCreationUiState uiState;
 
     protected GSRCreateWorldScreenMixin() {
         super(null);
@@ -35,9 +35,9 @@ public abstract class GSRCreateWorldScreenMixin extends Screen {
     @Inject(method = "init", at = @At("TAIL"))
     private void gsr$prefillWorldName(CallbackInfo ci) {
         String name = GSRClient.nextGsrWorldName;
-        if (name == null || name.isEmpty() || worldCreator == null || minecraft == null) return;
+        if (name == null || name.isEmpty() || uiState == null || minecraft == null) return;
 
-        worldCreator.setName(name);
+        uiState.setName(name);
         // Defer to next tick; retry until we find the world name field (Game tab may load later)
         Minecraft mc = minecraft;
         gsr$scheduleApplyAttempt(mc, name, 0);

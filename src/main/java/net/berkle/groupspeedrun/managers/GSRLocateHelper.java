@@ -155,7 +155,7 @@ public final class GSRLocateHelper {
         for (StructurePiece piece : start.getPieces()) {
             BoundingBox box = piece.getBoundingBox();
             if (piece instanceof TemplateStructurePiece simple) {
-                String templateId = ((GSRSimpleStructurePieceAccessor) simple).gsr$getTemplateIdString();
+                String templateId = ((GSRSimpleStructurePieceAccessor) simple).gsr$getTemplateName();
                 if (templateId != null && templateId.toLowerCase().contains("ship")) {
                     int cx = (box.minX() + box.maxX()) / 2;
                     int cy = (box.minY() + box.maxY()) / 2;

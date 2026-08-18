@@ -113,6 +113,51 @@ public final class GSRUiParameters {
     public static final int LOCATORS_INACTIVE_LABEL = 0xFF888888;
     /** Chat message when structure locate fails. %s = structure type (fortress, bastion, etc.). */
     public static final String MSG_LOCATOR_NOT_FOUND = "Could not find %s nearby. Locator turned off.";
+    public static final String TOAST_LOCATOR_TITLE_FORTRESS = "Fortress not found";
+    public static final String TOAST_LOCATOR_TITLE_BASTION = "Bastion not found";
+    public static final String TOAST_LOCATOR_TITLE_STRONGHOLD = "Stronghold not found";
+    public static final String TOAST_LOCATOR_TITLE_SHIP = "End ship not found";
+    public static final String TOAST_LOCATOR_BODY_WRONG_DIMENSION_FORTRESS = "You are not in the Nether. GSR searched the Nether from your current coordinates and found no fortress.";
+    public static final String TOAST_LOCATOR_BODY_WRONG_DIMENSION_BASTION = "You are not in the Nether. GSR searched the Nether from your current coordinates and found no bastion remnant.";
+    public static final String TOAST_LOCATOR_BODY_WRONG_DIMENSION_STRONGHOLD = "You are not in the Overworld. GSR searched the Overworld from your current coordinates and found no stronghold.";
+    public static final String TOAST_LOCATOR_BODY_WRONG_DIMENSION_SHIP = "You are not in the End. GSR searched the End from your current coordinates and found no end city with a ship.";
+    public static final String TOAST_LOCATOR_BODY_DIMENSION_UNLOADED = "That dimension is not loaded yet, so this locator cannot search.";
+    public static final String TOAST_LOCATOR_BODY_NOT_FOUND_FORTRESS = "No fortress was found nearby. Move closer and try again after the area has generated.";
+    public static final String TOAST_LOCATOR_BODY_NOT_FOUND_BASTION = "No bastion remnant was found nearby. Move closer and try again after the area has generated.";
+    public static final String TOAST_LOCATOR_BODY_NOT_FOUND_STRONGHOLD = "No stronghold was found nearby. Move closer and try again after the area has generated.";
+    public static final String TOAST_LOCATOR_BODY_NOT_FOUND_SHIP = "No end city with a ship was found in loaded chunks or by world search. A ship already on screen should be detected — wait for it to finish generating and try again.";
+
+    public static String locatorToastTitle(String type) {
+        return switch (type == null ? "" : type.toLowerCase()) {
+            case "fortress" -> TOAST_LOCATOR_TITLE_FORTRESS;
+            case "bastion" -> TOAST_LOCATOR_TITLE_BASTION;
+            case "stronghold" -> TOAST_LOCATOR_TITLE_STRONGHOLD;
+            case "ship" -> TOAST_LOCATOR_TITLE_SHIP;
+            default -> "Nothing found";
+        };
+    }
+
+    public static String locatorToastBody(String type, String reason) {
+        String t = type == null ? "" : type.toLowerCase();
+        String r = reason == null ? "" : reason.toLowerCase();
+        if ("dimension_unloaded".equals(r)) return TOAST_LOCATOR_BODY_DIMENSION_UNLOADED;
+        if ("wrong_dimension".equals(r)) {
+            return switch (t) {
+                case "fortress" -> TOAST_LOCATOR_BODY_WRONG_DIMENSION_FORTRESS;
+                case "bastion" -> TOAST_LOCATOR_BODY_WRONG_DIMENSION_BASTION;
+                case "stronghold" -> TOAST_LOCATOR_BODY_WRONG_DIMENSION_STRONGHOLD;
+                case "ship" -> TOAST_LOCATOR_BODY_WRONG_DIMENSION_SHIP;
+                default -> TOAST_LOCATOR_BODY_DIMENSION_UNLOADED;
+            };
+        }
+        return switch (t) {
+            case "fortress" -> TOAST_LOCATOR_BODY_NOT_FOUND_FORTRESS;
+            case "bastion" -> TOAST_LOCATOR_BODY_NOT_FOUND_BASTION;
+            case "stronghold" -> TOAST_LOCATOR_BODY_NOT_FOUND_STRONGHOLD;
+            case "ship" -> TOAST_LOCATOR_BODY_NOT_FOUND_SHIP;
+            default -> MSG_LOCATOR_NOT_FOUND.formatted(type == null ? "structure" : type);
+        };
+    }
     /** Chat message when run is deranked due to admin command use. */
     public static final String MSG_ADMIN_COMMAND_DERANKED = "Run deranked: admin command used.";
 

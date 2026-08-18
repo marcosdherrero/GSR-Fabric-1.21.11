@@ -24,6 +24,7 @@ import net.berkle.groupspeedrun.managers.GSRRunSyncManager;
 import net.berkle.groupspeedrun.timer.GSRTimer;
 import net.berkle.groupspeedrun.managers.GSRWorldSnapshotManager;
 import net.berkle.groupspeedrun.network.GSRLocatorActionPayload;
+import net.berkle.groupspeedrun.network.GSRLocatorFeedbackPayload;
 import net.berkle.groupspeedrun.network.GSRScreenTimePayload;
 import net.berkle.groupspeedrun.network.GSROpenScreenPayload;
 import net.berkle.groupspeedrun.network.GSRSplitAchievedPayload;
@@ -73,6 +74,7 @@ public class GSRMain implements ModInitializer {
         PayloadTypeRegistry.clientboundPlay().register(GSROpenScreenPayload.ID, GSROpenScreenPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(GSRRunActionPayload.ID, GSRRunActionPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(GSRLocatorActionPayload.ID, GSRLocatorActionPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(GSRLocatorFeedbackPayload.ID, GSRLocatorFeedbackPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(GSRScreenTimePayload.ID, GSRScreenTimePayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(GSRPlayerListPayload.ID, GSRPlayerListPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(GSRRunCompletePayload.ID, GSRRunCompletePayload.CODEC);

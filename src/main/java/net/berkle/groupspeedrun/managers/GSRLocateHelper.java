@@ -12,9 +12,9 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.berkle.groupspeedrun.mixin.accessors.GSRSimpleStructurePieceAccessor;
 import net.berkle.groupspeedrun.parameter.GSRLocatorParameters;
 import net.berkle.groupspeedrun.parameter.GSRServerParameters;
@@ -23,171 +23,224 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 /**
  * Server-side helper to locate structures for the locator HUD.
- * Uses ServerLevel.locateStructure with structure tags (from GSR data pack).
+ * Uses ServerLevel.findNearestMapStructure with structure tags (from GSR data pack).
  * Stronghold uses EYE_OF_ENDER_LOCATED and points to the portal room.
- * Ship locator searches for the nearest end city that has a ship piece and points to the ship (elytra) specifically.
+ * Ship locator prefers already-loaded structure pieces in the End, then falls back to worldgen locate.
+ * Template id is the vanilla path {@code end_city/ship} (stored as templateName {@code ship}).
  */
 public final class GSRLocateHelper {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("GSR-Locate");
 
+    public static final String MISS_DIMENSION_UNLOADED = "dimension_unloaded";
+    public static final String MISS_WRONG_DIMENSION = "wrong_dimension";
+    public static final String MISS_NOT_FOUND = "not_found";
+
+    /** Vanilla End City ship piece template: Identifier {@code minecraft:end_city/ship}, templateName {@code ship}. */
+    public static final String END_SHIP_TEMPLATE_NAME = "ship";
+    public static final String END_SHIP_TEMPLATE_PATH = "end_city/ship";
+
     private GSRLocateHelper() {}
+
+    public record LocateResult(BlockPos pos, String missReason) {
+        public boolean found() {
+            return pos != null;
+        }
+
+        public static LocateResult found(BlockPos pos) {
+            return new LocateResult(pos, null);
+        }
+
+        public static LocateResult miss(String reason) {
+            return new LocateResult(null, reason != null ? reason : MISS_NOT_FOUND);
+        }
+    }
 
     /**
      * Locates the nearest structure of the given type from the given position.
      * For stronghold, returns the portal room center. For ship, returns the ship piece center (elytra).
-     * For others, returns structure center.
      *
-     * @return BlockPos of the target, or null if not found
+     * @param playerInTargetDimension true when the player is currently in the dimension being searched
      */
-    public static BlockPos locate(ServerLevel world, String structureType, BlockPos from) {
-        if (world == null || from == null) return null;
+    public static LocateResult locate(ServerLevel world, String structureType, BlockPos from, boolean playerInTargetDimension) {
+        if (world == null) return LocateResult.miss(MISS_DIMENSION_UNLOADED);
+        if (from == null) return LocateResult.miss(MISS_NOT_FOUND);
         TagKey<Structure> tag = tagFor(structureType);
-        if (tag == null) return null;
+        if (tag == null) return LocateResult.miss(MISS_NOT_FOUND);
         try {
+            BlockPos found;
             if ("ship".equalsIgnoreCase(structureType)) {
-                return locateNearestEndShip(world, from, tag);
+                found = locateNearestEndShip(world, from, tag);
+            } else {
+                found = world.findNearestMapStructure(tag, from, GSRLocatorParameters.LOCATE_RADIUS_CHUNKS, false);
+                if (found != null && "stronghold".equalsIgnoreCase(structureType)) {
+                    BlockPos portal = locateStrongholdPortal(world, found);
+                    if (portal != null) found = portal;
+                }
             }
-            BlockPos found = world.findNearestMapStructure(tag, from, GSRLocatorParameters.LOCATE_RADIUS_CHUNKS, false);
-            if (found == null) return null;
-            if ("stronghold".equalsIgnoreCase(structureType)) {
-                BlockPos portal = locateStrongholdPortal(world, found);
-                return portal != null ? portal : found;
-            }
-            return found;
+            if (found != null) return LocateResult.found(found);
+            return LocateResult.miss(playerInTargetDimension ? MISS_NOT_FOUND : MISS_WRONG_DIMENSION);
         } catch (Exception e) {
             LOGGER.warn("[GSR] Locate failed for {}: {}", structureType, e.getMessage());
-            return null;
+            return LocateResult.miss(playerInTargetDimension ? MISS_NOT_FOUND : MISS_WRONG_DIMENSION);
         }
     }
 
     /**
      * Finds the nearest end city that has a ship piece and returns the ship (elytra) position.
-     * Uses locateStructure (like /locate) so it works from any distance; loads chunks as needed.
-     * End cities without ships are added to a dud set and skipped – never point to structures without wings.
-     * Uses getStructureStarts per chunk to find all end cities (avoids sampling positions that miss structures).
+     * Loaded pieces in the current dimension are searched first so a ship already on screen is found.
      */
     private static BlockPos locateNearestEndShip(ServerLevel world, BlockPos from, TagKey<Structure> endCityTag) {
+        StructureManager accessor = world.structureManager();
+        Structure endCityStructure = resolveEndCity(world);
+
+        BlockPos loaded = locateShipInLoadedChunks(world, from, accessor, endCityStructure);
+        if (loaded != null) return loaded;
+
         try {
-            StructureManager accessor = world.structureManager();
-            int radiusChunks = Math.min(GSRLocatorParameters.LOCATE_RADIUS_CHUNKS, GSRLocatorParameters.SHIP_LOCATE_SEARCH_RADIUS_CHUNKS);
-            int maxChunks = GSRLocatorParameters.SHIP_LOCATE_MAX_CHUNKS;
-            int fromChunkX = from.getX() >> 4;
-            int fromChunkZ = from.getZ() >> 4;
-            double bestDistSq = Double.MAX_VALUE;
-            BlockPos bestShip = null;
-            Set<Long> dudStructures = new HashSet<>();
-            int chunksChecked = 0;
-
-            Structure endCityStructure = world.registryAccess().lookupOrThrow(Registries.STRUCTURE).getValue(Identifier.fromNamespaceAndPath("minecraft", "end_city"));
-            if (endCityStructure == null) return null;
-
-            // 1. Player position first – if within view of a city with ship, they may be inside it
-            StructureStart atPlayer = accessor.getStructureWithPieceAt(from, endCityTag);
-            if (atPlayer != null) {
+            StructureStart atPlayer = endCityStructure != null
+                    ? accessor.getStructureWithPieceAt(from, endCityStructure)
+                    : accessor.getStructureWithPieceAt(from, endCityTag);
+            if (isUsableStart(atPlayer)) {
                 BlockPos shipPos = extractShipPosition(atPlayer);
                 if (shipPos != null) return shipPos;
-                BoundingBox box = atPlayer.getBoundingBox();
-                long key = ((long) box.minX() << 32) | (box.minZ() & 0xFFFFFFFFL);
-                dudStructures.add(key);
             }
+        } catch (Exception e) {
+            LOGGER.debug("[GSR] Locate ship at player failed: {}", e.getMessage());
+        }
 
-            // 2. locateStructure nearest end city
+        try {
+            int radiusChunks = Math.min(GSRLocatorParameters.LOCATE_RADIUS_CHUNKS, GSRLocatorParameters.SHIP_LOCATE_SEARCH_RADIUS_CHUNKS);
             BlockPos firstCity = world.findNearestMapStructure(endCityTag, from, radiusChunks, false);
             if (firstCity != null) {
                 world.getChunk(firstCity.getX() >> 4, firstCity.getZ() >> 4);
-                StructureStart start = accessor.getStructureWithPieceAt(firstCity, endCityTag);
-                if (start != null) {
+                StructureStart start = endCityStructure != null
+                        ? accessor.getStructureWithPieceAt(firstCity, endCityStructure)
+                        : accessor.getStructureWithPieceAt(firstCity, endCityTag);
+                if (isUsableStart(start)) {
                     BlockPos shipPos = extractShipPosition(start);
                     if (shipPos != null) return shipPos;
-                    BoundingBox box = start.getBoundingBox();
-                    long key = ((long) box.minX() << 32) | (box.minZ() & 0xFFFFFFFFL);
-                    dudStructures.add(key);
                 }
             }
-
-            // 3. Spiral: getStructureStarts per chunk – finds all end cities overlapping each chunk (no position sampling)
-            int[] sectionYs = { 3, 4, 5, 6 }; // Y 48–111; end cities span this range
-            for (int r = 0; r <= radiusChunks && chunksChecked < maxChunks; r++) {
-                for (int dx = -r; dx <= r; dx++) {
-                    for (int dz = -r; dz <= r; dz++) {
-                        if (Math.abs(dx) != r && Math.abs(dz) != r) continue;
-                        if (chunksChecked++ >= maxChunks) break;
-                        int cx = fromChunkX + dx;
-                        int cz = fromChunkZ + dz;
-                        world.getChunk(cx, cz);
-                        ChunkPos chunkPos = new ChunkPos(cx, cz);
-                        for (int sectionY : sectionYs) {
-                            SectionPos sectionPos = SectionPos.of(chunkPos, sectionY);
-                            List<StructureStart> starts = accessor.startsForStructure(sectionPos, endCityStructure);
-                        for (StructureStart start : starts) {
-                            BoundingBox box = start.getBoundingBox();
-                            long key = ((long) box.minX() << 32) | (box.minZ() & 0xFFFFFFFFL);
-                            if (dudStructures.contains(key)) continue;
-                            BlockPos shipPos = extractShipPosition(start);
-                            if (shipPos == null) {
-                                dudStructures.add(key);
-                                continue;
-                            }
-                            double distSq = from.distSqr(shipPos);
-                            if (distSq < bestDistSq) {
-                                bestDistSq = distSq;
-                                bestShip = shipPos;
-                            }
-                        }
-                        }
-                    }
-                }
-            }
-            return bestShip;
         } catch (Exception e) {
-            LOGGER.warn("[GSR] Locate ship failed: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    /** Extracts ship piece center from an end city StructureStart, or null if no ship. Uses template path (end_city/ship) and bounding box size (ship ~29x13x24). */
-    private static BlockPos extractShipPosition(StructureStart start) {
-        for (StructurePiece piece : start.getPieces()) {
-            BoundingBox box = piece.getBoundingBox();
-            if (piece instanceof TemplateStructurePiece simple) {
-                String templateId = ((GSRSimpleStructurePieceAccessor) simple).gsr$getTemplateIdString();
-                if (templateId != null && templateId.toLowerCase().contains("ship")) {
-                    int cx = (box.minX() + box.maxX()) / 2;
-                    int cy = (box.minY() + box.maxY()) / 2;
-                    int cz = (box.minZ() + box.maxZ()) / 2;
-                    return new BlockPos(cx, cy, cz);
-                }
-            }
-            String className = piece.getClass().getSimpleName().toLowerCase();
-            String fullName = piece.getClass().getName().toLowerCase();
-            if (className.contains("ship") || fullName.contains("ship")) {
-                int cx = (box.minX() + box.maxX()) / 2;
-                int cy = (box.minY() + box.maxY()) / 2;
-                int cz = (box.minZ() + box.maxZ()) / 2;
-                return new BlockPos(cx, cy, cz);
-            }
-            int spanX = box.getXSpan();
-            int spanY = box.getYSpan();
-            int spanZ = box.getZSpan();
-            int maxHz = Math.max(spanX, spanZ);
-            int minHz = Math.min(spanX, spanZ);
-            if (maxHz >= 25 && minHz >= 8 && spanY >= 18 && spanY <= 30) {
-                int cx = (box.minX() + box.maxX()) / 2;
-                int cy = (box.minY() + box.maxY()) / 2;
-                int cz = (box.minZ() + box.maxZ()) / 2;
-                return new BlockPos(cx, cy, cz);
-            }
+            LOGGER.debug("[GSR] Locate ship worldgen fallback failed: {}", e.getMessage());
         }
         return null;
     }
 
+    /**
+     * Scans currently loaded chunks around {@code from} for end-city ship pieces.
+     * Uses getChunkNow so already-visible ships are found without generating new terrain.
+     */
+    private static BlockPos locateShipInLoadedChunks(ServerLevel world, BlockPos from, StructureManager accessor, Structure endCityStructure) {
+        int fromChunkX = from.getX() >> 4;
+        int fromChunkZ = from.getZ() >> 4;
+        int view = 12;
+        try {
+            var server = world.getServer();
+            if (server != null) {
+                view = Math.max(server.getPlayerList().getViewDistance(), server.getPlayerList().getSimulationDistance());
+            }
+        } catch (Exception ignored) {
+        }
+        int radius = Math.min(Math.max(view + 4, 8), 32);
+        double bestDistSq = Double.MAX_VALUE;
+        BlockPos bestShip = null;
+        Set<Long> seenStarts = new HashSet<>();
+
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                LevelChunk chunk = world.getChunkSource().getChunkNow(fromChunkX + dx, fromChunkZ + dz);
+                if (chunk == null) continue;
+                ChunkPos chunkPos = chunk.getPos();
+                List<StructureStart> starts;
+                try {
+                    if (endCityStructure != null) {
+                        starts = accessor.startsForStructure(chunkPos, structure -> structure == endCityStructure);
+                    } else {
+                        starts = accessor.startsForStructure(chunkPos, structure -> true);
+                    }
+                } catch (Exception e) {
+                    continue;
+                }
+                for (StructureStart start : starts) {
+                    if (!isUsableStart(start)) continue;
+                    BoundingBox box = start.getBoundingBox();
+                    long key = ((long) box.minX() << 32) | (box.minZ() & 0xFFFFFFFFL);
+                    if (!seenStarts.add(key)) continue;
+                    BlockPos shipPos = extractShipPosition(start);
+                    if (shipPos == null) continue;
+                    double distSq = from.distSqr(shipPos);
+                    if (distSq < bestDistSq) {
+                        bestDistSq = distSq;
+                        bestShip = shipPos;
+                    }
+                }
+            }
+        }
+        return bestShip;
+    }
+
+    private static Structure resolveEndCity(ServerLevel world) {
+        try {
+            return world.registryAccess().lookupOrThrow(Registries.STRUCTURE)
+                    .getValue(Identifier.fromNamespaceAndPath("minecraft", "end_city"));
+        } catch (Exception e) {
+            LOGGER.debug("[GSR] Could not resolve minecraft:end_city: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private static boolean isUsableStart(StructureStart start) {
+        return start != null && start != StructureStart.INVALID_START && start.isValid();
+    }
+
+    /**
+     * Extracts ship piece center from an end city StructureStart, or null if no ship.
+     * Matches templateName {@code ship} and Identifier path {@code end_city/ship}.
+     */
+    private static BlockPos extractShipPosition(StructureStart start) {
+        if (!isUsableStart(start)) return null;
+        for (StructurePiece piece : start.getPieces()) {
+            if (!isEndShipPiece(piece)) continue;
+            BoundingBox box = piece.getBoundingBox();
+            int cx = (box.minX() + box.maxX()) / 2;
+            int cy = (box.minY() + box.maxY()) / 2;
+            int cz = (box.minZ() + box.maxZ()) / 2;
+            return new BlockPos(cx, cy, cz);
+        }
+        return null;
+    }
+
+    private static boolean isEndShipPiece(StructurePiece piece) {
+        if (piece instanceof TemplateStructurePiece simple) {
+            try {
+                String templateId = ((GSRSimpleStructurePieceAccessor) simple).gsr$getTemplateIdString();
+                if (isEndShipTemplateName(templateId)) return true;
+            } catch (Exception ignored) {
+            }
+        }
+        String className = piece.getClass().getSimpleName().toLowerCase(Locale.ROOT);
+        return className.contains("ship") && !className.contains("shipwreck");
+    }
+
+    /** True for {@code ship}, {@code end_city/ship}, or {@code minecraft:end_city/ship}. */
+    static boolean isEndShipTemplateName(String name) {
+        if (name == null || name.isEmpty()) return false;
+        String n = name.toLowerCase(Locale.ROOT);
+        if (n.contains("shipwreck")) return false;
+        return n.equals(END_SHIP_TEMPLATE_NAME)
+                || n.endsWith("/" + END_SHIP_TEMPLATE_NAME)
+                || n.contains(END_SHIP_TEMPLATE_PATH);
+    }
+
     private static TagKey<Structure> tagFor(String type) {
-        return switch (type.toLowerCase()) {
+        return switch (type.toLowerCase(Locale.ROOT)) {
             case "fortress" -> TagKey.create(Registries.STRUCTURE, Identifier.fromNamespaceAndPath("gsr", "fortress"));
             case "bastion" -> TagKey.create(Registries.STRUCTURE, Identifier.fromNamespaceAndPath("gsr", "bastion_remnant"));
             case "stronghold" -> StructureTags.EYE_OF_ENDER_LOCATED;
@@ -204,7 +257,7 @@ public final class GSRLocateHelper {
         try {
             StructureManager accessor = world.structureManager();
             StructureStart start = accessor.getStructureWithPieceAt(strongholdPos, StructureTags.EYE_OF_ENDER_LOCATED);
-            if (start == null) return null;
+            if (!isUsableStart(start)) return null;
             for (StructurePiece piece : start.getPieces()) {
                 if (piece instanceof StrongholdPieces.PortalRoom portalRoom) {
                     BoundingBox box = portalRoom.getBoundingBox();
@@ -225,11 +278,6 @@ public final class GSRLocateHelper {
      * Used for split detection (fortress, bastion) when no locator is active.
      * Verifies the position is inside at least one structure piece's bounding box,
      * not just in a chunk with a structure reference (avoids false positives on Nether entry).
-     *
-     * @param world Server world.
-     * @param pos Position to check.
-     * @param structureType "fortress", "bastion", "stronghold", or "ship".
-     * @return true if pos is inside a structure piece of that type.
      */
     public static boolean isInStructure(ServerLevel world, BlockPos pos, String structureType) {
         if (world == null || pos == null) return false;
@@ -237,7 +285,7 @@ public final class GSRLocateHelper {
         if (tag == null) return false;
         try {
             StructureStart start = world.structureManager().getStructureWithPieceAt(pos, tag);
-            if (start == null) return false;
+            if (!isUsableStart(start)) return false;
             return isPosInsideStructurePiece(pos, start);
         } catch (Exception e) {
             return false;
@@ -246,8 +294,6 @@ public final class GSRLocateHelper {
 
     /**
      * Returns true if the position is inside or within proximity of any child piece of the structure.
-     * Prevents false positives when getStructureContaining returns a structure
-     * whose reference chunk overlaps the pos but no actual piece contains it.
      * Uses SPLIT_STRUCTURE_PROXIMITY_BLOCKS so players near the structure edge still trigger.
      */
     private static boolean isPosInsideStructurePiece(BlockPos pos, StructureStart start) {
@@ -268,9 +314,7 @@ public final class GSRLocateHelper {
 
     /**
      * Checks if the given position is inside a structure of the given type that contains the stored target.
-     * Used to detect when a player enters a tracked structure (locator turn-off).
      * For ship: uses spherical distance (3D) – player within 100 blocks of ship position.
-     * storedX, storedY, storedZ are the ship (elytra) coordinates.
      */
     public static boolean isInTrackedStructure(ServerLevel world, BlockPos playerPos, String structureType, int storedX, int storedY, int storedZ) {
         if (world == null || playerPos == null) return false;
@@ -286,7 +330,7 @@ public final class GSRLocateHelper {
         try {
             var accessor = world.structureManager();
             StructureStart start = accessor.getStructureWithPieceAt(playerPos, tag);
-            if (start == null) return false;
+            if (!isUsableStart(start)) return false;
             BoundingBox structureBox = start.getBoundingBox();
             return structureBox.minX() <= storedX && storedX <= structureBox.maxX()
                 && structureBox.minZ() <= storedZ && storedZ <= structureBox.maxZ();

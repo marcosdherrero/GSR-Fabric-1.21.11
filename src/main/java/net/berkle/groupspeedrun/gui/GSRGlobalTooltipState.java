@@ -3,7 +3,7 @@ package net.berkle.groupspeedrun.gui;
 import net.berkle.groupspeedrun.parameter.GSRTooltipParameters;
 
 /**
- * Static state for global tooltip scroll timing. Used by the DrawContext mixin when
+ * Static state for global tooltip scroll timing. Used by the GuiGraphicsExtractor mixin when
  * rendering tooltips in options menus, config screens, and buttons. Resets scroll
  * when tooltip content changes (different widget/element hovered).
  */

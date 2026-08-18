@@ -8,11 +8,11 @@ import net.berkle.groupspeedrun.data.GSRRunRecord;
 import net.berkle.groupspeedrun.data.GSRRunPlayerSnapshot;
 import net.berkle.groupspeedrun.data.GSRRunSaveState;
 import net.berkle.groupspeedrun.data.GSRRunSaveStateNbt;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtList;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +50,7 @@ public final class GSRDataStore {
      * Writes NBT to path as JSON atomically: write to .tmp file, then rename to replace.
      * Avoids corrupting the target if the process crashes during write.
      */
-    private static void writeAtomic(Path path, NbtCompound root) throws IOException {
+    private static void writeAtomic(Path path, CompoundTag root) throws IOException {
         Path tmp = path.resolveSibling(path.getFileName() + GSRStorageParameters.ATOMIC_WRITE_SUFFIX);
         GSRJsonUtil.writeNbtAsJson(tmp, root);
         Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING);
@@ -62,9 +62,9 @@ public final class GSRDataStore {
         Path path = dir.resolve(GSRStorageParameters.RUNS_FILE);
         try {
             Files.createDirectories(dir);
-            NbtList list = loadList(path);
+            ListTag list = loadList(path);
             list.add(toNbt(run));
-            NbtCompound root = new NbtCompound();
+            CompoundTag root = new CompoundTag();
             root.put("runs", list);
             writeAtomic(path, root);
         } catch (Exception e) {
@@ -78,9 +78,9 @@ public final class GSRDataStore {
         Path path = dir.resolve(GSRStorageParameters.PARTICIPANTS_FILE);
         try {
             Files.createDirectories(dir);
-            NbtList list = loadList(path, "participants");
+            ListTag list = loadList(path, "participants");
             list.add(participantToNbt(p));
-            NbtCompound root = new NbtCompound();
+            CompoundTag root = new CompoundTag();
             root.put("participants", list);
             writeAtomic(path, root);
         } catch (Exception e) {
@@ -94,9 +94,9 @@ public final class GSRDataStore {
         Path path = dir.resolve(GSRStorageParameters.SNAPSHOTS_FILE);
         try {
             Files.createDirectories(dir);
-            NbtList list = loadList(path, "snapshots");
+            ListTag list = loadList(path, "snapshots");
             list.add(snapshotToNbt(s));
-            NbtCompound root = new NbtCompound();
+            CompoundTag root = new CompoundTag();
             root.put("snapshots", list);
             writeAtomic(path, root);
         } catch (Exception e) {
@@ -110,11 +110,11 @@ public final class GSRDataStore {
      */
     public static List<GSRRunRecord> loadRuns(MinecraftServer server) {
         Path path = getDbDir(server).resolve(GSRStorageParameters.RUNS_FILE);
-        NbtList list = loadList(path);
+        ListTag list = loadList(path);
         List<GSRRunRecord> out = new ArrayList<>();
         for (int i = 0; i < list.size(); i++) {
-            NbtElement el = list.get(i);
-            if (el instanceof NbtCompound c) out.add(fromNbt(c));
+            Tag el = list.get(i);
+            if (el instanceof CompoundTag c) out.add(fromNbt(c));
         }
         return out;
     }
@@ -125,11 +125,11 @@ public final class GSRDataStore {
      */
     public static List<GSRRunPlayerSnapshot> loadSnapshots(MinecraftServer server) {
         Path path = getDbDir(server).resolve(GSRStorageParameters.SNAPSHOTS_FILE);
-        NbtList list = loadList(path, "snapshots");
+        ListTag list = loadList(path, "snapshots");
         List<GSRRunPlayerSnapshot> out = new ArrayList<>();
         for (int i = 0; i < list.size(); i++) {
-            NbtElement el = list.get(i);
-            if (el instanceof NbtCompound c) out.add(snapshotFromNbt(c));
+            Tag el = list.get(i);
+            if (el instanceof CompoundTag c) out.add(snapshotFromNbt(c));
         }
         return out;
     }
@@ -147,7 +147,7 @@ public final class GSRDataStore {
         Path perRunPath = getDbDir(server).resolve(GSRStorageParameters.DB_RUNS_DIR).resolve(runId + ".json");
         if (Files.exists(perRunPath)) {
             try {
-                NbtCompound root = GSRJsonUtil.readNbtFromJson(perRunPath);
+                CompoundTag root = GSRJsonUtil.readNbtFromJson(perRunPath);
                 return GSRRunSaveStateNbt.fromNbt(root);
             } catch (Exception e) {
                 LOGGER.warn("[GSR] Failed to load per-run file {}, falling back to tables", perRunPath, e);
@@ -169,16 +169,16 @@ public final class GSRDataStore {
      */
     public static List<GSRRunParticipant> loadParticipants(MinecraftServer server) {
         Path path = getDbDir(server).resolve(GSRStorageParameters.PARTICIPANTS_FILE);
-        NbtList list = loadList(path, "participants");
+        ListTag list = loadList(path, "participants");
         List<GSRRunParticipant> out = new ArrayList<>();
         for (int i = 0; i < list.size(); i++) {
-            NbtElement el = list.get(i);
-            if (el instanceof NbtCompound c) out.add(participantFromNbt(c));
+            Tag el = list.get(i);
+            if (el instanceof CompoundTag c) out.add(participantFromNbt(c));
         }
         return out;
     }
 
-    private static GSRRunParticipant participantFromNbt(NbtCompound c) {
+    private static GSRRunParticipant participantFromNbt(CompoundTag c) {
         return new GSRRunParticipant(
             c.getString("runId").orElse(""),
             c.getString("playerUuid").orElse(""),
@@ -279,11 +279,11 @@ public final class GSRDataStore {
             deranked,
             runDifficulty
         );
-        NbtCompound runNbt = toNbt(run);
+        CompoundTag runNbt = toNbt(run);
 
         Path baseDir = GSRStoragePaths.getWorldDir(server).resolve(GSRStorageParameters.COMPLETED_RUNS_DIR);
         for (UUID uuid : participantUuids) {
-            ServerPlayerEntity player = server.getPlayerManager().getPlayer(uuid);
+            ServerPlayer player = server.getPlayerManager().getPlayer(uuid);
             String name = (player != null) ? player.getName().getString() : uuid.toString();
             if (name == null || name.isEmpty()) name = uuid.toString();
 
@@ -292,7 +292,7 @@ public final class GSRDataStore {
             Path file = playerDir.resolve("run_" + endMs + ".json");
             try {
                 Files.createDirectories(playerDir);
-                NbtCompound root = new NbtCompound();
+                CompoundTag root = new CompoundTag();
                 root.put("run", runNbt);
                 root.put("snapshot", snapshotToNbt(snap));
                 GSRJsonUtil.writeNbtAsJson(file, root);
@@ -346,7 +346,7 @@ public final class GSRDataStore {
         List<GSRRunParticipant> participants = new ArrayList<>();
         List<GSRRunPlayerSnapshot> snapshots = new ArrayList<>();
 
-        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+        for (ServerPlayer player : server.getPlayerManager().getPlayerList()) {
             UUID uuid = player.getUuid();
             String name = player.getName().getString();
             GSRRunParticipant p = new GSRRunParticipant(runId, uuid.toString(), name);
@@ -362,7 +362,7 @@ public final class GSRDataStore {
         Path perRunPath = perRunDir.resolve(runId + ".json");
         try {
             Files.createDirectories(perRunDir);
-            NbtCompound root = GSRRunSaveStateNbt.toNbt(state);
+            CompoundTag root = GSRRunSaveStateNbt.toNbt(state);
             Path tmp = perRunPath.resolveSibling(perRunPath.getFileName() + GSRStorageParameters.ATOMIC_WRITE_SUFFIX);
             GSRJsonUtil.writeNbtAsJson(tmp, root);
             Files.move(tmp, perRunPath, StandardCopyOption.REPLACE_EXISTING);
@@ -373,23 +373,23 @@ public final class GSRDataStore {
         return state;
     }
 
-    private static NbtList loadList(Path path) {
+    private static ListTag loadList(Path path) {
         return loadList(path, "runs");
     }
 
-    private static NbtList loadList(Path path, String key) {
-        if (!Files.exists(path)) return new NbtList();
+    private static ListTag loadList(Path path, String key) {
+        if (!Files.exists(path)) return new ListTag();
         try {
-            NbtCompound root = GSRJsonUtil.readNbtFromJson(path);
-            return root.getList(key).orElse(new NbtList());
+            CompoundTag root = GSRJsonUtil.readNbtFromJson(path);
+            return root.getList(key).orElse(new ListTag());
         } catch (Exception e) {
             LOGGER.warn("[GSR] Failed to load list from {}", path, e);
         }
-        return new NbtList();
+        return new ListTag();
     }
 
-    private static NbtCompound toNbt(GSRRunRecord r) {
-        NbtCompound c = new NbtCompound();
+    private static CompoundTag toNbt(GSRRunRecord r) {
+        CompoundTag c = new CompoundTag();
         c.putString("runId", r.runId());
         c.putString("worldName", r.worldName());
         c.putLong("startMs", r.startMs());
@@ -410,7 +410,7 @@ public final class GSRDataStore {
         return c;
     }
 
-    private static GSRRunRecord fromNbt(NbtCompound c) {
+    private static GSRRunRecord fromNbt(CompoundTag c) {
         return new GSRRunRecord(
             c.getString("runId").orElse(""),
             c.getString("worldName").orElse(""),
@@ -432,16 +432,16 @@ public final class GSRDataStore {
         );
     }
 
-    private static NbtCompound participantToNbt(GSRRunParticipant p) {
-        NbtCompound c = new NbtCompound();
+    private static CompoundTag participantToNbt(GSRRunParticipant p) {
+        CompoundTag c = new CompoundTag();
         c.putString("runId", p.runId());
         c.putString("playerUuid", p.playerUuid());
         c.putString("playerName", p.playerName());
         return c;
     }
 
-    private static NbtCompound snapshotToNbt(GSRRunPlayerSnapshot s) {
-        NbtCompound c = new NbtCompound();
+    private static CompoundTag snapshotToNbt(GSRRunPlayerSnapshot s) {
+        CompoundTag c = new CompoundTag();
         c.putString("runId", s.runId());
         c.putString("playerUuid", s.playerUuid());
         c.putString("playerName", s.playerName());
@@ -476,7 +476,7 @@ public final class GSRDataStore {
         return c;
     }
 
-    private static GSRRunPlayerSnapshot snapshotFromNbt(NbtCompound c) {
+    private static GSRRunPlayerSnapshot snapshotFromNbt(CompoundTag c) {
         return new GSRRunPlayerSnapshot(
             c.getString("runId").orElse(""),
             c.getString("playerUuid").orElse(""),

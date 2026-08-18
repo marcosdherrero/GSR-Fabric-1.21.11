@@ -6,7 +6,7 @@ import net.berkle.groupspeedrun.parameter.GSRStorageParameters;
 import net.berkle.groupspeedrun.util.GSRJsonUtil;
 import net.berkle.groupspeedrun.util.GSRStoragePaths;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.WorldSavePath;
+import net.minecraft.world.level.storage.LevelResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +32,7 @@ public final class GSRWorldSnapshotManager {
      * Call at the very start of SERVER_STARTING: if restore flag exists, copy snapshot over world root and clear flag.
      */
     public static void checkAndRestoreIfNeeded(MinecraftServer server) {
-        Path worldRoot = server.getSavePath(WorldSavePath.ROOT);
+        Path worldRoot = server.getSavePath(LevelResource.ROOT);
         Path worldDir = GSRStoragePaths.getWorldDir(server);
         Path flagFile = worldDir.resolve(GSRStorageParameters.RESTORE_FLAG_FILE);
         if (!Files.exists(flagFile)) return;
@@ -98,7 +98,7 @@ public final class GSRWorldSnapshotManager {
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null || config.startTime > 0 || config.isVictorious || config.isFailed) return;
 
-        Path worldRoot = server.getSavePath(WorldSavePath.ROOT);
+        Path worldRoot = server.getSavePath(LevelResource.ROOT);
         Path snapshotDir = GSRStoragePaths.getSnapshotDir(server);
         if (Files.exists(snapshotDir)) return;
 
@@ -119,7 +119,7 @@ public final class GSRWorldSnapshotManager {
         Path flagFile = worldDir.resolve(GSRStorageParameters.RESTORE_FLAG_FILE);
         try {
             Files.createDirectories(worldDir);
-            GSRJsonUtil.writeNbtAsJson(flagFile, new net.minecraft.nbt.NbtCompound());
+            GSRJsonUtil.writeNbtAsJson(flagFile, new net.minecraft.nbt.CompoundTag());
         } catch (IOException e) {
             LOGGER.error("[GSR] Failed to set restore flag", e);
         }

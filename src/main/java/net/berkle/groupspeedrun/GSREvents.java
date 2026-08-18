@@ -7,7 +7,7 @@ import net.berkle.groupspeedrun.server.GSRDeathHandler;
 import net.berkle.groupspeedrun.server.GSRLocatorTickHandler;
 import net.berkle.groupspeedrun.timer.GSRTimer;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
 
 /**
@@ -58,7 +58,7 @@ public final class GSREvents {
     }
 
     /** Handle group death: mark failed, spectator all, broadcast. Delegates to {@link GSRDeathHandler}. */
-    public static void handlePlayerDeath(ServerPlayerEntity deadPlayer, MinecraftServer server) {
+    public static void handlePlayerDeath(ServerPlayer deadPlayer, MinecraftServer server) {
         GSRDeathHandler.handlePlayerDeath(deadPlayer, server);
     }
 }

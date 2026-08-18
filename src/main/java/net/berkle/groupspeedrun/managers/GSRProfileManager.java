@@ -3,9 +3,9 @@ package net.berkle.groupspeedrun.managers;
 import net.berkle.groupspeedrun.config.GSRConfigPlayer;
 import net.berkle.groupspeedrun.util.GSRJsonUtil;
 import net.berkle.groupspeedrun.util.GSRStoragePaths;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,12 +27,12 @@ public final class GSRProfileManager {
 
     private GSRProfileManager() {}
 
-    public static GSRConfigPlayer getPlayerConfig(ServerPlayerEntity player) {
+    public static GSRConfigPlayer getPlayerConfig(ServerPlayer player) {
         if (player == null) return new GSRConfigPlayer();
         return PLAYER_CONFIGS.computeIfAbsent(player.getUuid(), u -> new GSRConfigPlayer());
     }
 
-    public static void updatePlayerSettings(ServerPlayerEntity player, GSRConfigPlayer config) {
+    public static void updatePlayerSettings(ServerPlayer player, GSRConfigPlayer config) {
         if (player != null && config != null) {
             PLAYER_CONFIGS.put(player.getUuid(), config);
         }
@@ -44,9 +44,9 @@ public final class GSRProfileManager {
         Path path = worldDir.resolve(PLAYERS_FILE);
         try {
             Files.createDirectories(worldDir);
-            NbtCompound root = new NbtCompound();
+            CompoundTag root = new CompoundTag();
             for (Map.Entry<UUID, GSRConfigPlayer> e : PLAYER_CONFIGS.entrySet()) {
-                NbtCompound sub = new NbtCompound();
+                CompoundTag sub = new CompoundTag();
                 e.getValue().writeNbt(sub);
                 root.put(e.getKey().toString(), sub);
             }
@@ -63,7 +63,7 @@ public final class GSRProfileManager {
         Path path = worldDir.resolve(PLAYERS_FILE);
         if (!Files.exists(path)) return;
         try {
-            NbtCompound root = GSRJsonUtil.readNbtFromFile(path);
+            CompoundTag root = GSRJsonUtil.readNbtFromFile(path);
             root.getKeys().forEach(k -> {
                 try {
                     UUID uuid = UUID.fromString(k);

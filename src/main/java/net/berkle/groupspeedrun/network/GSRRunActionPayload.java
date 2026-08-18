@@ -1,18 +1,18 @@
 package net.berkle.groupspeedrun.network;
 
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
 /**
  * C2S: Client requests a run action (start, pause, resume, reset). Server runs same logic as /gsr commands.
  */
 @SuppressWarnings("null")
-public record GSRRunActionPayload(byte action) implements CustomPayload {
+public record GSRRunActionPayload(byte action) implements CustomPacketPayload {
 
-    public static final Id<GSRRunActionPayload> ID = new Id<>(Identifier.of("gsr", "run_action"));
+    public static final Type<GSRRunActionPayload> ID = new Type<>(Identifier.fromNamespaceAndPath("gsr", "run_action"));
 
     public static final byte ACTION_START = 0;
     public static final byte ACTION_PAUSE = 1;
@@ -23,13 +23,13 @@ public record GSRRunActionPayload(byte action) implements CustomPayload {
     /** C2S: Single-player pause menu closed; server unfreezes only if frozen by client pause. */
     public static final byte ACTION_CLIENT_RESUME = 5;
 
-    public static final PacketCodec<PacketByteBuf, GSRRunActionPayload> CODEC = PacketCodec.tuple(
-            PacketCodecs.BYTE, GSRRunActionPayload::action,
+    public static final StreamCodec<RegistryFriendlyByteBuf, GSRRunActionPayload> CODEC = StreamCodec.composite(
+            ByteBufCodecs.BYTE, GSRRunActionPayload::action,
             GSRRunActionPayload::new
     );
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

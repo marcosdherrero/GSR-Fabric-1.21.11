@@ -1,7 +1,7 @@
 package net.berkle.groupspeedrun.util;
 
 /**
- * Utility for ARGB color integers (alpha in high bits) for HUD DrawContext.
+ * Utility for ARGB color integers (alpha in high bits) for HUD GuiGraphicsExtractor.
  */
 public final class GSRColorHelper {
 

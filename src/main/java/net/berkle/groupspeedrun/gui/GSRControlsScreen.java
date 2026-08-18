@@ -4,10 +4,10 @@ package net.berkle.groupspeedrun.gui;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
 // Minecraft: screen, GUI, input
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.input.KeyInput;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.input.KeyEvent;
 // LWJGL: key codes
 import org.lwjgl.glfw.GLFW;
 
@@ -31,7 +31,7 @@ import net.berkle.groupspeedrun.timer.hud.GSRTimerHudRenderer;
 public class GSRControlsScreen extends GSRBaseScreen {
 
     /** Start/Pause/Resume button; label updated each tick so it reflects current run state. */
-    private ButtonWidget startPauseResumeBtn;
+    private Button startPauseResumeBtn;
 
     public GSRControlsScreen(Screen parent) {
         super(GSRButtonParameters.literal(GSRButtonParameters.SCREEN_CONTROLS), parent);
@@ -52,11 +52,11 @@ public class GSRControlsScreen extends GSRBaseScreen {
         int row2Y = row1Y + btnH + rowGap;
         int row3Y = row2Y + btnH + rowGap;
 
-        boolean inWorld = client != null && client.world != null;
+        boolean inWorld = client != null && client.level != null;
         GSRConfigPlayer pConfig = GSRClient.PLAYER_CONFIG;
         boolean canUseAdmin = pConfig != null && pConfig.canUseAdmin;
 
-        startPauseResumeBtn = ButtonWidget.builder(
+        startPauseResumeBtn = Button.builder(
                 GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_START),
                 b -> {
                     byte action = getStartPauseResumeAction();
@@ -66,35 +66,35 @@ public class GSRControlsScreen extends GSRBaseScreen {
                 })
                 .dimensions(leftX, row1Y, halfW, btnH).build();
         updateStartPauseResumeButton();
-        addDrawableChild(startPauseResumeBtn);
+        addRenderableWidget(startPauseResumeBtn);
 
-        ButtonWidget resetBtn = ButtonWidget.builder(GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_RESET), b -> {
+        Button resetBtn = Button.builder(GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_RESET), b -> {
                     if (client != null) client.setScreen(new GSRResetConfirmScreen(this));
                 })
                 .dimensions(rightX, row1Y, halfW, btnH).build();
         ((GSRClickableWidgetAccessor) resetBtn).gsr$setActive(inWorld && canUseAdmin);
-        addDrawableChild(resetBtn);
+        addRenderableWidget(resetBtn);
 
-        ButtonWidget runManagerBtn = ButtonWidget.builder(GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_RUN_MANAGER), b -> {
+        Button runManagerBtn = Button.builder(GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_RUN_MANAGER), b -> {
             if (client != null) client.setScreen(new GSRRunManagerScreen(this));
         }).dimensions(leftX, row2Y, halfW, btnH).build();
         ((GSRClickableWidgetAccessor) runManagerBtn).gsr$setActive(inWorld);
-        addDrawableChild(runManagerBtn);
-        ButtonWidget locatorsBtn = ButtonWidget.builder(GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_LOCATORS), b -> {
+        addRenderableWidget(runManagerBtn);
+        Button locatorsBtn = Button.builder(GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_LOCATORS), b -> {
             if (client != null) client.setScreen(new GSRLocatorsScreen(this));
         }).dimensions(rightX, row2Y, halfW, btnH).build();
         ((GSRClickableWidgetAccessor) locatorsBtn).gsr$setActive(inWorld);
-        addDrawableChild(locatorsBtn);
+        addRenderableWidget(locatorsBtn);
 
-        addDrawableChild(ButtonWidget.builder(GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_RUN_HISTORY), b -> {
+        addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_RUN_HISTORY), b -> {
             if (client != null) client.setScreen(new GSRRunHistoryScreen(this, true));
         }).dimensions(leftX, row3Y, halfW, btnH).build());
-        addDrawableChild(ButtonWidget.builder(GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_PREFERENCES), b -> {
+        addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_PREFERENCES), b -> {
             if (client != null) client.setScreen(new net.berkle.groupspeedrun.gui.preferences.GSRPreferencesScreen(this));
         }).dimensions(rightX, row3Y, halfW, btnH).build());
 
         var footer = GSRMenuComponents.singleButtonFooterLayout(width, height);
-        addDrawableChild(ButtonWidget.builder(GSRButtonParameters.literal(GSRButtonParameters.FOOTER_BACK), btn -> goBack())
+        addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.FOOTER_BACK), btn -> goBack())
                 .dimensions(footer.buttonX(), footer.footerY(), footer.buttonWidth(), footer.buttonHeight()).build());
     }
 
@@ -131,7 +131,7 @@ public class GSRControlsScreen extends GSRBaseScreen {
      * In singleplayer when game is paused, Pause/Resume is grayed out (timer already frozen by game pause). */
     private void updateStartPauseResumeButton() {
         if (startPauseResumeBtn == null) return;
-        boolean inWorld = client != null && client.world != null;
+        boolean inWorld = client != null && client.level != null;
         GSRConfigWorld wc = GSRClient.clientWorldConfig;
         boolean runNotStarted = wc != null && wc.startTime <= 0 && !wc.isVictorious && !wc.isFailed;
         boolean runActive = wc != null && wc.startTime > 0 && !wc.isVictorious && !wc.isFailed;
@@ -153,7 +153,7 @@ public class GSRControlsScreen extends GSRBaseScreen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, width, height, GSRUiParameters.SCREEN_BG_DARK);
         // Timer drawn first (behind buttons) with reduced alpha so options are the focus
         GSRConfigWorld wc = GSRClient.clientWorldConfig;
@@ -166,11 +166,11 @@ public class GSRControlsScreen extends GSRBaseScreen {
             GSRTimerHudRenderer.drawTimerBox(context, textRenderer, pc.timerHudOnRight, anchorX, anchorY, wc, pc, true, 1f, true, GSRUiParameters.CONTROLS_TIMER_ALPHA);
         }
         super.render(context, mouseX, mouseY, delta);
-        context.drawCenteredTextWithShadow(textRenderer, getTitle(), width / 2, GSRUiParameters.TITLE_Y, GSRUiParameters.TITLE_COLOR);
+        context.centeredText(textRenderer, getTitle(), width / 2, GSRUiParameters.TITLE_Y, GSRUiParameters.TITLE_COLOR);
     }
 
     @Override
-    public boolean keyPressed(KeyInput keyInput) {
+    public boolean keyPressed(KeyEvent keyInput) {
         if (keyInput.key() == GLFW.GLFW_KEY_ESCAPE) {
             goBack();
             return true;

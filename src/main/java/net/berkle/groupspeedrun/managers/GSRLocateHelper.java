@@ -1,20 +1,20 @@
 package net.berkle.groupspeedrun.managers;
 
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.tag.StructureTags;
-import net.minecraft.registry.tag.TagKey;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.structure.SimpleStructurePiece;
-import net.minecraft.structure.StructurePiece;
-import net.minecraft.structure.StructureStart;
-import net.minecraft.structure.StrongholdGenerator;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockBox;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.ChunkSectionPos;
-import net.minecraft.world.gen.StructureAccessor;
-import net.minecraft.world.gen.structure.Structure;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.StructureTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.levelgen.structure.TemplateStructurePiece;
+import net.minecraft.world.level.levelgen.structure.StructurePiece;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
+import net.minecraft.world.level.levelgen.structure.structures.StrongholdPieces;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.core.SectionPos;
+import net.minecraft.world.level.StructureManager;
+import net.minecraft.world.level.levelgen.structure.Structure;
 import net.berkle.groupspeedrun.mixin.accessors.GSRSimpleStructurePieceAccessor;
 import net.berkle.groupspeedrun.parameter.GSRLocatorParameters;
 import net.berkle.groupspeedrun.parameter.GSRServerParameters;
@@ -27,7 +27,7 @@ import java.util.Set;
 
 /**
  * Server-side helper to locate structures for the locator HUD.
- * Uses ServerWorld.locateStructure with structure tags (from GSR data pack).
+ * Uses ServerLevel.locateStructure with structure tags (from GSR data pack).
  * Stronghold uses EYE_OF_ENDER_LOCATED and points to the portal room.
  * Ship locator searches for the nearest end city that has a ship piece and points to the ship (elytra) specifically.
  */
@@ -44,7 +44,7 @@ public final class GSRLocateHelper {
      *
      * @return BlockPos of the target, or null if not found
      */
-    public static BlockPos locate(ServerWorld world, String structureType, BlockPos from) {
+    public static BlockPos locate(ServerLevel world, String structureType, BlockPos from) {
         if (world == null || from == null) return null;
         TagKey<Structure> tag = tagFor(structureType);
         if (tag == null) return null;
@@ -71,9 +71,9 @@ public final class GSRLocateHelper {
      * End cities without ships are added to a dud set and skipped – never point to structures without wings.
      * Uses getStructureStarts per chunk to find all end cities (avoids sampling positions that miss structures).
      */
-    private static BlockPos locateNearestEndShip(ServerWorld world, BlockPos from, TagKey<Structure> endCityTag) {
+    private static BlockPos locateNearestEndShip(ServerLevel world, BlockPos from, TagKey<Structure> endCityTag) {
         try {
-            StructureAccessor accessor = world.getStructureAccessor();
+            StructureManager accessor = world.getStructureAccessor();
             int radiusChunks = Math.min(GSRLocatorParameters.LOCATE_RADIUS_CHUNKS, GSRLocatorParameters.SHIP_LOCATE_SEARCH_RADIUS_CHUNKS);
             int maxChunks = GSRLocatorParameters.SHIP_LOCATE_MAX_CHUNKS;
             int fromChunkX = from.getX() >> 4;
@@ -83,7 +83,7 @@ public final class GSRLocateHelper {
             Set<Long> dudStructures = new HashSet<>();
             int chunksChecked = 0;
 
-            Structure endCityStructure = world.getRegistryManager().getOrThrow(RegistryKeys.STRUCTURE).get(Identifier.of("minecraft", "end_city"));
+            Structure endCityStructure = world.getRegistryManager().getOrThrow(Registries.STRUCTURE).get(Identifier.fromNamespaceAndPath("minecraft", "end_city"));
             if (endCityStructure == null) return null;
 
             // 1. Player position first – if within view of a city with ship, they may be inside it
@@ -91,7 +91,7 @@ public final class GSRLocateHelper {
             if (atPlayer != null) {
                 BlockPos shipPos = extractShipPosition(atPlayer);
                 if (shipPos != null) return shipPos;
-                BlockBox box = atPlayer.getBoundingBox();
+                BoundingBox box = atPlayer.getBoundingBox();
                 long key = ((long) box.getMinX() << 32) | (box.getMinZ() & 0xFFFFFFFFL);
                 dudStructures.add(key);
             }
@@ -104,7 +104,7 @@ public final class GSRLocateHelper {
                 if (start != null) {
                     BlockPos shipPos = extractShipPosition(start);
                     if (shipPos != null) return shipPos;
-                    BlockBox box = start.getBoundingBox();
+                    BoundingBox box = start.getBoundingBox();
                     long key = ((long) box.getMinX() << 32) | (box.getMinZ() & 0xFFFFFFFFL);
                     dudStructures.add(key);
                 }
@@ -122,10 +122,10 @@ public final class GSRLocateHelper {
                         world.getChunk(cx, cz);
                         ChunkPos chunkPos = new ChunkPos(cx, cz);
                         for (int sectionY : sectionYs) {
-                            ChunkSectionPos sectionPos = ChunkSectionPos.from(chunkPos, sectionY);
+                            SectionPos sectionPos = SectionPos.from(chunkPos, sectionY);
                             List<StructureStart> starts = accessor.getStructureStarts(sectionPos, endCityStructure);
                         for (StructureStart start : starts) {
-                            BlockBox box = start.getBoundingBox();
+                            BoundingBox box = start.getBoundingBox();
                             long key = ((long) box.getMinX() << 32) | (box.getMinZ() & 0xFFFFFFFFL);
                             if (dudStructures.contains(key)) continue;
                             BlockPos shipPos = extractShipPosition(start);
@@ -153,8 +153,8 @@ public final class GSRLocateHelper {
     /** Extracts ship piece center from an end city StructureStart, or null if no ship. Uses template path (end_city/ship) and bounding box size (ship ~29x13x24). */
     private static BlockPos extractShipPosition(StructureStart start) {
         for (StructurePiece piece : start.getChildren()) {
-            BlockBox box = piece.getBoundingBox();
-            if (piece instanceof SimpleStructurePiece simple) {
+            BoundingBox box = piece.getBoundingBox();
+            if (piece instanceof TemplateStructurePiece simple) {
                 String templateId = ((GSRSimpleStructurePieceAccessor) simple).gsr$getTemplateIdString();
                 if (templateId != null && templateId.toLowerCase().contains("ship")) {
                     int cx = (box.getMinX() + box.getMaxX()) / 2;
@@ -188,10 +188,10 @@ public final class GSRLocateHelper {
 
     private static TagKey<Structure> tagFor(String type) {
         return switch (type.toLowerCase()) {
-            case "fortress" -> TagKey.of(RegistryKeys.STRUCTURE, Identifier.of("gsr", "fortress"));
-            case "bastion" -> TagKey.of(RegistryKeys.STRUCTURE, Identifier.of("gsr", "bastion_remnant"));
+            case "fortress" -> TagKey.of(Registries.STRUCTURE, Identifier.fromNamespaceAndPath("gsr", "fortress"));
+            case "bastion" -> TagKey.of(Registries.STRUCTURE, Identifier.fromNamespaceAndPath("gsr", "bastion_remnant"));
             case "stronghold" -> StructureTags.EYE_OF_ENDER_LOCATED;
-            case "ship" -> TagKey.of(RegistryKeys.STRUCTURE, Identifier.of("gsr", "end_city"));
+            case "ship" -> TagKey.of(Registries.STRUCTURE, Identifier.fromNamespaceAndPath("gsr", "end_city"));
             default -> null;
         };
     }
@@ -200,14 +200,14 @@ public final class GSRLocateHelper {
      * Finds the portal room center within the stronghold at the given position.
      * @return BlockPos at portal room center, or null if portal room not found
      */
-    private static BlockPos locateStrongholdPortal(ServerWorld world, BlockPos strongholdPos) {
+    private static BlockPos locateStrongholdPortal(ServerLevel world, BlockPos strongholdPos) {
         try {
-            StructureAccessor accessor = world.getStructureAccessor();
+            StructureManager accessor = world.getStructureAccessor();
             StructureStart start = accessor.getStructureContaining(strongholdPos, StructureTags.EYE_OF_ENDER_LOCATED);
             if (start == null) return null;
             for (StructurePiece piece : start.getChildren()) {
-                if (piece instanceof StrongholdGenerator.PortalRoom portalRoom) {
-                    BlockBox box = portalRoom.getBoundingBox();
+                if (piece instanceof StrongholdPieces.PortalRoom portalRoom) {
+                    BoundingBox box = portalRoom.getBoundingBox();
                     int cx = (box.getMinX() + box.getMaxX()) / 2;
                     int cy = (box.getMinY() + box.getMaxY()) / 2;
                     int cz = (box.getMinZ() + box.getMaxZ()) / 2;
@@ -231,7 +231,7 @@ public final class GSRLocateHelper {
      * @param structureType "fortress", "bastion", "stronghold", or "ship".
      * @return true if pos is inside a structure piece of that type.
      */
-    public static boolean isInStructure(ServerWorld world, BlockPos pos, String structureType) {
+    public static boolean isInStructure(ServerLevel world, BlockPos pos, String structureType) {
         if (world == null || pos == null) return false;
         TagKey<Structure> tag = tagFor(structureType);
         if (tag == null) return false;
@@ -256,7 +256,7 @@ public final class GSRLocateHelper {
         int y = pos.getY();
         int z = pos.getZ();
         for (StructurePiece piece : start.getChildren()) {
-            BlockBox box = piece.getBoundingBox();
+            BoundingBox box = piece.getBoundingBox();
             if (box.getMinX() - margin <= x && x <= box.getMaxX() + margin
                     && box.getMinY() - margin <= y && y <= box.getMaxY() + margin
                     && box.getMinZ() - margin <= z && z <= box.getMaxZ() + margin) {
@@ -272,7 +272,7 @@ public final class GSRLocateHelper {
      * For ship: uses spherical distance (3D) – player within 100 blocks of ship position.
      * storedX, storedY, storedZ are the ship (elytra) coordinates.
      */
-    public static boolean isInTrackedStructure(ServerWorld world, BlockPos playerPos, String structureType, int storedX, int storedY, int storedZ) {
+    public static boolean isInTrackedStructure(ServerLevel world, BlockPos playerPos, String structureType, int storedX, int storedY, int storedZ) {
         if (world == null || playerPos == null) return false;
         if ("ship".equalsIgnoreCase(structureType)) {
             int dx = playerPos.getX() - storedX;
@@ -287,7 +287,7 @@ public final class GSRLocateHelper {
             var accessor = world.getStructureAccessor();
             StructureStart start = accessor.getStructureContaining(playerPos, tag);
             if (start == null) return false;
-            BlockBox structureBox = start.getBoundingBox();
+            BoundingBox structureBox = start.getBoundingBox();
             return structureBox.getMinX() <= storedX && storedX <= structureBox.getMaxX()
                 && structureBox.getMinZ() <= storedZ && storedZ <= structureBox.getMaxZ();
         } catch (Exception e) {
@@ -296,7 +296,7 @@ public final class GSRLocateHelper {
     }
 
     /** Overload for structures that only need XZ (fortress, bastion, stronghold). Pass 0 for storedY. */
-    public static boolean isInTrackedStructure(ServerWorld world, BlockPos playerPos, String structureType, int storedX, int storedZ) {
+    public static boolean isInTrackedStructure(ServerLevel world, BlockPos playerPos, String structureType, int storedX, int storedZ) {
         return isInTrackedStructure(world, playerPos, structureType, storedX, 0, storedZ);
     }
 }

@@ -5,14 +5,14 @@ import net.berkle.groupspeedrun.config.GSRConfigWorld;
 import net.berkle.groupspeedrun.parameter.GSRUiParameters;
 import net.berkle.groupspeedrun.util.GSRFormatUtil;
 import net.berkle.groupspeedrun.server.GSRSharedHealthEatAllowance;
-import net.minecraft.component.type.FoodComponent;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.Entity;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.network.chat.Component;
 
 /**
  * Broadcasts damage and eating events to shared health participants when shared health is enabled.
@@ -32,7 +32,7 @@ public final class GSRSharedHealthBroadcast {
     public static void broadcastToSharedHealthParticipants(MinecraftServer server, Text message) {
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null || !config.sharedHealthEnabled) return;
-        for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
+        for (ServerPlayer p : server.getPlayerManager().getPlayerList()) {
             if (config.isInSharedHealth(p.getUuid())) {
                 p.sendMessage(message, false);
             }
@@ -46,11 +46,11 @@ public final class GSRSharedHealthBroadcast {
      * @param source Damage source
      * @param damageTaken Actual damage taken (after shields, before armor)
      */
-    public static void onSharedHealthPlayerDamaged(ServerPlayerEntity player, DamageSource source, float damageTaken) {
+    public static void onSharedHealthPlayerDamaged(ServerPlayer player, DamageSource source, float damageTaken) {
         if (damageTaken <= 0) return;
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null || !config.sharedHealthEnabled || !config.isInSharedHealth(player.getUuid())) return;
-        MinecraftServer server = player.getEntityWorld() instanceof ServerWorld sw ? sw.getServer() : null;
+        MinecraftServer server = player.level() instanceof ServerLevel sw ? sw.getServer() : null;
         if (server == null) return;
 
         GSRSharedHealthEatAllowance.recordDamage(player, server.getTicks());
@@ -69,10 +69,10 @@ public final class GSRSharedHealthBroadcast {
      * @param stack Item stack consumed (before consumption)
      * @param foodComponent Food component with nutrition
      */
-    public static void onSharedHealthPlayerAte(ServerPlayerEntity player, ItemStack stack, FoodComponent foodComponent) {
+    public static void onSharedHealthPlayerAte(ServerPlayer player, ItemStack stack, FoodProperties foodComponent) {
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null || !config.sharedHealthEnabled || !config.isInSharedHealth(player.getUuid())) return;
-        MinecraftServer server = player.getEntityWorld() instanceof ServerWorld sw ? sw.getServer() : null;
+        MinecraftServer server = player.level() instanceof ServerLevel sw ? sw.getServer() : null;
         if (server == null) return;
 
         int nutrition = foodComponent.nutrition();

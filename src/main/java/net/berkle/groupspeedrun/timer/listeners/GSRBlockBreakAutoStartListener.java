@@ -3,10 +3,10 @@ package net.berkle.groupspeedrun.timer.listeners;
 import net.berkle.groupspeedrun.GSRMain;
 import net.berkle.groupspeedrun.GSRStats;
 import net.berkle.groupspeedrun.config.GSRConfigWorld;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
 
 /**
  * Event handler for block-break auto-start and auto-resume triggers.
@@ -26,7 +26,7 @@ public final class GSRBlockBreakAutoStartListener {
      * @param block the block that was broken (may be null)
      * @return true if handled (start or resume); false if run is active and block should be tracked for stats
      */
-    public static boolean onBlockBroken(MinecraftServer server, ServerPlayerEntity player, Block block) {
+    public static boolean onBlockBroken(MinecraftServer server, ServerPlayer player, Block block) {
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null || config.isVictorious || config.isFailed) return false;
 

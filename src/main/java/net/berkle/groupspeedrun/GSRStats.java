@@ -1,12 +1,12 @@
 package net.berkle.groupspeedrun;
 
 import net.berkle.groupspeedrun.config.GSRConfigWorld;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.damage.DamageType;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.RegistryKeys;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageType;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.server.level.ServerLevel;
 import net.berkle.groupspeedrun.parameter.GSRBroadcastParameters;
 import net.berkle.groupspeedrun.parameter.GSRStatTrackerParameters;
 import net.berkle.groupspeedrun.parameter.GSRStorageParameters;
@@ -237,10 +237,10 @@ public final class GSRStats {
      * Returns damage type id from source for per-type tracking (e.g. minecraft:player_attack).
      * Used by damage tracker mixin and Fabric AFTER_DAMAGE handler.
      */
-    public static String getDamageTypeId(ServerWorld world, DamageSource source) {
+    public static String getDamageTypeId(ServerLevel world, DamageSource source) {
         if (world == null || source == null) return "unknown";
         DamageType type = source.getType();
-        return world.getRegistryManager().getOrThrow(RegistryKeys.DAMAGE_TYPE).getKey(type).map(k -> k.getValue().toString()).orElse("unknown");
+        return world.getRegistryManager().getOrThrow(Registries.DAMAGE_TYPE).getKey(type).map(k -> k.getValue().toString()).orElse("unknown");
     }
 
     /** Records damage taken by type; call from damage tracker or Fabric AFTER_DAMAGE. */
@@ -512,7 +512,7 @@ public final class GSRStats {
         Path path = worldDir.resolve(STATS_FILE);
         try {
             Files.createDirectories(worldDir);
-            NbtCompound root = new NbtCompound();
+            CompoundTag root = new CompoundTag();
             writeMapFloat(root, "distance", DISTANCE_MOVED);
             writeMapMapFloat(root, "distanceByType", DISTANCE_MOVED_BY_TYPE);
             writeMapFloat(root, "damageDealt", TOTAL_DAMAGE_DEALT);
@@ -546,7 +546,7 @@ public final class GSRStats {
         Path path = worldDir.resolve(STATS_FILE);
         if (!Files.exists(path)) return;
         try {
-            NbtCompound root = GSRJsonUtil.readNbtFromFile(path);
+            CompoundTag root = GSRJsonUtil.readNbtFromFile(path);
             readMapFloat(root, "distance", DISTANCE_MOVED);
             readMapMapFloat(root, "distanceByType", DISTANCE_MOVED_BY_TYPE);
             readMapFloat(root, "damageDealt", TOTAL_DAMAGE_DEALT);
@@ -572,23 +572,23 @@ public final class GSRStats {
         }
     }
 
-    private static void writeMapFloat(NbtCompound root, String key, Map<UUID, Float> map) {
-        NbtCompound sub = new NbtCompound();
+    private static void writeMapFloat(CompoundTag root, String key, Map<UUID, Float> map) {
+        CompoundTag sub = new CompoundTag();
         for (Map.Entry<UUID, Float> e : map.entrySet()) {
             sub.putFloat(e.getKey().toString(), e.getValue());
         }
         root.put(key, sub);
     }
 
-    private static void writeMapInt(NbtCompound root, String key, Map<UUID, Integer> map) {
-        NbtCompound sub = new NbtCompound();
+    private static void writeMapInt(CompoundTag root, String key, Map<UUID, Integer> map) {
+        CompoundTag sub = new CompoundTag();
         for (Map.Entry<UUID, Integer> e : map.entrySet()) {
             sub.putInt(e.getKey().toString(), e.getValue());
         }
         root.put(key, sub);
     }
 
-    private static void readMapFloat(NbtCompound root, String key, Map<UUID, Float> out) {
+    private static void readMapFloat(CompoundTag root, String key, Map<UUID, Float> out) {
         root.getCompound(key).ifPresent(sub -> {
             for (String k : sub.getKeys()) {
                 try {
@@ -598,7 +598,7 @@ public final class GSRStats {
         });
     }
 
-    private static void readMapInt(NbtCompound root, String key, Map<UUID, Integer> out) {
+    private static void readMapInt(CompoundTag root, String key, Map<UUID, Integer> out) {
         root.getCompound(key).ifPresent(sub -> {
             for (String k : sub.getKeys()) {
                 try {
@@ -608,11 +608,11 @@ public final class GSRStats {
         });
     }
 
-    private static void writeMapMapInt(NbtCompound root, String key, Map<UUID, Map<String, Integer>> map) {
-        NbtCompound sub = new NbtCompound();
+    private static void writeMapMapInt(CompoundTag root, String key, Map<UUID, Map<String, Integer>> map) {
+        CompoundTag sub = new CompoundTag();
         for (Map.Entry<UUID, Map<String, Integer>> e : map.entrySet()) {
             if (e.getValue() == null || e.getValue().isEmpty()) continue;
-            NbtCompound inner = new NbtCompound();
+            CompoundTag inner = new CompoundTag();
             for (Map.Entry<String, Integer> ie : e.getValue().entrySet()) {
                 inner.putInt(ie.getKey(), ie.getValue());
             }
@@ -621,7 +621,7 @@ public final class GSRStats {
         if (!sub.getKeys().isEmpty()) root.put(key, sub);
     }
 
-    private static void readMapMapInt(NbtCompound root, String key, Map<UUID, Map<String, Integer>> out) {
+    private static void readMapMapInt(CompoundTag root, String key, Map<UUID, Map<String, Integer>> out) {
         root.getCompound(key).ifPresent(sub -> {
             for (String k : sub.getKeys()) {
                 try {
@@ -638,11 +638,11 @@ public final class GSRStats {
         });
     }
 
-    private static void writeMapMapFloat(NbtCompound root, String key, Map<UUID, Map<String, Float>> map) {
-        NbtCompound sub = new NbtCompound();
+    private static void writeMapMapFloat(CompoundTag root, String key, Map<UUID, Map<String, Float>> map) {
+        CompoundTag sub = new CompoundTag();
         for (Map.Entry<UUID, Map<String, Float>> e : map.entrySet()) {
             if (e.getValue() == null || e.getValue().isEmpty()) continue;
-            NbtCompound inner = new NbtCompound();
+            CompoundTag inner = new CompoundTag();
             for (Map.Entry<String, Float> ie : e.getValue().entrySet()) {
                 inner.putFloat(ie.getKey(), ie.getValue());
             }
@@ -651,7 +651,7 @@ public final class GSRStats {
         if (!sub.getKeys().isEmpty()) root.put(key, sub);
     }
 
-    private static void readMapMapFloat(NbtCompound root, String key, Map<UUID, Map<String, Float>> out) {
+    private static void readMapMapFloat(CompoundTag root, String key, Map<UUID, Map<String, Float>> out) {
         root.getCompound(key).ifPresent(sub -> {
             for (String k : sub.getKeys()) {
                 try {
@@ -668,15 +668,15 @@ public final class GSRStats {
         });
     }
 
-    private static void writeMapLong(NbtCompound root, String key, Map<UUID, Long> map) {
-        NbtCompound sub = new NbtCompound();
+    private static void writeMapLong(CompoundTag root, String key, Map<UUID, Long> map) {
+        CompoundTag sub = new CompoundTag();
         for (Map.Entry<UUID, Long> e : map.entrySet()) {
             sub.putLong(e.getKey().toString(), e.getValue());
         }
         root.put(key, sub);
     }
 
-    private static void readMapLong(NbtCompound root, String key, Map<UUID, Long> out) {
+    private static void readMapLong(CompoundTag root, String key, Map<UUID, Long> out) {
         root.getCompound(key).ifPresent(sub -> {
             for (String k : sub.getKeys()) {
                 try {
@@ -686,11 +686,11 @@ public final class GSRStats {
         });
     }
 
-    private static void writeMapMapLong(NbtCompound root, String key, Map<UUID, Map<String, Long>> map) {
-        NbtCompound sub = new NbtCompound();
+    private static void writeMapMapLong(CompoundTag root, String key, Map<UUID, Map<String, Long>> map) {
+        CompoundTag sub = new CompoundTag();
         for (Map.Entry<UUID, Map<String, Long>> e : map.entrySet()) {
             if (e.getValue() == null || e.getValue().isEmpty()) continue;
-            NbtCompound inner = new NbtCompound();
+            CompoundTag inner = new CompoundTag();
             for (Map.Entry<String, Long> ie : e.getValue().entrySet()) {
                 inner.putLong(ie.getKey(), ie.getValue());
             }
@@ -699,7 +699,7 @@ public final class GSRStats {
         if (!sub.getKeys().isEmpty()) root.put(key, sub);
     }
 
-    private static void readMapMapLong(NbtCompound root, String key, Map<UUID, Map<String, Long>> out) {
+    private static void readMapMapLong(CompoundTag root, String key, Map<UUID, Map<String, Long>> out) {
         root.getCompound(key).ifPresent(sub -> {
             for (String k : sub.getKeys()) {
                 try {

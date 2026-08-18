@@ -1,15 +1,15 @@
 package net.berkle.groupspeedrun.gui.preferences;
 
 // Minecraft: screen, GUI, input
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.screen.option.KeybindsScreen;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.input.KeyInput;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.screens.options.controls.KeyBindsScreen;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
 // Fabric: client networking
@@ -55,9 +55,9 @@ import net.berkle.groupspeedrun.util.GSRLocatorIconHelper;
 import net.berkle.groupspeedrun.util.GSRScrollbarHelper;
 
 // Minecraft: GUI rendering, items
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 // Java collections
 import java.util.ArrayList;
@@ -125,8 +125,8 @@ public final class GSRPreferencesScreen extends Screen {
     private boolean contentScrollbarDragging = false;
 
     /** Footer buttons; disabled when dropdown overlay is open. */
-    private ButtonWidget backButton;
-    private ButtonWidget keybindsButton;
+    private Button backButton;
+    private Button keybindsButton;
 
     public GSRPreferencesScreen(Screen parent) {
         this(parent, 0);
@@ -155,7 +155,7 @@ public final class GSRPreferencesScreen extends Screen {
 
     /** Plays the vanilla button click sound for custom-handled clicks (dropdowns, toggles). Uses same sound as Minecraft menu buttons. */
     private void gsr$playClickSound() {
-        var client = MinecraftClient.getInstance();
+        var client = Minecraft.getInstance();
         if (client != null && backButton != null) {
             ((GSRClickableWidgetAccessor) backButton).gsr$playDownSound(client.getSoundManager());
         }
@@ -372,7 +372,7 @@ public final class GSRPreferencesScreen extends Screen {
     }
 
     /** Returns display name for default option label. Uses registry ID if non-null, else fallback item. */
-    private String gsr$itemDisplayName(String registryId, net.minecraft.item.Item fallbackItem) {
+    private String gsr$itemDisplayName(String registryId, net.minecraft.world.item.Item fallbackItem) {
         if (client == null) return "Default";
         ItemStack stack = registryId != null
                 ? GSRLocatorIconHelper.getItemStack(registryId, fallbackItem)
@@ -381,7 +381,7 @@ public final class GSRPreferencesScreen extends Screen {
     }
 
     /** Returns ItemStack for icon dropdown at index. Uses registry ID for enum value; fallback for out-of-range. */
-    private static <T> ItemStack gsr$iconForIndex(T[] options, int idx, net.minecraft.item.Item defaultItem,
+    private static <T> ItemStack gsr$iconForIndex(T[] options, int idx, net.minecraft.world.item.Item defaultItem,
             java.util.function.Function<T, String> registryIdGetter) {
         if (idx >= 0 && idx < options.length) {
             return GSRLocatorIconHelper.getItemStack(registryIdGetter.apply(options[idx]), defaultItem);
@@ -418,7 +418,7 @@ public final class GSRPreferencesScreen extends Screen {
     void gsr$syncPlayerConfig() {
         GSRConfigPlayer config = GSRClient.PLAYER_CONFIG;
         config.clampAll();
-        NbtCompound nbt = new NbtCompound();
+        CompoundTag nbt = new CompoundTag();
         config.writeNbt(nbt);
         GSRClient.PLAYER_CONFIG.readNbt(nbt);
         if (client != null && client.player != null) {
@@ -443,13 +443,13 @@ public final class GSRPreferencesScreen extends Screen {
     protected void init() {
         super.init();
         var footer = GSRMenuComponents.footerLayout(width, height);
-        backButton = ButtonWidget.builder(GSRButtonParameters.literal(GSRButtonParameters.FOOTER_BACK), b -> goBack())
+        backButton = Button.builder(GSRButtonParameters.literal(GSRButtonParameters.FOOTER_BACK), b -> goBack())
                 .dimensions(footer.leftX(), footer.footerY(), footer.buttonWidth(), footer.buttonHeight()).build();
-        keybindsButton = ButtonWidget.builder(GSRButtonParameters.literal(GSRButtonParameters.PREFERENCES_KEYBINDS), b -> {
-            if (client != null && client.options != null) client.setScreen(new KeybindsScreen(this, client.options));
+        keybindsButton = Button.builder(GSRButtonParameters.literal(GSRButtonParameters.PREFERENCES_KEYBINDS), b -> {
+            if (client != null && client.options != null) client.setScreen(new KeyBindsScreen(this, client.options));
         }).dimensions(footer.rightX(), footer.footerY(), footer.buttonWidth(), footer.buttonHeight()).build();
-        addDrawableChild(backButton);
-        addDrawableChild(keybindsButton);
+        addRenderableWidget(backButton);
+        addRenderableWidget(keybindsButton);
     }
 
     private void goBack() {
@@ -460,7 +460,7 @@ public final class GSRPreferencesScreen extends Screen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         boolean dropdownOpen = model.openDropdownId != GSRPreferencesScreenModel.DROPDOWN_NONE;
         if (backButton != null) ((GSRClickableWidgetAccessor) backButton).gsr$setActive(!dropdownOpen);
         if (keybindsButton != null) ((GSRClickableWidgetAccessor) keybindsButton).gsr$setActive(!dropdownOpen);
@@ -482,7 +482,7 @@ public final class GSRPreferencesScreen extends Screen {
             GSRTimerHudRenderer.drawTimerBox(context, textRenderer, pc.timerHudOnRight, anchorX, anchorY, wc, pc, true, 1f, showSplits, GSRUiParameters.CONTROLS_TIMER_ALPHA);
         }
         super.render(context, mouseX, mouseY, delta);
-        context.drawCenteredTextWithShadow(textRenderer, getTitle(), width / 2, GSRUiParameters.TITLE_Y, GSRUiParameters.TITLE_COLOR);
+        context.centeredText(textRenderer, getTitle(), width / 2, GSRUiParameters.TITLE_Y, GSRUiParameters.TITLE_COLOR);
 
         int contentLeft = CONTENT_MARGIN;
         int contentWidth = width - 2 * CONTENT_MARGIN;
@@ -565,7 +565,7 @@ public final class GSRPreferencesScreen extends Screen {
         }
     }
 
-    private void gsr$renderContentList(DrawContext context, int contentLeft, int contentTop, int contentWidth, int contentBottom, int mouseX, int mouseY) {
+    private void gsr$renderContentList(GuiGraphicsExtractor context, int contentLeft, int contentTop, int contentWidth, int contentBottom, int mouseX, int mouseY) {
         int listHeight = contentBottom - contentTop;
         int totalHeight = gsr$contentHeight();
         int maxScroll = Math.max(0, totalHeight - listHeight);
@@ -677,14 +677,14 @@ public final class GSRPreferencesScreen extends Screen {
     }
 
     /** Draws a horizontal divider between categories. Returns y after the divider and gap. */
-    private int gsr$drawCategoryDivider(DrawContext context, int y, int left, int width) {
+    private int gsr$drawCategoryDivider(GuiGraphicsExtractor context, int y, int left, int width) {
         int h = GSRUiParameters.PREFERENCES_CATEGORY_DIVIDER_HEIGHT;
         context.fill(left, y, left + width, y + h, GSRUiParameters.PREFERENCES_CATEGORY_DIVIDER_COLOR);
         return y + h + GSRUiParameters.PREFERENCES_CATEGORY_DIVIDER_GAP;
     }
 
     /** Draws category title. When showLocatorPreview, draws mini locator bar with icons next to "Locator HUD". */
-    private int gsr$drawCategory(DrawContext context, String title, int y, int left, int width, boolean showLocatorPreview) {
+    private int gsr$drawCategory(GuiGraphicsExtractor context, String title, int y, int left, int width, boolean showLocatorPreview) {
         int labelX = left + GSRRunHistoryParameters.LIST_TEXT_INSET;
         context.drawTextWithShadow(textRenderer, Text.literal(title), labelX, y, GSRUiParameters.TITLE_COLOR);
         if (showLocatorPreview) {
@@ -695,7 +695,7 @@ public final class GSRPreferencesScreen extends Screen {
         return y + CATEGORY_HEADER + CATEGORY_GAP;
     }
 
-    private int gsr$drawDropdownRow(DrawContext context, int id, String label, int y, int colLeft, int colWidth, int mouseX, int mouseY) {
+    private int gsr$drawDropdownRow(GuiGraphicsExtractor context, int id, String label, int y, int colLeft, int colWidth, int mouseX, int mouseY) {
         GSRPreferencesDropdownEntry entry = gsr$getEntry(id);
         if (entry == null) return y + ROW_HEIGHT;
         int sectionTop = y;
@@ -706,7 +706,7 @@ public final class GSRPreferencesScreen extends Screen {
         return y + ROW_HEIGHT;
     }
 
-    private int gsr$drawToggleRow(DrawContext context, String label, boolean value, int y, int colLeft, int colWidth,
+    private int gsr$drawToggleRow(GuiGraphicsExtractor context, String label, boolean value, int y, int colLeft, int colWidth,
                                    int mouseX, int mouseY, Runnable onToggle,
                                    ItemStack iconOn, ItemStack iconOff, int colorOn, int colorOff,
                                    String displayOn, String displayOff) {
@@ -714,7 +714,7 @@ public final class GSRPreferencesScreen extends Screen {
         int barTop = y + LABEL_AREA_HEIGHT;
         int labelX = colLeft + GSRRunHistoryParameters.LIST_TEXT_INSET;
         int labelY = sectionTop + GSRRunHistoryParameters.LIST_VERTICAL_GAP;
-        var matrices = context.getMatrices();
+        var matrices = context.pose();
         matrices.pushMatrix();
         matrices.translate(labelX, labelY);
         matrices.scale(LABEL_SCALE, LABEL_SCALE);
@@ -737,13 +737,13 @@ public final class GSRPreferencesScreen extends Screen {
             textLeft = iconX + iconSize + iconMargin + GSRRunHistoryParameters.DROPDOWN_ITEM_ICON_TEXT_GAP;
         }
         String display = value ? displayOn : displayOff;
-        int textY = barTop + (BAR_HEIGHT - textRenderer.fontHeight) / 2;
+        int textY = barTop + (BAR_HEIGHT - textRenderer.lineHeight) / 2;
         context.drawTextWithShadow(textRenderer, Text.literal(display), textLeft, textY, textColor);
         return y + ROW_HEIGHT;
     }
 
     /** Draws a button in one column (e.g. Reset All to Default in right column). Uses same bar style as toggle/dropdown rows. */
-    private int gsr$drawButtonRow(DrawContext context, String label, int y, int colLeft, int colWidth, int mouseX, int mouseY) {
+    private int gsr$drawButtonRow(GuiGraphicsExtractor context, String label, int y, int colLeft, int colWidth, int mouseX, int mouseY) {
         int sectionTop = y;
         int barTop = y + LABEL_AREA_HEIGHT;
         int barDrawWidth = colWidth - GSRRunHistoryParameters.CONTAINER_INSET * 2;
@@ -752,17 +752,17 @@ public final class GSRPreferencesScreen extends Screen {
         var tex = textures.get(true, hovered);
         context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, tex, colLeft + GSRRunHistoryParameters.CONTAINER_INSET, barTop, barDrawWidth, BAR_HEIGHT);
         int textX = colLeft + GSRRunHistoryParameters.CONTAINER_INSET + GSRRunHistoryParameters.LIST_TEXT_INSET;
-        int textY = barTop + (BAR_HEIGHT - textRenderer.fontHeight) / 2;
+        int textY = barTop + (BAR_HEIGHT - textRenderer.lineHeight) / 2;
         context.drawTextWithShadow(textRenderer, Text.literal(label), textX, textY, GSRRunHistoryParameters.TEXT_COLOR);
         return y + ROW_HEIGHT;
     }
 
     /** Draws a scaled item icon for toggle buttons. */
-    private void gsr$drawToggleIcon(DrawContext context, ItemStack stack, int x, int y, int size, int margin) {
+    private void gsr$drawToggleIcon(GuiGraphicsExtractor context, ItemStack stack, int x, int y, int size, int margin) {
         int inner = size - 2 * margin;
         if (inner <= 0) return;
         float scale = inner / 16f;
-        var matrices = context.getMatrices();
+        var matrices = context.pose();
         matrices.pushMatrix();
         matrices.translate(x + margin, y + margin);
         matrices.scale(scale, scale);
@@ -770,7 +770,7 @@ public final class GSRPreferencesScreen extends Screen {
         matrices.popMatrix();
     }
 
-    private void gsr$renderDropdownOverlay(DrawContext context, int listLeft, int listTop, int listWidth, int listBottom, int mouseX, int mouseY) {
+    private void gsr$renderDropdownOverlay(GuiGraphicsExtractor context, int listLeft, int listTop, int listWidth, int listBottom, int mouseX, int mouseY) {
         GSRPreferencesDropdownEntry entry = gsr$getEntry(model.openDropdownId);
         if (entry == null) return;
         GSRMultiSelectDropdown<GSRPreferencesScreenModel> dd = entry.getDropdown();
@@ -797,8 +797,8 @@ public final class GSRPreferencesScreen extends Screen {
         var textures = GSRPressableWidgetAccessor.gsr$getTextures();
         var confirmTexture = textures.get(true, confirmHover);
         context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, confirmTexture, overlayLeft, confirmTop, listW, GSRRunHistoryParameters.FILTER_MAKE_SELECTION_BUTTON_HEIGHT);
-        int confirmTextY = confirmTop + (GSRRunHistoryParameters.FILTER_MAKE_SELECTION_BUTTON_HEIGHT - textRenderer.fontHeight) / 2;
-        context.drawCenteredTextWithShadow(textRenderer, GSRMultiSelectDropdown.CONFIRM_BUTTON_TEXT, overlayLeft + listW / 2, confirmTextY, GSRRunHistoryParameters.TEXT_COLOR);
+        int confirmTextY = confirmTop + (GSRRunHistoryParameters.FILTER_MAKE_SELECTION_BUTTON_HEIGHT - textRenderer.lineHeight) / 2;
+        context.centeredText(textRenderer, GSRMultiSelectDropdown.CONFIRM_BUTTON_TEXT, overlayLeft + listW / 2, confirmTextY, GSRRunHistoryParameters.TEXT_COLOR);
     }
 
     private GSRPreferencesDropdownEntry gsr$getEntry(int id) {
@@ -1103,7 +1103,7 @@ public final class GSRPreferencesScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(KeyInput keyInput) {
+    public boolean keyPressed(KeyEvent keyInput) {
         if (keyInput.key() == GLFW.GLFW_KEY_ESCAPE) {
             if (model.openDropdownId != GSRPreferencesScreenModel.DROPDOWN_NONE) {
                 model.openDropdownId = GSRPreferencesScreenModel.DROPDOWN_NONE;

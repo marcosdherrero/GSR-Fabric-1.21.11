@@ -2,11 +2,11 @@ package net.berkle.groupspeedrun.mixin;
 
 import net.berkle.groupspeedrun.GSRMain;
 import net.berkle.groupspeedrun.config.GSRConfigWorld;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.EnderEyeItem;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.EnderEyeItem;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -19,14 +19,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class GSREnderEyeItemMixin {
 
     /** Injects at head of use to record first ender eye throw time for stronghold locator gate. */
-    @Inject(method = "use(Lnet/minecraft/world/World;Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/util/Hand;)Lnet/minecraft/util/ActionResult;", at = @At("HEAD"))
-    private void groupspeedrun$recordFirstEnderEye(World world, PlayerEntity user, Hand hand, CallbackInfoReturnable<ActionResult> cir) {
+    @Inject(method = "use(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/InteractionHand;)Lnet/minecraft/world/InteractionResult;", at = @At("HEAD"))
+    private void groupspeedrun$recordFirstEnderEye(World world, Player user, Hand hand, CallbackInfoReturnable<InteractionResult> cir) {
         if (world.isClient()) return;
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null || config.startTime <= 0 || config.isVictorious || config.isFailed) return;
         if (config.timeFirstEnderEye > 0) return;
         config.timeFirstEnderEye = config.getElapsedTime();
-        if (world instanceof net.minecraft.server.world.ServerWorld serverWorld && serverWorld.getServer() != null) {
+        if (world instanceof net.minecraft.server.level.ServerLevel serverWorld && serverWorld.getServer() != null) {
             config.save(serverWorld.getServer());
         }
     }

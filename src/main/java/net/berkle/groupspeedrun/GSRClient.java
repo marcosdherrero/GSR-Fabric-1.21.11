@@ -7,11 +7,11 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
 // Minecraft: screens, widgets
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen;
-import net.minecraft.client.gui.screen.ingame.InventoryScreen;
-import net.minecraft.client.gui.screen.option.GameOptionsScreen;
-import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.gui.screens.options.OptionsSubScreen;
+import net.minecraft.client.gui.components.Button;
 
 // GSR: client, config, data, gui, network, util
 import net.berkle.groupspeedrun.client.GSRCelebrationHandler;
@@ -80,7 +80,7 @@ public class GSRClient implements ClientModInitializer {
      */
     private static boolean shouldFreezeTimerForScreen(Screen screen) {
         if (screen == null) return false;
-        return screen instanceof GSRPreferencesScreen || screen instanceof GSRControlsScreen || screen instanceof GameOptionsScreen;
+        return screen instanceof GSRPreferencesScreen || screen instanceof GSRControlsScreen || screen instanceof OptionsSubScreen;
     }
 
     @Override
@@ -92,7 +92,7 @@ public class GSRClient implements ClientModInitializer {
                 clientWorldConfig.readNbt(payload.nbt());
                 PLAYER_CONFIG.readNbt(payload.nbt());
                 // When opening a world, config may arrive while paused; ensure paused time shows current run time
-                if (client.getServer() != null && (client.isPaused() || shouldFreezeTimerForScreen(client.currentScreen)) && client.world != null) {
+                if (client.getServer() != null && (client.isPaused() || shouldFreezeTimerForScreen(client.currentScreen)) && client.level != null) {
                     clientPausedElapsedMs = clientWorldConfig.getElapsedTime();
                 }
                 int newVisibility = PLAYER_CONFIG.hudVisibility;
@@ -192,7 +192,7 @@ public class GSRClient implements ClientModInitializer {
             clientWorldConfig.clearCompletionStateOnly();
         });
         ClientTickEvents.START_CLIENT_TICK.register(client -> {
-            if (client.world == null) {
+            if (client.level == null) {
                 clientPausedElapsedMs = -1;
                 gKeyHeldLastTick = false;
                 openedConfigDuringGHold = false;
@@ -218,7 +218,7 @@ public class GSRClient implements ClientModInitializer {
         });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             GSRCelebrationHandler.tick(client);
-            if (client.world == null) {
+            if (client.level == null) {
                 return;
             }
             // Report player/creative inventory screen time (server cannot detect these)
@@ -228,7 +228,7 @@ public class GSRClient implements ClientModInitializer {
                 Screen screen = client.currentScreen;
                 if (screen instanceof InventoryScreen) {
                     ClientPlayNetworking.send(new GSRScreenTimePayload(GSRScreenTimePayload.PLAYER_INVENTORY));
-                } else if (screen instanceof CreativeInventoryScreen) {
+                } else if (screen instanceof CreativeModeInventoryScreen) {
                     ClientPlayNetworking.send(new GSRScreenTimePayload(GSRScreenTimePayload.CREATIVE_INVENTORY));
                 }
             }
@@ -293,12 +293,12 @@ public class GSRClient implements ClientModInitializer {
     }
 
     /** Creates GSR Controls button for main menu. Caller must add the returned button. */
-    public static ButtonWidget createControlsButton(net.minecraft.client.MinecraftClient client, net.minecraft.client.gui.screen.Screen screen, int width, int height) {
+    public static Button createControlsButton(net.minecraft.client.Minecraft client, net.minecraft.client.gui.screens.Screen screen, int width, int height) {
         return GSRTitleScreenLayout.createControlsButton(client, screen, width, height);
     }
 
-    /** Re-apply layout after refreshWidgetPositions. Delegates to {@link GSRTitleScreenLayout}. */
-    public static void applyRunHistoryLayout(net.minecraft.client.gui.screen.Screen screen) {
+    /** Re-apply layout after repositionElements. Delegates to {@link GSRTitleScreenLayout}. */
+    public static void applyRunHistoryLayout(net.minecraft.client.gui.screens.Screen screen) {
         GSRTitleScreenLayout.applyRunHistoryLayout(screen);
     }
 
@@ -317,7 +317,7 @@ public class GSRClient implements ClientModInitializer {
      * frozen. In multiplayer, pause menu does not stop the server so time advances; manual pause still freezes. */
     public static long getClientElapsedMs() {
         if (clientWorldConfig == null || clientWorldConfig.startTime <= 0) return 0;
-        var client = net.minecraft.client.MinecraftClient.getInstance();
+        var client = net.minecraft.client.Minecraft.getInstance();
         if (client != null && client.getServer() != null) {
             // Singleplayer: when timer is frozen by server/manual pause, use frozenTime so display stays frozen
             if (clientWorldConfig.isTimerFrozen && clientWorldConfig.frozenTime > 0) {

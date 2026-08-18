@@ -30,7 +30,7 @@ public final class GSRQuickNewWorld {
         try {
             Files.createDirectories(dir);
             if (Files.exists(file)) {
-                net.minecraft.nbt.NbtCompound nbt = GSRJsonUtil.readNbtFromFile(file);
+                net.minecraft.nbt.CompoundTag nbt = GSRJsonUtil.readNbtFromFile(file);
                 int count = nbt.getInt("count").orElse(0);
                 if (count > 0) next = count + 1;
             }
@@ -42,7 +42,7 @@ public final class GSRQuickNewWorld {
                     Files.deleteIfExists(legacyFile);
                 } catch (NumberFormatException ignored) {}
             }
-            net.minecraft.nbt.NbtCompound nbt = new net.minecraft.nbt.NbtCompound();
+            net.minecraft.nbt.CompoundTag nbt = new net.minecraft.nbt.CompoundTag();
             nbt.putInt("count", next);
             GSRJsonUtil.writeNbtAsJson(file, nbt);
         } catch (IOException | NumberFormatException e) {

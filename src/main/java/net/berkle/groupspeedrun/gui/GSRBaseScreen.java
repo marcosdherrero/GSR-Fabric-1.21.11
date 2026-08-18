@@ -1,7 +1,7 @@
 package net.berkle.groupspeedrun.gui;
 
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 /**
  * Base screen for GSR menus. Provides common parent handling and back navigation.

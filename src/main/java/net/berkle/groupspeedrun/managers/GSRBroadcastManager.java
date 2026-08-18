@@ -9,7 +9,7 @@ import net.berkle.groupspeedrun.data.GSRRunSaveStateNbt;
 import net.berkle.groupspeedrun.parameter.GSRTimerConfig;
 import net.berkle.groupspeedrun.util.GSRFormatUtil;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 import java.util.Comparator;
 import java.util.List;
@@ -19,7 +19,7 @@ import net.berkle.groupspeedrun.parameter.GSRBroadcastParameters;
 import net.berkle.groupspeedrun.parameter.GSRStatTrackerParameters;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
@@ -43,7 +43,7 @@ public final class GSRBroadcastManager {
     public static void broadcastToRunParticipants(MinecraftServer server, Text message) {
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null) return;
-        for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
+        for (ServerPlayer p : server.getPlayerManager().getPlayerList()) {
             if (!config.excludedFromRun.contains(p.getUuid())) {
                 p.sendMessage(message, false);
             }
@@ -117,7 +117,7 @@ public final class GSRBroadcastManager {
 
         // Send run data to all clients for shared run history
         var payload = new GSRRunCompletePayload(GSRRunSaveStateNbt.toNbt(state));
-        for (ServerPlayerEntity p : PlayerLookup.all(server)) {
+        for (ServerPlayer p : PlayerLookup.all(server)) {
             ServerPlayNetworking.send(p, payload);
         }
     }

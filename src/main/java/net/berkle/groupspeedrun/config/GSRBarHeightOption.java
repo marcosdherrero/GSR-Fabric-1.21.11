@@ -1,7 +1,7 @@
 package net.berkle.groupspeedrun.config;
 
 import net.berkle.groupspeedrun.parameter.GSRLocatorParameters;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 /** Locator bar height options (2–6 px). Used for single-selection in GSR Preferences. */
 public enum GSRBarHeightOption {

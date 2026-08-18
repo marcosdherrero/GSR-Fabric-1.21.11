@@ -1,7 +1,7 @@
 package net.berkle.groupspeedrun.config;
 
 import net.berkle.groupspeedrun.parameter.GSRHudParameters;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 /** Scale options (0.5–2.5) for Overall/Timer/Locate scale. Used for single-selection in GSR Preferences. */
 public enum GSRScaleOption {

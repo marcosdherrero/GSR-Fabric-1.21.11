@@ -4,7 +4,7 @@ import net.berkle.groupspeedrun.parameter.GSRHudParameters;
 import net.berkle.groupspeedrun.parameter.GSRLocatorParameters;
 import net.berkle.groupspeedrun.parameter.GSRPlayerConfigParameters;
 import net.berkle.groupspeedrun.parameter.GSRTimerConfig;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
 
 /**
  * Per-player HUD config (stored per UUID on server). Timer and styling fields.
@@ -135,7 +135,7 @@ public class GSRConfigPlayer {
         endShowTicks = Math.max(MIN_END_SHOW_TICKS, Math.min(MAX_END_SHOW_TICKS, endShowTicks));
     }
 
-    public void writeNbt(NbtCompound nbt) {
+    public void writeNbt(CompoundTag nbt) {
         nbt.putFloat(GSRPlayerConfigParameters.K_HUD_SCALE, hudOverallScale);
         nbt.putFloat(GSRPlayerConfigParameters.K_TIMER_SCALE, timerScale);
         nbt.putBoolean(GSRPlayerConfigParameters.K_TIMER_RIGHT, timerHudOnRight);
@@ -175,7 +175,7 @@ public class GSRConfigPlayer {
         nbt.putBoolean(GSRPlayerConfigParameters.K_ALLOW_NEW_WORLD_BEFORE_RUN_END, allowNewWorldBeforeRunEnd);
     }
 
-    public void readNbt(NbtCompound nbt) {
+    public void readNbt(CompoundTag nbt) {
         if (nbt == null) return;
         nbt.getFloat(GSRPlayerConfigParameters.K_HUD_SCALE).ifPresent(v -> this.hudOverallScale = v);
         nbt.getFloat(GSRPlayerConfigParameters.K_TIMER_SCALE).ifPresent(v -> this.timerScale = v);

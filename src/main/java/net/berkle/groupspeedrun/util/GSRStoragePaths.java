@@ -3,7 +3,7 @@ package net.berkle.groupspeedrun.util;
 import net.berkle.groupspeedrun.parameter.GSRStorageParameters;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.WorldSavePath;
+import net.minecraft.world.level.storage.LevelResource;
 
 import java.nio.file.Path;
 
@@ -24,7 +24,7 @@ public final class GSRStoragePaths {
      * World-colocated GSR data dir (world_root/data/gsr/). Guarantees save and load use the same path.
      */
     public static Path getWorldDataDir(MinecraftServer server) {
-        return server.getSavePath(WorldSavePath.ROOT).resolve("data").resolve("gsr");
+        return server.getSavePath(LevelResource.ROOT).resolve("data").resolve("gsr");
     }
 
     /**
@@ -49,7 +49,7 @@ public final class GSRStoragePaths {
             }
         } catch (Exception ignored) {}
         try {
-            return sanitizeForPath(server.getSavePath(net.minecraft.util.WorldSavePath.ROOT).getFileName().toString());
+            return sanitizeForPath(server.getSavePath(net.minecraft.world.level.storage.LevelResource.ROOT).getFileName().toString());
         } catch (Exception e) {
             return "world";
         }
@@ -68,7 +68,7 @@ public final class GSRStoragePaths {
         java.util.List<Path> candidates = new java.util.ArrayList<>();
         try {
             String levelName = server.getSaveProperties().getLevelName();
-            String folderName = server.getSavePath(WorldSavePath.ROOT).getFileName().toString();
+            String folderName = server.getSavePath(LevelResource.ROOT).getFileName().toString();
             Path worldsBase = getGsrRoot().resolve("worlds");
             if (levelName != null && !levelName.isEmpty()) {
                 Path byLevel = worldsBase.resolve(levelName);

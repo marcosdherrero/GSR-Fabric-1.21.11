@@ -7,10 +7,10 @@ import net.berkle.groupspeedrun.gui.GSRTickerState;
 import net.berkle.groupspeedrun.parameter.GSRRunHistoryParameters;
 import net.berkle.groupspeedrun.util.GSRFormatUtil;
 import net.berkle.groupspeedrun.util.GSRStatusText;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.OrderedText;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,7 +54,7 @@ public final class GSRRunHistoryChartRenderer {
      * @param viewMode 0=Recent (Sel, Avg, 5), 1=Best 5, 2=All time.
      * @param chartScrollX Horizontal scroll for All time view.
      */
-    public static void render(DrawContext context, TextRenderer textRenderer,
+    public static void render(GuiGraphicsExtractor context, Font textRenderer,
                              GSRTickerState tickerState,
                              GSRRunHistoryStatRow row, List<GSRRunSaveState> selectedRuns,
                              List<GSRRunSaveState> runs, List<GSRRunSaveState> filteredRuns, int viewMode, String description,
@@ -80,7 +80,7 @@ public final class GSRRunHistoryChartRenderer {
     /**
      * All time view: all runs in chronological order. Filtered runs blue, specifically selected yellow, others gray.
      */
-    private static void renderOverTimeChart(DrawContext context, TextRenderer textRenderer,
+    private static void renderOverTimeChart(GuiGraphicsExtractor context, Font textRenderer,
                                             GSRTickerState tickerState,
                                             GSRRunHistoryStatRow row, List<GSRRunSaveState> selectedRuns,
                                             List<GSRRunSaveState> runs, List<GSRRunSaveState> filteredRuns, String description,
@@ -145,7 +145,7 @@ public final class GSRRunHistoryChartRenderer {
         if (globalMax < 0.001) globalMax = 1;
 
         int x = left - scrollX;
-        int slotAreaBottom = valueY + 2 * textRenderer.fontHeight;
+        int slotAreaBottom = valueY + 2 * textRenderer.lineHeight;
         int labelMargin = GSRRunHistoryParameters.BUTTON_TICKER_MARGIN;
         int maxLabelWidth = Math.max(1, slotWidth - 2 * labelMargin);
         float uniformScale = 1f;
@@ -262,7 +262,7 @@ public final class GSRRunHistoryChartRenderer {
     /**
      * Recent/Best view: Sel (average of selected runs), Avg, 5 comparison runs.
      */
-    private static void renderCompareChart(DrawContext context, TextRenderer textRenderer,
+    private static void renderCompareChart(GuiGraphicsExtractor context, Font textRenderer,
                                            GSRTickerState tickerState,
                                            GSRRunHistoryStatRow row, List<GSRRunSaveState> selectedRuns,
                                            List<GSRRunSaveState> runs, int viewMode, String description,
@@ -382,7 +382,7 @@ public final class GSRRunHistoryChartRenderer {
         }
 
         int x = left;
-        int slotAreaBottom = valueY + 2 * textRenderer.fontHeight;
+        int slotAreaBottom = valueY + 2 * textRenderer.lineHeight;
         List<String> hoverTooltip = null;
         int hoveredBarIndex = -1;
         int hoveredSegmentIndex = -1;
@@ -484,14 +484,14 @@ public final class GSRRunHistoryChartRenderer {
      *
      * @param statusIcon Optional status icon (e.g. dragon/skull) to draw centered on second row; null or empty to skip.
      */
-    private static void drawBarLabelWithTicker(DrawContext context, TextRenderer textRenderer,
+    private static void drawBarLabelWithTicker(GuiGraphicsExtractor context, Font textRenderer,
                                                GSRTickerState tickerState, String tickerKey,
                                                String label, String statusIcon, int x, int y, int slotWidth, int color, boolean hovered,
                                                int clipLeft, int clipTop, int clipRight, int clipBottom,
                                                float uniformScale) {
         int margin = GSRRunHistoryParameters.BUTTON_TICKER_MARGIN;
         int textX = x + margin;
-        int rowHeight = textRenderer.fontHeight;
+        int rowHeight = textRenderer.lineHeight;
         int contentHeight = rowHeight + (statusIcon != null && !statusIcon.isEmpty() ? rowHeight : 0);
         int scissorLeft = Math.max(clipLeft, x + margin);
         int scissorTop = Math.max(clipTop, y - 2);
@@ -504,7 +504,7 @@ public final class GSRRunHistoryChartRenderer {
         if (uniformScale >= 1f) {
             context.drawText(textRenderer, label, textX, y, color, false);
         } else {
-            var matrices = context.getMatrices();
+            var matrices = context.pose();
             matrices.pushMatrix();
             matrices.translate(textX, y);
             matrices.scale(uniformScale, uniformScale);
@@ -539,7 +539,7 @@ public final class GSRRunHistoryChartRenderer {
      * Draws the split times color key across the top of the bar area (N, B, F, E, D).
      * Drawn in background before bars; bars that reach the top overlap it.
      */
-    private static void drawSplitKey(DrawContext context, TextRenderer textRenderer,
+    private static void drawSplitKey(GuiGraphicsExtractor context, Font textRenderer,
                                      int left, int keyTop, int chartWidth) {
         int keyH = GSRRunHistoryParameters.SPLIT_KEY_HEIGHT;
         int segCount = GSRRunHistoryParameters.SPLIT_SEGMENT_COUNT;
@@ -551,7 +551,7 @@ public final class GSRRunHistoryChartRenderer {
             String abbrev = SPLIT_KEY_ABBREV[s];
             int textW = textRenderer.getWidth(abbrev);
             int textX = segX + (segW - textW) / 2;
-            int textY = keyTop + (keyH - textRenderer.fontHeight) / 2;
+            int textY = keyTop + (keyH - textRenderer.lineHeight) / 2;
             context.drawText(textRenderer, abbrev, textX, textY, GSRRunHistoryParameters.SPLIT_KEY_TEXT_COLOR, false);
         }
     }
@@ -559,15 +559,15 @@ public final class GSRRunHistoryChartRenderer {
     /**
      * Draws text wrapped to maxWidth, one line per row. Returns total height in pixels.
      */
-    static int drawWrappedText(DrawContext context, TextRenderer textRenderer, String text,
+    static int drawWrappedText(GuiGraphicsExtractor context, Font textRenderer, String text,
                               int left, int y, int maxWidth, int color) {
         if (text == null || text.isEmpty()) return 0;
-        List<OrderedText> lines = textRenderer.wrapLines(Text.literal(text), Math.max(1, maxWidth));
-        int fontHeight = textRenderer.fontHeight;
+        List<FormattedCharSequence> lines = textRenderer.wrapLines(Text.literal(text), Math.max(1, maxWidth));
+        int lineHeight = textRenderer.lineHeight;
         for (int i = 0; i < lines.size(); i++) {
-            context.drawText(textRenderer, lines.get(i), left, y + i * fontHeight, color, false);
+            context.drawText(textRenderer, lines.get(i), left, y + i * lineHeight, color, false);
         }
-        return lines.size() * fontHeight;
+        return lines.size() * lineHeight;
     }
 
     private static String formatValue(GSRRunHistoryStatRow row, double value) {

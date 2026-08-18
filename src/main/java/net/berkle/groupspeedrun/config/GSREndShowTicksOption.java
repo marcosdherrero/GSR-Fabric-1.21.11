@@ -1,7 +1,7 @@
 package net.berkle.groupspeedrun.config;
 
 import net.berkle.groupspeedrun.parameter.GSRHudParameters;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 /** End show duration options (3–90 seconds). Displayed in seconds; stored as ticks internally. */
 public enum GSREndShowTicksOption {

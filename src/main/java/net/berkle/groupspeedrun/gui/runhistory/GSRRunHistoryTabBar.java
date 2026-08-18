@@ -2,10 +2,10 @@ package net.berkle.groupspeedrun.gui.runhistory;
 
 import net.berkle.groupspeedrun.mixin.accessors.GSRPressableWidgetAccessor;
 import net.berkle.groupspeedrun.parameter.GSRRunHistoryParameters;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
 
 /**
  * Renders the three-tab bar (Run Info, Run Graphs, Player Graphs) for the detail panel.
@@ -29,7 +29,7 @@ public final class GSRRunHistoryTabBar {
      * @param mouseX       Current mouse X for hover.
      * @param mouseY       Current mouse Y for hover.
      */
-    public void render(DrawContext context, TextRenderer textRenderer,
+    public void render(GuiGraphicsExtractor context, Font textRenderer,
                       int detailLeft, int detailRight, int detailTop,
                       int selectedTab, int mouseX, int mouseY) {
         int tabY = detailTop + GSRRunHistoryParameters.TAB_TOP_OFFSET;
@@ -49,7 +49,7 @@ public final class GSRRunHistoryTabBar {
             context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, texture, x, tabY, tabWidth, tabHeight);
             int textInset = GSRRunHistoryParameters.CONTAINER_INSET + GSRRunHistoryParameters.LIST_TEXT_INSET;
             context.drawTextWithShadow(textRenderer, Text.literal(TAB_LABELS[i]), x + textInset,
-                    tabY + (tabHeight - textRenderer.fontHeight) / 2, GSRRunHistoryParameters.TEXT_COLOR);
+                    tabY + (tabHeight - textRenderer.lineHeight) / 2, GSRRunHistoryParameters.TEXT_COLOR);
         }
     }
 

@@ -2,8 +2,8 @@ package net.berkle.groupspeedrun.gui.runmanager;
 
 import net.berkle.groupspeedrun.parameter.GSRRunHistoryParameters;
 import net.berkle.groupspeedrun.parameter.GSRUiParameters;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.Font;
+import net.minecraft.network.chat.Component;
 
 /**
  * Computes Run Manager container bounds. Container fits content exactly:
@@ -29,11 +29,11 @@ public final class GSRRunManagerLayout {
      * @param listWidth     Width of list area (for header wrap).
      * @return [containerTop, containerBottom, listTop, listBottom, confirmButtonTop].
      */
-    public static int[] openBounds(TextRenderer textRenderer, String header, int itemCount, int listWidth) {
+    public static int[] openBounds(Font textRenderer, String header, int itemCount, int listWidth) {
         int containerTop = GSRUiParameters.RUN_MANAGER_CONTAINER_TOP + GSRRunHistoryParameters.SELECTION_CONTAINER_MARGIN;
 
         int headerMaxWidth = listWidth - 2 * GSRRunHistoryParameters.LIST_TEXT_INSET;
-        int headerHeight = textRenderer.wrapLines(Text.literal(header), Math.max(1, headerMaxWidth)).size() * textRenderer.fontHeight;
+        int headerHeight = textRenderer.wrapLines(Text.literal(header), Math.max(1, headerMaxWidth)).size() * textRenderer.lineHeight;
         int listTop = containerTop + GSRRunHistoryParameters.LIST_VERTICAL_GAP + headerHeight + GSRRunHistoryParameters.LIST_VERTICAL_GAP;
 
         int listAreaHeight = Math.min(

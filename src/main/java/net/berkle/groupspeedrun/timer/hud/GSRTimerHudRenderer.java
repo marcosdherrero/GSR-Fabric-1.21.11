@@ -1,7 +1,7 @@
 package net.berkle.groupspeedrun.timer.hud;
 
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.berkle.groupspeedrun.GSRClient;
 import net.berkle.groupspeedrun.config.GSRConfigPlayer;
 import net.berkle.groupspeedrun.config.GSRConfigWorld;
@@ -12,7 +12,7 @@ import net.berkle.groupspeedrun.util.GSRFormatUtil;
 
 /**
  * Rendering logic for the dynamic GSR timer HUD, including conditional symbols and colors.
- * Used by InGameHud mixin and GSR Controls screen.
+ * Used by Gui mixin and GSR Controls screen.
  */
 public final class GSRTimerHudRenderer {
 
@@ -25,7 +25,7 @@ public final class GSRTimerHudRenderer {
      * Compute the scaled size of the timer box (same logic as drawTimerBox) so callers can position it.
      * Returns int[2] = { scaledWidth, scaledHeight }.
      */
-    public static int[] getTimerBoxScaledSize(TextRenderer tr, GSRConfigWorld worldConfig,
+    public static int[] getTimerBoxScaledSize(Font tr, GSRConfigWorld worldConfig,
             GSRConfigPlayer playerConfig, boolean showSplits) {
         if (worldConfig == null || playerConfig == null) return new int[]{0, 0};
         long displayElapsed = (worldConfig == GSRClient.clientWorldConfig) ? GSRClient.getClientElapsedMs() : worldConfig.getElapsedTime();
@@ -77,7 +77,7 @@ public final class GSRTimerHudRenderer {
      * @param fadeAlpha 0–1 when not forceShowInMenu
      * @param showSplits whether to draw split rows
      */
-    public static void drawTimerBox(DrawContext context, TextRenderer tr,
+    public static void drawTimerBox(GuiGraphicsExtractor context, Font tr,
             boolean boxRight, int anchorX, int anchorY,
             GSRConfigWorld worldConfig, GSRConfigPlayer playerConfig,
             boolean forceShowInMenu, float fadeAlpha, boolean showSplits) {
@@ -85,12 +85,12 @@ public final class GSRTimerHudRenderer {
     }
 
     /**
-     * Same as {@link #drawTimerBox(DrawContext, TextRenderer, boolean, int, int, GSRConfigWorld, GSRConfigPlayer, boolean, float, boolean)}
+     * Same as {@link #drawTimerBox(GuiGraphicsExtractor, Font, boolean, int, int, GSRConfigWorld, GSRConfigPlayer, boolean, float, boolean)}
      * but with explicit menu alpha for de-emphasized display (e.g. GSR Controls screen).
      *
      * @param menuAlpha when forceShowInMenu, alpha (0–1) for faded/blurred look. Ignored otherwise.
      */
-    public static void drawTimerBox(DrawContext context, TextRenderer tr,
+    public static void drawTimerBox(GuiGraphicsExtractor context, Font tr,
             boolean boxRight, int anchorX, int anchorY,
             GSRConfigWorld worldConfig, GSRConfigPlayer playerConfig,
             boolean forceShowInMenu, float fadeAlpha, boolean showSplits, float menuAlpha) {
@@ -139,9 +139,9 @@ public final class GSRTimerHudRenderer {
         int x = boxRight ? (anchorX - scaledW) : anchorX;
         int y = anchorY;
 
-        context.getMatrices().pushMatrix();
-        context.getMatrices().translate(x, y);
-        context.getMatrices().scale(scale, scale);
+        context.pose().pushMatrix();
+        context.pose().translate(x, y);
+        context.pose().scale(scale, scale);
 
         // Slightly gray out the box when paused (lower background opacity); soft blue when freeze
         int bgOpacity = isPaused ? GSRHudParameters.BG_OPACITY_PAUSED : GSRHudParameters.BG_OPACITY_RUNNING;
@@ -160,7 +160,7 @@ public final class GSRTimerHudRenderer {
                 currentY += rowHeight;
             }
         }
-        context.getMatrices().popMatrix();
+        context.pose().popMatrix();
     }
 
     /** Returns ARGB color for current timer state (title and time use same color). Uses player config when available. */
@@ -175,7 +175,7 @@ public final class GSRTimerHudRenderer {
 
     /**
      * Builds the title label for the timer box based on run state. Plain text with §l bold only;
-     * color is applied via DrawContext ARGB.
+     * color is applied via GuiGraphicsExtractor ARGB.
      * Victory: GSR {dragon} Victory!. Fail: GSR {skull} FAIL:.
      * Freeze: GSR {snowflake} Freeze:. Paused: GSR {hourglass} Paused:.
      * Running: GSR {stopwatch} Time: when ranked; GSR {white-flag} Time: when deranked.

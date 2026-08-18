@@ -1,11 +1,11 @@
 package net.berkle.groupspeedrun.mixin.trackers;
 
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.server.network.ServerPlayerInteractionManager;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayerGameMode;
+import net.minecraft.core.BlockPos;
 import net.berkle.groupspeedrun.GSRMain;
 import net.berkle.groupspeedrun.config.GSRConfigWorld;
 import net.berkle.groupspeedrun.timer.listeners.GSRBlockBreakAutoStartListener;
@@ -21,17 +21,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * Tracks blocks broken. Auto-starts the timer on first block break when armed (startTime == -1).
  * Delegates auto-start/resume logic to {@link GSRBlockBreakAutoStartListener}.
  */
-@Mixin(ServerPlayerInteractionManager.class)
+@Mixin(ServerPlayerGameMode.class)
 public class GSRServerPlayerInterTracker {
 
-    @Shadow @Final protected ServerPlayerEntity player;
+    @Shadow @Final protected ServerPlayer player;
 
     @Unique private static final ThreadLocal<Block> gsr$brokenBlock = new ThreadLocal<>();
 
     /** Capture block state before break (at HEAD, block still in world). */
-    @Inject(method = "tryBreakBlock", at = @At("HEAD"))
+    @Inject(method = "destroyBlock", at = @At("HEAD"))
     private void groupspeedrun$captureBlock(BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
-        if (player != null && player.getEntityWorld() instanceof ServerWorld sw) {
+        if (player != null && player.level() instanceof ServerLevel sw) {
             gsr$brokenBlock.set(sw.getBlockState(pos).getBlock());
         } else {
             gsr$brokenBlock.set(null);
@@ -39,12 +39,12 @@ public class GSRServerPlayerInterTracker {
     }
 
     /** Injects at return of tryBreakBlock to auto-start timer or track blocks broken. */
-    @Inject(method = "tryBreakBlock", at = @At("RETURN"))
+    @Inject(method = "destroyBlock", at = @At("RETURN"))
     @SuppressWarnings("deprecation")
     private void groupspeedrun$afterBreak(BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
         Block block = gsr$brokenBlock.get();
         gsr$brokenBlock.remove();
-        if (!cir.getReturnValue() || player == null || !(player.getEntityWorld() instanceof ServerWorld sw)) return;
+        if (!cir.getReturnValue() || player == null || !(player.level() instanceof ServerLevel sw)) return;
         MinecraftServer server = sw.getServer();
         if (server == null) return;
         GSRConfigWorld config = GSRMain.CONFIG;

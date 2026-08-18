@@ -1,12 +1,12 @@
 package net.berkle.groupspeedrun.gui.preferences;
 
 // Minecraft: screen, GUI, input, NBT, text
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.input.KeyInput;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
@@ -47,9 +47,9 @@ public class GSRResetModSettingsConfirmScreen extends Screen {
         int centerX = width / 2;
         int y = height / 2 + GSRUiParameters.CONTROLS_PADDING;
 
-        addDrawableChild(ButtonWidget.builder(GSRButtonParameters.literal(GSRButtonParameters.PREFERENCES_RESET_CONFIRM), btn -> confirm())
+        addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.PREFERENCES_RESET_CONFIRM), btn -> confirm())
                 .dimensions(centerX - buttonWidth - gap / 2, y, buttonWidth, buttonHeight).build());
-        addDrawableChild(ButtonWidget.builder(GSRButtonParameters.literal(GSRButtonParameters.PREFERENCES_RESET_CANCEL), btn -> cancel())
+        addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.PREFERENCES_RESET_CANCEL), btn -> cancel())
                 .dimensions(centerX + gap / 2, y, buttonWidth, buttonHeight).build());
     }
 
@@ -68,7 +68,7 @@ public class GSRResetModSettingsConfirmScreen extends Screen {
             gsrPrefs.gsr$syncPlayerConfig();
             gsrPrefs.gsr$applyVisibilityChange();
         } else {
-            NbtCompound nbt = new NbtCompound();
+            CompoundTag nbt = new CompoundTag();
             pc.writeNbt(nbt);
             if (client != null && client.player != null) {
                 ClientPlayNetworking.send(new GSRConfigPayload(nbt));
@@ -97,29 +97,29 @@ public class GSRResetModSettingsConfirmScreen extends Screen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, width, height, GSRUiParameters.STATUS_BG_COLOR);
         super.render(context, mouseX, mouseY, delta);
 
         int centerX = width / 2;
         int msgMaxW = Math.min(GSRUiParameters.RESET_CONFIRM_MESSAGE_MAX_WIDTH, width - 80);
-        List<net.minecraft.text.OrderedText> lines = textRenderer.wrapLines(
+        List<net.minecraft.util.FormattedCharSequence> lines = textRenderer.wrapLines(
                 Text.literal(GSRButtonParameters.PREFERENCES_RESET_CONFIRM_MESSAGE), msgMaxW);
 
-        context.drawCenteredTextWithShadow(textRenderer, getTitle(), centerX,
+        context.centeredText(textRenderer, getTitle(), centerX,
                 height / 2 - GSRUiParameters.RESET_CONFIRM_TITLE_OFFSET, GSRUiParameters.NEW_WORLD_TITLE_COLOR);
 
-        int lineHeight = textRenderer.fontHeight + 2;
+        int lineHeight = textRenderer.lineHeight + 2;
         int totalMsgHeight = lines.size() * lineHeight;
         int msgTop = height / 2 - GSRUiParameters.RESET_CONFIRM_MESSAGE_OFFSET - totalMsgHeight / 2;
         for (int i = 0; i < lines.size(); i++) {
-            context.drawCenteredTextWithShadow(textRenderer, lines.get(i), centerX,
+            context.centeredText(textRenderer, lines.get(i), centerX,
                     msgTop + i * lineHeight, GSRUiParameters.NEW_WORLD_LINE1_COLOR);
         }
     }
 
     @Override
-    public boolean keyPressed(KeyInput keyInput) {
+    public boolean keyPressed(KeyEvent keyInput) {
         if (keyInput.key() == GLFW.GLFW_KEY_ESCAPE) {
             cancel();
             return true;

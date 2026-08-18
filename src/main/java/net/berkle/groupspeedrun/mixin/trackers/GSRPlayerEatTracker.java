@@ -4,12 +4,12 @@ import net.berkle.groupspeedrun.GSRMain;
 import net.berkle.groupspeedrun.GSRStats;
 import net.berkle.groupspeedrun.server.GSRSharedHealthBroadcast;
 import net.berkle.groupspeedrun.server.GSRSharedHealthEatAllowance;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.FoodComponent;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -26,21 +26,21 @@ public abstract class GSRPlayerEatTracker {
     private static final ThreadLocal<Integer> gsr$consumedNutrition = new ThreadLocal<>();
 
     /** Injects at head of consumeItem: block eating if insufficient allowance, else broadcast. */
-    @Inject(method = "consumeItem", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "completeUsingItem", at = @At("HEAD"), cancellable = true)
     private void groupspeedrun$onConsumeItemHead(CallbackInfo ci) {
         LivingEntity self = (LivingEntity) (Object) this;
-        if (!(self instanceof ServerPlayerEntity player)) return;
+        if (!(self instanceof ServerPlayer player)) return;
 
         ItemStack active = self.getActiveItem();
         if (active.isEmpty()) return;
 
-        FoodComponent food = active.get(DataComponentTypes.FOOD);
+        FoodProperties food = active.get(DataComponents.FOOD);
         if (food == null) return;
 
         int nutrition = food.nutrition();
         gsr$consumedNutrition.set(nutrition);
 
-        if (player.getEntityWorld() instanceof ServerWorld sw) {
+        if (player.level() instanceof ServerLevel sw) {
             long tick = sw.getServer() != null ? sw.getServer().getTicks() : 0;
             if (!GSRSharedHealthEatAllowance.canEat(player, nutrition, tick)) {
                 gsr$consumedNutrition.remove();
@@ -58,10 +58,10 @@ public abstract class GSRPlayerEatTracker {
     }
 
     /** Injects at tail of consumeItem to deduct eat allowance after successful consumption. */
-    @Inject(method = "consumeItem", at = @At("TAIL"))
+    @Inject(method = "completeUsingItem", at = @At("TAIL"))
     private void groupspeedrun$onConsumeItemTail(CallbackInfo ci) {
         LivingEntity self = (LivingEntity) (Object) this;
-        if (!(self instanceof ServerPlayerEntity player)) return;
+        if (!(self instanceof ServerPlayer player)) return;
 
         Integer nutrition = gsr$consumedNutrition.get();
         gsr$consumedNutrition.remove();

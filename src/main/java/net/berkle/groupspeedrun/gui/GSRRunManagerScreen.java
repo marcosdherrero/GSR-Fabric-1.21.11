@@ -5,11 +5,11 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
 // Minecraft: GUI, NBT
 import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtString;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 
 // LWJGL: key codes
 import org.lwjgl.glfw.GLFW;
@@ -39,7 +39,7 @@ import java.util.UUID;
 public class GSRRunManagerScreen extends Screen {
 
     private final Screen parent;
-    private NbtCompound runManagerData;
+    private CompoundTag runManagerData;
     private boolean dataReceived;
 
     private final GSRRunManagerModel model = new GSRRunManagerModel();
@@ -54,7 +54,7 @@ public class GSRRunManagerScreen extends Screen {
     }
 
     /** Called when server sends player list and participant config. */
-    public void setRunManagerData(NbtCompound nbt) {
+    public void setRunManagerData(CompoundTag nbt) {
         this.runManagerData = nbt;
         this.dataReceived = true;
     }
@@ -80,7 +80,7 @@ public class GSRRunManagerScreen extends Screen {
         }
 
         var layout = GSRMenuComponents.singleButtonFooterLayout(width, height);
-        addDrawableChild(GSRMenuComponents.button(GSRButtonParameters.FOOTER_BACK, this::goBack,
+        addRenderableWidget(GSRMenuComponents.button(GSRButtonParameters.FOOTER_BACK, this::goBack,
                 layout.buttonX(), layout.footerY(), layout.buttonWidth(), layout.buttonHeight()));
     }
 
@@ -98,7 +98,7 @@ public class GSRRunManagerScreen extends Screen {
     }
 
     private void save() {
-        NbtCompound nbt = new NbtCompound();
+        CompoundTag nbt = new CompoundTag();
         writeUuidSet(nbt, GSRWorldConfigParameters.K_GROUP_DEATH_PARTICIPANTS, model.groupDeathParticipants);
         writeUuidSet(nbt, GSRWorldConfigParameters.K_SHARED_HEALTH_PARTICIPANTS, model.sharedHealthParticipants);
         writeUuidSet(nbt, GSRWorldConfigParameters.K_EXCLUDED_FROM_RUN, model.excluded);
@@ -106,10 +106,10 @@ public class GSRRunManagerScreen extends Screen {
         ClientPlayNetworking.send(new GSRRunManagerRequestPayload());
     }
 
-    private static void writeUuidSet(NbtCompound nbt, String key, Set<UUID> set) {
-        NbtList list = new NbtList();
+    private static void writeUuidSet(CompoundTag nbt, String key, Set<UUID> set) {
+        ListTag list = new ListTag();
         for (UUID u : set) {
-            if (u != null) list.add(NbtString.of(u.toString()));
+            if (u != null) list.add(StringTag.of(u.toString()));
         }
         nbt.put(key, list);
     }
@@ -151,7 +151,7 @@ public class GSRRunManagerScreen extends Screen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         if (runManagerData != null && !dataReceived) {
             dataReceived = true;
         }
@@ -164,7 +164,7 @@ public class GSRRunManagerScreen extends Screen {
 
         context.fill(0, 0, width, height, GSRUiParameters.SCREEN_BG_DARK);
         super.render(context, mouseX, mouseY, delta);
-        context.drawCenteredTextWithShadow(textRenderer, getTitle(), width / 2, GSRUiParameters.TITLE_Y, GSRUiParameters.TITLE_COLOR);
+        context.centeredText(textRenderer, getTitle(), width / 2, GSRUiParameters.TITLE_Y, GSRUiParameters.TITLE_COLOR);
 
         boolean dropdownOpen = model.deathDropdownOpen || model.healthDropdownOpen;
         if (dropdownOpen) {
@@ -172,7 +172,7 @@ public class GSRRunManagerScreen extends Screen {
         }
 
         if (!dataReceived && runManagerData == null) {
-            context.drawCenteredTextWithShadow(textRenderer, "Loading...", width / 2, height / 2 - GSRUiParameters.RUN_MANAGER_LOADING_Y_OFFSET, GSRUiParameters.RUN_MANAGER_LOADING_COLOR);
+            context.centeredText(textRenderer, "Loading...", width / 2, height / 2 - GSRUiParameters.RUN_MANAGER_LOADING_Y_OFFSET, GSRUiParameters.RUN_MANAGER_LOADING_COLOR);
             return;
         }
 
@@ -340,7 +340,7 @@ public class GSRRunManagerScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(net.minecraft.client.input.KeyInput keyInput) {
+    public boolean keyPressed(net.minecraft.client.input.KeyEvent keyInput) {
         if (keyInput.key() == GLFW.GLFW_KEY_ESCAPE) {
             if (model.deathDropdownOpen || model.healthDropdownOpen) {
                 model.deathDropdownOpen = false;

@@ -7,7 +7,7 @@ import net.berkle.groupspeedrun.data.GSRRunSaveStateNbt;
 import net.berkle.groupspeedrun.parameter.GSRStorageParameters;
 import net.berkle.groupspeedrun.util.GSRJsonUtil;
 import net.berkle.groupspeedrun.util.GSRStoragePaths;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -153,7 +153,7 @@ public final class GSRSharedRunLoader {
             Files.createDirectories(dir);
             GSRRunSaveState existing = loadOne(path);
             GSRRunSaveState toSave = existing != null ? merge(existing, state) : state;
-            NbtCompound root = GSRRunSaveStateNbt.toNbt(toSave);
+            CompoundTag root = GSRRunSaveStateNbt.toNbt(toSave);
             GSRJsonUtil.writeNbtAsJson(path, root);
         } catch (Exception e) {
             LOGGER.warn("[GSR] Failed to save run to {}: {}", dir.getFileName(), e.getMessage());
@@ -169,7 +169,7 @@ public final class GSRSharedRunLoader {
             else return null;
         }
         try {
-            NbtCompound root = GSRJsonUtil.readNbtFromFile(toRead);
+            CompoundTag root = GSRJsonUtil.readNbtFromFile(toRead);
             return GSRRunSaveStateNbt.fromNbt(root);
         } catch (Exception e) {
             return null;

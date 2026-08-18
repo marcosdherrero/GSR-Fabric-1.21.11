@@ -2,9 +2,9 @@ package net.berkle.groupspeedrun.managers;
 
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 import net.berkle.groupspeedrun.data.GSRRunSaveState;
 import net.berkle.groupspeedrun.data.GSRRunSaveStateNbt;
 import net.berkle.groupspeedrun.network.GSRRunDataPayload;
@@ -54,8 +54,8 @@ public final class GSRRunSyncManager {
     }
 
     /** Called when a player joins: request run IDs from all clients. */
-    public static void onPlayerJoin(MinecraftServer server, ServerPlayerEntity joiner) {
-        for (ServerPlayerEntity p : PlayerLookup.all(server)) {
+    public static void onPlayerJoin(MinecraftServer server, ServerPlayer joiner) {
+        for (ServerPlayer p : PlayerLookup.all(server)) {
             ServerPlayNetworking.send(p, new GSRRunIdsRequestPayload());
         }
     }
@@ -70,7 +70,7 @@ public final class GSRRunSyncManager {
     }
 
     /** Handle C2S run IDs from client. */
-    public static void handleRunIds(MinecraftServer server, ServerPlayerEntity sender, List<String> runIds) {
+    public static void handleRunIds(MinecraftServer server, ServerPlayer sender, List<String> runIds) {
         playerRunIds.put(sender.getUuid(), new HashSet<>(runIds));
 
         // Union of others' run IDs plus this world's run IDs from server storage.
@@ -83,19 +83,19 @@ public final class GSRRunSyncManager {
         }
         othersRunIds.addAll(getServerRunIds(server));
         if (!othersRunIds.isEmpty()) {
-            NbtCompound nbt = GSRRunIdsPayload.toNbt(new ArrayList<>(othersRunIds));
+            CompoundTag nbt = GSRRunIdsPayload.toNbt(new ArrayList<>(othersRunIds));
             ServerPlayNetworking.send(sender, new GSRRunIdsPayload(nbt));
         }
     }
 
     /** Handle C2S run request from client. */
-    public static void handleRunRequest(MinecraftServer server, ServerPlayerEntity requester, List<String> runIds) {
+    public static void handleRunRequest(MinecraftServer server, ServerPlayer requester, List<String> runIds) {
         if (runIds.isEmpty()) return;
         runRequestRequester = requester.getUuid();
         runRequestIds = new HashSet<>(runIds);
 
-        NbtCompound nbt = GSRRunRequestBroadcastPayload.toNbt(requester.getUuid(), runIds);
-        for (ServerPlayerEntity p : PlayerLookup.all(server)) {
+        CompoundTag nbt = GSRRunRequestBroadcastPayload.toNbt(requester.getUuid(), runIds);
+        for (ServerPlayer p : PlayerLookup.all(server)) {
             if (!p.getUuid().equals(requester.getUuid())) {
                 ServerPlayNetworking.send(p, new GSRRunRequestBroadcastPayload(nbt));
             }
@@ -105,20 +105,20 @@ public final class GSRRunSyncManager {
         for (String runId : runIds) {
             GSRRunSaveState state = GSRDataStore.loadRunSaveStateByRunId(server, runId);
             if (state != null) {
-                NbtCompound runNbt = GSRRunSaveStateNbt.toNbt(state);
+                CompoundTag runNbt = GSRRunSaveStateNbt.toNbt(state);
                 ServerPlayNetworking.send(requester, new GSRRunDataPayload(GSRRunDataPayload.toNbt(runId, runNbt)));
             }
         }
     }
 
     /** Handle C2S run data from client; forward to requester if applicable. */
-    public static void handleRunData(MinecraftServer server, ServerPlayerEntity sender, NbtCompound payloadNbt) {
+    public static void handleRunData(MinecraftServer server, ServerPlayer sender, CompoundTag payloadNbt) {
         String runId = payloadNbt.getString(GSRRunDataPayload.KEY_RUN_ID).orElse(null);
-        NbtCompound runNbt = payloadNbt.getCompound(GSRRunDataPayload.KEY_RUN_NBT).orElse(null);
+        CompoundTag runNbt = payloadNbt.getCompound(GSRRunDataPayload.KEY_RUN_NBT).orElse(null);
         if (runId == null || runNbt == null || runRequestRequester == null || !runRequestIds.contains(runId)) {
             return;
         }
-        ServerPlayerEntity requester = server.getPlayerManager().getPlayer(runRequestRequester);
+        ServerPlayer requester = server.getPlayerManager().getPlayer(runRequestRequester);
         if (requester != null) {
             ServerPlayNetworking.send(requester, new GSRRunDataPayload(GSRRunDataPayload.toNbt(runId, runNbt)));
         }

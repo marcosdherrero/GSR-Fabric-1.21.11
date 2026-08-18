@@ -13,15 +13,15 @@ import net.berkle.groupspeedrun.parameter.GSRRunHistoryParameters;
 // Time formatting for Run Time / Split Times
 import net.berkle.groupspeedrun.util.GSRFormatUtil;
 // Minecraft client for skin provider
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 // Minecraft text measurement
-import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.gui.Font;
 // Minecraft screen drawing
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 // Player head drawing from skin textures
-import net.minecraft.client.gui.PlayerSkinDrawer;
+import net.minecraft.client.gui.components.PlayerFaceRenderer;
 // Skin textures for player head
-import net.minecraft.entity.player.SkinTextures;
+import net.minecraft.client.resources.PlayerSkin;
 
 // Mojang authlib for GameProfile (skin fetch)
 import com.mojang.authlib.GameProfile;
@@ -66,8 +66,8 @@ public final class GSRRunHistoryPlayerChartRenderer {
     private static final int VIEW_WORST_5 = 3;
     private static final int RUNS_PER_PLAYER_LIMIT = 5;
 
-    /** Cache of player UUID -> SkinTextures for head drawing. Populated asynchronously. */
-    private static final Map<UUID, SkinTextures> SKIN_CACHE = new ConcurrentHashMap<>();
+    /** Cache of player UUID -> PlayerSkin for head drawing. Populated asynchronously. */
+    private static final Map<UUID, PlayerSkin> SKIN_CACHE = new ConcurrentHashMap<>();
     /** UUIDs we have already triggered a fetch for (avoid duplicate requests). */
     private static final Set<UUID> FETCH_PENDING = ConcurrentHashMap.newKeySet();
     /** Cache of Mojang username -> UUID for players with offline UUIDs or missing UUIDs. */
@@ -91,7 +91,7 @@ public final class GSRRunHistoryPlayerChartRenderer {
      * @param viewIndex 0=Recent 5 runs per player, 1=Best 5 runs per player, 2=All time (all runs per player).
      * @return true if content was rendered; false if empty (no players or no runs).
      */
-    public static boolean render(DrawContext context, TextRenderer textRenderer,
+    public static boolean render(GuiGraphicsExtractor context, Font textRenderer,
                                  GSRTickerState tickerState,
                                  GSRRunHistoryStatRow row, Set<String> selectedPlayers,
                                  List<GSRRunSaveState> runs, int typeIndex, int viewIndex,
@@ -257,9 +257,9 @@ public final class GSRRunHistoryPlayerChartRenderer {
                 left, descY, titleMaxWidth, GSRRunHistoryParameters.BAR_LABEL_COLOR);
 
         int headerBottom = descY + descHeight;
-        int fontHeight = textRenderer.fontHeight;
+        int lineHeight = textRenderer.lineHeight;
         int nameLabelGap = GSRRunHistoryParameters.CHART_LABEL_Y_OFFSET;
-        int nameY = bottom - margin - fontHeight;
+        int nameY = bottom - margin - lineHeight;
         int barBottom = nameY - nameLabelGap;
         int barAreaTop = headerBottom + margin;
         int availableBarHeight = Math.max(GSRRunHistoryParameters.BAR_HEIGHT, barBottom - barAreaTop);
@@ -276,7 +276,7 @@ public final class GSRRunHistoryPlayerChartRenderer {
                 context.fill(x, barBottom - fillHeight, x + slotWidth, barBottom, colors[i]);
             }
 
-            int valueY = barBottom - fontHeight - valueInset;
+            int valueY = barBottom - lineHeight - valueInset;
             String valueStr = formatValue(row, values[i]);
             int maxValueWidth = Math.max(1, slotWidth - 2 * valueInset);
             float valueScale = Math.min(1f, (float) maxValueWidth / textRenderer.getWidth(valueStr));
@@ -284,20 +284,20 @@ public final class GSRRunHistoryPlayerChartRenderer {
 
             String playerName = players.get(i);
             UUID playerUuid = getEffectiveSkinUuid(playerName, nameToUuid);
-            SkinTextures skin = getCachedSkin(playerUuid);
+            PlayerSkin skin = getCachedSkin(playerUuid);
             int faceSize = GSRRunHistoryParameters.PLAYER_CHART_FACE_SIZE;
             int faceGap = GSRRunHistoryParameters.PLAYER_CHART_FACE_NAME_GAP;
             int nameX = x;
             if (skin != null && slotWidth >= faceSize + faceGap) {
-                int faceY = nameY + (fontHeight - faceSize) / 2;
-                PlayerSkinDrawer.draw(context, skin, x, faceY, faceSize);
+                int faceY = nameY + (lineHeight - faceSize) / 2;
+                PlayerFaceRenderer.draw(context, skin, x, faceY, faceSize);
                 nameX = x + faceSize + faceGap;
             }
             int nameMaxWidth = slotWidth - (nameX - x);
             String namePart = truncatePlayerLabel(labels.get(i), Math.max(1, nameMaxWidth), textRenderer);
             context.drawText(textRenderer, namePart, nameX, nameY, GSRRunHistoryParameters.BAR_VALUE_COLOR, false);
 
-            if (mouseX >= x && mouseX < x + slotWidth && mouseY >= barTop && mouseY < nameY + fontHeight) {
+            if (mouseX >= x && mouseX < x + slotWidth && mouseY >= barTop && mouseY < nameY + lineHeight) {
                 hoveredIndex = i;
             }
             x += slotWidth + GSRRunHistoryParameters.BAR_GAP;
@@ -307,7 +307,7 @@ public final class GSRRunHistoryPlayerChartRenderer {
         if (hoveredIndex >= 0) {
             String playerName = players.get(hoveredIndex);
             UUID playerUuid = getEffectiveSkinUuid(playerName, nameToUuid);
-            SkinTextures skin = getCachedSkin(playerUuid);
+            PlayerSkin skin = getCachedSkin(playerUuid);
             ensureSkinFetch(nameToUuid.get(playerName), playerName);
 
             List<GSRRunSaveState> allPlayerRuns = runs.stream().filter(r -> runHasPlayer(r, playerName)).toList();
@@ -319,8 +319,8 @@ public final class GSRRunHistoryPlayerChartRenderer {
             String highlightedLine = buildHighlightedValueLine(row, barValueStr);
 
             long elapsed = tickerState.getTooltipElapsedMsUnbounded("tooltip-player-" + hoveredIndex + "-" + playerName, System.currentTimeMillis());
-            int sw = context.getScaledWindowWidth();
-            int sh = context.getScaledWindowHeight();
+            int sw = context.guiWidth();
+            int sh = context.guiHeight();
             GSRStandardTooltip.drawWithPlayerChartTooltip(context, textRenderer, skin, playerName, highlightedLine,
                     statsRow, scoresRow, GSRStandardTooltip.CURSOR_OFFSET, mouseX, mouseY, sw, sh, elapsed);
         }
@@ -457,7 +457,7 @@ public final class GSRRunHistoryPlayerChartRenderer {
                 }
             }
         }
-        var client = MinecraftClient.getInstance();
+        var client = Minecraft.getInstance();
         if (client != null && client.getSession() != null) {
             UUID sessionUuid = client.getSession().getUuidOrNull();
             if (sessionUuid != null) {
@@ -532,7 +532,7 @@ public final class GSRRunHistoryPlayerChartRenderer {
                 .thenAccept(resolvedUuid -> {
                     MOJANG_PENDING_NAMES.remove(name);
                     if (resolvedUuid != null) MOJANG_UUID_CACHE.put(name, resolvedUuid);
-                    var client = MinecraftClient.getInstance();
+                    var client = Minecraft.getInstance();
                     if (client != null && resolvedUuid != null) {
                         client.execute(() -> doSkinFetch(resolvedUuid, name));
                     }
@@ -544,7 +544,7 @@ public final class GSRRunHistoryPlayerChartRenderer {
         if (uuid == null) return;
         if (SKIN_CACHE.containsKey(uuid)) return;
         if (!FETCH_PENDING.add(uuid)) return;
-        var client = MinecraftClient.getInstance();
+        var client = Minecraft.getInstance();
         if (client == null || client.getSkinProvider() == null) {
             FETCH_PENDING.remove(uuid);
             return;
@@ -559,8 +559,8 @@ public final class GSRRunHistoryPlayerChartRenderer {
         });
     }
 
-    /** Returns cached SkinTextures for UUID, or null if not yet loaded. */
-    private static SkinTextures getCachedSkin(UUID uuid) {
+    /** Returns cached PlayerSkin for UUID, or null if not yet loaded. */
+    private static PlayerSkin getCachedSkin(UUID uuid) {
         return uuid != null ? SKIN_CACHE.get(uuid) : null;
     }
 
@@ -617,12 +617,12 @@ public final class GSRRunHistoryPlayerChartRenderer {
     }
 
     /** Draws text scaled to fit; scale &lt; 1 shrinks text. */
-    private static void drawScaledText(DrawContext context, TextRenderer textRenderer,
+    private static void drawScaledText(GuiGraphicsExtractor context, Font textRenderer,
                                        String text, int x, int y, float scale, int color) {
         if (scale >= 1f) {
             context.drawText(textRenderer, text, x, y, color, false);
         } else {
-            var matrices = context.getMatrices();
+            var matrices = context.pose();
             matrices.pushMatrix();
             matrices.translate(x, y);
             matrices.scale(scale, scale);
@@ -632,7 +632,7 @@ public final class GSRRunHistoryPlayerChartRenderer {
     }
 
     /** Truncates player name with ellipsis if it exceeds maxWidth. */
-    private static String truncatePlayerLabel(String name, int maxWidth, TextRenderer tr) {
+    private static String truncatePlayerLabel(String name, int maxWidth, Font tr) {
         if (name == null) return "?";
         int w = tr.getWidth(name);
         if (w <= maxWidth) return name;

@@ -1,6 +1,6 @@
 package net.berkle.groupspeedrun.config;
 
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 /**
  * HUD Visibility mode: Toggle (V to toggle) or Pressed (Tab to hold).

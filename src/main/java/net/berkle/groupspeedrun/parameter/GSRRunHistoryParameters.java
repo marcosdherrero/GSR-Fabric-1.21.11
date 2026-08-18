@@ -1,13 +1,13 @@
 package net.berkle.groupspeedrun.parameter;
 
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
 
 /**
  * Parameters for the Run History screen: layout, colors, and chart styling.
  * Used by {@link net.berkle.groupspeedrun.gui.GSRRunHistoryScreen}.
  *
  * <p><b>Text shadow standard:</b> Button-like text (on vanilla button texture) must use
- * {@code drawTextWithShadow} or {@code drawCenteredTextWithShadow} to match main menu styling.
+ * {@code drawTextWithShadow} or {@code centeredText} to match main menu styling.
  * Use {@link #TEXT_COLOR} for button text. Section labels and chart text may use
  * {@code drawText} without shadow.
  */
@@ -256,7 +256,7 @@ public final class GSRRunHistoryParameters {
     // --- Colors (all ARGB with 0xFF prefix) ---
     /** Label color (Runs, Filter, Compare). */
     public static final int LABEL_COLOR = 0xFFAAAAAA;
-    /** Default text color (white). Use with drawTextWithShadow/drawCenteredTextWithShadow for button-like text to match main menu. */
+    /** Default text color (white). Use with drawTextWithShadow/centeredText for button-like text to match main menu. */
     public static final int TEXT_COLOR = 0xFFFFFFFF;
     /** Empty state message ("Select a run"). */
     public static final int EMPTY_MESSAGE_COLOR = 0xFF888888;
@@ -346,7 +346,7 @@ public final class GSRRunHistoryParameters {
     /** Export CSV icon placeholder color when texture fails to load (ARGB). */
     public static final int EXPORT_CSV_ICON_PLACEHOLDER_COLOR = 0xFF202020;
     /** Export CSV left column: GUI atlas sprite identifier for gsr_icon (texture in minecraft:textures/gsr/). */
-    public static final Identifier EXPORT_CSV_ICON_SPRITE = Identifier.of("minecraft", "gsr/gsr_icon");
+    public static final Identifier EXPORT_CSV_ICON_SPRITE = Identifier.fromNamespaceAndPath("minecraft", "gsr/gsr_icon");
     /** Export CSV popup: margin around content (pixels). */
     public static final int EXPORT_POPUP_MARGIN = 4;
     /** Export CSV popup: title Y offset from panel top (pixels). */

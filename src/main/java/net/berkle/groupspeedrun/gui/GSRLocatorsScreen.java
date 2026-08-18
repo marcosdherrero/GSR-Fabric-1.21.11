@@ -4,13 +4,13 @@ package net.berkle.groupspeedrun.gui;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 // Minecraft: screen, GUI, input, items
 import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.input.KeyInput;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.util.Mth;
 // LWJGL: key codes
 import org.lwjgl.glfw.GLFW;
 
@@ -27,7 +27,7 @@ import net.berkle.groupspeedrun.parameter.GSRLocatorParameters;
 import net.berkle.groupspeedrun.parameter.GSRUiParameters;
 import net.berkle.groupspeedrun.util.GSRColorHelper;
 import net.berkle.groupspeedrun.util.GSRLocatorIconHelper;
-import net.minecraft.client.gl.RenderPipelines;
+import net.minecraft.client.renderer.RenderPipelines;
 
 /**
  * GSR Locators menu: Clear Locators plus ON/OFF toggles for Fortress, Bastion, Stronghold, Wings.
@@ -74,18 +74,18 @@ public class GSRLocatorsScreen extends Screen {
             int fullWidth = colWidth * 2 + COL_GAP;
             int y = contentY;
 
-            addDrawableChild(ButtonWidget.builder(GSRButtonParameters.literal(GSRButtonParameters.LOCATORS_CLEAR), b ->
+            addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.LOCATORS_CLEAR), b ->
                     ClientPlayNetworking.send(new GSRLocatorActionPayload(GSRLocatorActionPayload.ACTION_CLEAR)))
                     .dimensions(width / 2 - fullWidth / 2, y, fullWidth, BUTTON_HEIGHT).build());
         } else {
             int centerX = width / 2 - BUTTON_WIDTH / 2;
-            addDrawableChild(ButtonWidget.builder(GSRButtonParameters.literal(GSRButtonParameters.LOCATORS_CLEAR), b ->
+            addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.LOCATORS_CLEAR), b ->
                     ClientPlayNetworking.send(new GSRLocatorActionPayload(GSRLocatorActionPayload.ACTION_CLEAR)))
                     .dimensions(centerX, contentY, BUTTON_WIDTH, BUTTON_HEIGHT).build());
         }
 
         var footer = GSRMenuComponents.singleButtonFooterLayout(width, height);
-        addDrawableChild(GSRMenuComponents.button(GSRButtonParameters.FOOTER_BACK, this::goBack,
+        addRenderableWidget(GSRMenuComponents.button(GSRButtonParameters.FOOTER_BACK, this::goBack,
                 footer.buttonX(), footer.footerY(), footer.buttonWidth(), footer.buttonHeight()));
     }
 
@@ -125,10 +125,10 @@ public class GSRLocatorsScreen extends Screen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, width, height, GSRUiParameters.SCREEN_BG_DARK);
         super.render(context, mouseX, mouseY, delta);
-        context.drawCenteredTextWithShadow(textRenderer, getTitle(), width / 2, GSRUiParameters.TITLE_Y, GSRUiParameters.TITLE_COLOR);
+        context.centeredText(textRenderer, getTitle(), width / 2, GSRUiParameters.TITLE_Y, GSRUiParameters.TITLE_COLOR);
 
         GSRConfigWorld wc = GSRClient.clientWorldConfig;
         GSRConfigPlayer pc = GSRClient.PLAYER_CONFIG;
@@ -149,14 +149,14 @@ public class GSRLocatorsScreen extends Screen {
     }
 
     /** Draws one toggle row: label + ON/OFF with icon. */
-    private void gsr$drawToggleRow(DrawContext context, String label, boolean value, int left, int top, int width, int height, ItemStack icon, boolean hovered) {
+    private void gsr$drawToggleRow(GuiGraphicsExtractor context, String label, boolean value, int left, int top, int width, int height, ItemStack icon, boolean hovered) {
         int labelY = top + GSRRunHistoryParameters.LIST_VERTICAL_GAP;
         int labelX = left + GSRRunHistoryParameters.LIST_TEXT_INSET;
-        var matrices = context.getMatrices();
+        var matrices = context.pose();
         matrices.pushMatrix();
         matrices.translate(labelX, labelY);
         matrices.scale(LABEL_SCALE, LABEL_SCALE);
-        context.drawTextWithShadow(textRenderer, net.minecraft.text.Text.literal(label), 0, 0, GSRRunHistoryParameters.LABEL_COLOR);
+        context.drawTextWithShadow(textRenderer, net.minecraft.network.chat.Component.literal(label), 0, 0, GSRRunHistoryParameters.LABEL_COLOR);
         matrices.popMatrix();
 
         int barTop = top + (int) (GSRUiParameters.PREFERENCES_LABEL_AREA_HEIGHT * LABEL_SCALE) + GSRRunHistoryParameters.LIST_VERTICAL_GAP;
@@ -180,8 +180,8 @@ public class GSRLocatorsScreen extends Screen {
         int textColor = value ? TOGGLE_ON_COLOR : TOGGLE_OFF_COLOR;
         String display = value ? "ON" : "OFF";
         int textLeft = iconX + iconSize + iconMargin + GSRRunHistoryParameters.LIST_TEXT_INSET;
-        int textY = barTop + (barHeight - textRenderer.fontHeight) / 2;
-        context.drawTextWithShadow(textRenderer, net.minecraft.text.Text.literal(display), textLeft, textY, textColor);
+        int textY = barTop + (barHeight - textRenderer.lineHeight) / 2;
+        context.drawTextWithShadow(textRenderer, net.minecraft.network.chat.Component.literal(display), textLeft, textY, textColor);
     }
 
     /** True if turning on a locator would invalidate the run (active run + anti-cheat enabled, not already deranked). */
@@ -256,7 +256,7 @@ public class GSRLocatorsScreen extends Screen {
     }
 
     /** Draws the exact locator bar as in-game: same bar style with icons on the bar, equally spaced (as if in front of you). */
-    private void drawPreview(DrawContext context, GSRConfigWorld wc, GSRConfigPlayer pc) {
+    private void drawPreview(GuiGraphicsExtractor context, GSRConfigWorld wc, GSRConfigPlayer pc) {
         int centerX = width / 2;
         int halfW = PREVIEW_BAR_WIDTH / 2;
         int barLeft = centerX - halfW;
@@ -294,7 +294,7 @@ public class GSRLocatorsScreen extends Screen {
         drawPreviewIconOnBar(context, centerX + (int) (positions[3] * halfW), iconCenterY, GSRLocatorIconHelper.getItemStack(shipItem, Items.ELYTRA), pc.shipColor, shipActive, "Wings");
 
         if (wc.antiCheatEnabled && wc.locatorDeranked) {
-            context.drawCenteredTextWithShadow(textRenderer, GSRUiParameters.LOCATORS_DERANKED_MESSAGE, centerX, PREVIEW_Y - GSRUiParameters.LOCATORS_DERANKED_LABEL_OFFSET, GSRUiParameters.LOCATORS_DERANKED_COLOR);
+            context.centeredText(textRenderer, GSRUiParameters.LOCATORS_DERANKED_MESSAGE, centerX, PREVIEW_Y - GSRUiParameters.LOCATORS_DERANKED_LABEL_OFFSET, GSRUiParameters.LOCATORS_DERANKED_COLOR);
         }
     }
 
@@ -308,15 +308,15 @@ public class GSRLocatorsScreen extends Screen {
     private static boolean gsr$previewShipActive(GSRConfigWorld wc, GSRConfigPlayer pc) { return wc != null && pc != null && wc.shipLocated && pc.shipLocatorOn; }
 
     private static int previewGradientColor(int c1, int c2, float ratio) {
-        int a = (int) MathHelper.lerp(ratio, (c1 >> 24) & 0xFF, (c2 >> 24) & 0xFF);
-        int r = (int) MathHelper.lerp(ratio, (c1 >> 16) & 0xFF, (c2 >> 16) & 0xFF);
-        int g = (int) MathHelper.lerp(ratio, (c1 >> 8) & 0xFF, (c2 >> 8) & 0xFF);
-        int b = (int) MathHelper.lerp(ratio, c1 & 0xFF, c2 & 0xFF);
+        int a = (int) Mth.lerp(ratio, (c1 >> 24) & 0xFF, (c2 >> 24) & 0xFF);
+        int r = (int) Mth.lerp(ratio, (c1 >> 16) & 0xFF, (c2 >> 16) & 0xFF);
+        int g = (int) Mth.lerp(ratio, (c1 >> 8) & 0xFF, (c2 >> 8) & 0xFF);
+        int b = (int) Mth.lerp(ratio, c1 & 0xFF, c2 & 0xFF);
         return (a << 24) | (r << 16) | (g << 8) | b;
     }
 
     /** Draws one icon on the bar: theme color box (as if looking directly at), dark inner, centered item. Text uses structure color. */
-    private void drawPreviewIconOnBar(DrawContext context, int iconCenterX, int iconCenterY, ItemStack stack, int themeColor, boolean active, String label) {
+    private void drawPreviewIconOnBar(GuiGraphicsExtractor context, int iconCenterX, int iconCenterY, ItemStack stack, int themeColor, boolean active, String label) {
         int r = PREVIEW_ICON_RADIUS; // 9
         int inner = GSRLocatorParameters.ICON_INNER_RADIUS;
         // Preview: show theme color as if looking directly at location
@@ -325,11 +325,11 @@ public class GSRLocatorsScreen extends Screen {
         // Item centered: drawItem uses top-left, so (centerX - 8, centerY - 8) centers 16x16 item
         context.drawItem(stack, iconCenterX - inner, iconCenterY - inner);
         int textColor = active ? (0xFF000000 | (themeColor & 0x00FFFFFF)) : GSRUiParameters.LOCATORS_INACTIVE_LABEL;
-        context.drawCenteredTextWithShadow(textRenderer, label, iconCenterX, iconCenterY + r + 2, textColor);
+        context.centeredText(textRenderer, label, iconCenterX, iconCenterY + r + 2, textColor);
     }
 
     @Override
-    public boolean keyPressed(KeyInput keyInput) {
+    public boolean keyPressed(KeyEvent keyInput) {
         if (keyInput.key() == GLFW.GLFW_KEY_ESCAPE) {
             goBack();
             return true;

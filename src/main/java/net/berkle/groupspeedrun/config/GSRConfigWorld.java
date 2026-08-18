@@ -3,10 +3,10 @@ package net.berkle.groupspeedrun.config;
 import net.berkle.groupspeedrun.parameter.GSRWorldConfigParameters;
 import net.berkle.groupspeedrun.util.GSRJsonUtil;
 import net.berkle.groupspeedrun.util.GSRStoragePaths;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtString;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 import net.minecraft.server.MinecraftServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -182,7 +182,7 @@ public class GSRConfigWorld {
         }
     }
 
-    public void writeNbt(NbtCompound nbt) {
+    public void writeNbt(CompoundTag nbt) {
         nbt.putLong(GSRWorldConfigParameters.K_START_TIME, startTime);
         nbt.putBoolean(GSRWorldConfigParameters.K_IS_FROZEN, isTimerFrozen);
         nbt.putLong(GSRWorldConfigParameters.K_FROZEN_TIME, frozenTime);
@@ -230,15 +230,15 @@ public class GSRConfigWorld {
         writeUuidSet(nbt, GSRWorldConfigParameters.K_EXCLUDED_FROM_RUN, excludedFromRun);
     }
 
-    private static void writeUuidSet(NbtCompound nbt, String key, Set<UUID> set) {
-        NbtList list = new NbtList();
+    private static void writeUuidSet(CompoundTag nbt, String key, Set<UUID> set) {
+        ListTag list = new ListTag();
         for (UUID u : set) {
-            if (u != null) list.add(NbtString.of(u.toString()));
+            if (u != null) list.add(StringTag.of(u.toString()));
         }
         nbt.put(key, list);
     }
 
-    public void readNbt(NbtCompound nbt) {
+    public void readNbt(CompoundTag nbt) {
         if (nbt == null) return;
         readLong(nbt, GSRWorldConfigParameters.K_START_TIME, v -> this.startTime = v);
         nbt.getBoolean(GSRWorldConfigParameters.K_IS_FROZEN).ifPresent(v -> this.isTimerFrozen = v);
@@ -294,7 +294,7 @@ public class GSRConfigWorld {
     }
 
     /** Reads long from NBT; falls back to double for JSON round-trip (numbers stored as double). */
-    private static void readLong(NbtCompound nbt, String key, java.util.function.LongConsumer setter) {
+    private static void readLong(CompoundTag nbt, String key, java.util.function.LongConsumer setter) {
         var opt = nbt.getLong(key);
         if (opt.isPresent()) {
             setter.accept(opt.get());
@@ -303,13 +303,13 @@ public class GSRConfigWorld {
         nbt.getDouble(key).ifPresent(v -> setter.accept(v.longValue()));
     }
 
-    private static void readUuidSet(NbtCompound nbt, String key, Set<UUID> out) {
+    private static void readUuidSet(CompoundTag nbt, String key, Set<UUID> out) {
         out.clear();
-        NbtList list = nbt.getList(key).orElse(new NbtList());
+        ListTag list = nbt.getList(key).orElse(new ListTag());
         for (int i = 0; i < list.size(); i++) {
             try {
-                NbtElement el = list.get(i);
-                if (el instanceof net.minecraft.nbt.NbtString nbtStr) {
+                Tag el = list.get(i);
+                if (el instanceof net.minecraft.nbt.StringTag nbtStr) {
                     String s = nbtStr.asString().orElse("");
                     if (!s.isEmpty()) out.add(UUID.fromString(s));
                 }
@@ -322,7 +322,7 @@ public class GSRConfigWorld {
         Path nbtPath = worldDir.resolve(GSRWorldConfigParameters.NBT_FILE);
         try {
             Files.createDirectories(worldDir);
-            NbtCompound nbt = new NbtCompound();
+            CompoundTag nbt = new CompoundTag();
             writeNbt(nbt);
             GSRJsonUtil.writeNbtAsJson(nbtPath, nbt);
             LOGGER.debug("GSR: Saved world config to {} (startTime={})", nbtPath.toAbsolutePath(), startTime);
@@ -340,7 +340,7 @@ public class GSRConfigWorld {
         LOGGER.info("GSR: Loading world config from {} (exists={})", absoluteCanonical, Files.exists(canonicalPath));
         if (Files.exists(canonicalPath)) {
             try {
-                NbtCompound nbt = GSRJsonUtil.readNbtFromFile(canonicalPath);
+                CompoundTag nbt = GSRJsonUtil.readNbtFromFile(canonicalPath);
                 config.readNbt(nbt);
                 loaded = true;
                 LOGGER.info("GSR: Loaded world config from {} (startTime={}, frozen={})", canonicalPath, config.startTime, config.isTimerFrozen);
@@ -355,7 +355,7 @@ public class GSRConfigWorld {
                 Path path = worldDir.resolve(GSRWorldConfigParameters.NBT_FILE);
                 if (Files.exists(path)) {
                     try {
-                        NbtCompound nbt = GSRJsonUtil.readNbtFromFile(path);
+                        CompoundTag nbt = GSRJsonUtil.readNbtFromFile(path);
                         config.readNbt(nbt);
                         loaded = true;
                         migrateConfigToCanonicalPath(path, canonicalPath);

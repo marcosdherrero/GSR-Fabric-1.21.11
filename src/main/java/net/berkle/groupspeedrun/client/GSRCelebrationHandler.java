@@ -1,11 +1,11 @@
 package net.berkle.groupspeedrun.client;
 
 import net.berkle.groupspeedrun.parameter.GSRBroadcastParameters;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.math.random.Random;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.RandomSource;
 
 /**
  * Client-side handler for split and victory celebration feedback.
@@ -23,46 +23,46 @@ public final class GSRCelebrationHandler {
      * Call when a split is achieved.
      */
     public static void onSplitAchieved() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return;
         var player = client.player;
-        var world = client.world;
+        var world = client.level;
         if (player == null || world == null) return;
-        world.playSound(player, player.getX(), player.getY(), player.getZ(), SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1f, 1f);
+        world.playSound(player, player.getX(), player.getY(), player.getZ(), SoundEvents.ENTITY_PLAYER_LEVELUP, SoundSource.PLAYERS, 1f, 1f);
     }
 
     /**
      * Starts the victory celebration: plays sounds and spawns firework particles for 5 seconds.
      */
     public static void onVictoryCelebration() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return;
         var player = client.player;
-        var world = client.world;
+        var world = client.level;
         if (player == null || world == null) return;
 
         double px = player.getX(), py = player.getY(), pz = player.getZ();
-        world.playSound(player, px, py, pz, SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundCategory.MASTER, 1f, 1f);
-        world.playSound(player, px, py, pz, SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1f, 1f);
-        world.playSound(player, px, py, pz, SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 1f, 1f);
-        world.playSound(player, px, py, pz, SoundEvents.ENTITY_FIREWORK_ROCKET_BLAST, SoundCategory.AMBIENT, 1f, 1f);
-        world.playSound(player, px, py, pz, SoundEvents.ENTITY_FIREWORK_ROCKET_TWINKLE, SoundCategory.AMBIENT, 0.8f, 1f);
+        world.playSound(player, px, py, pz, SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.MASTER, 1f, 1f);
+        world.playSound(player, px, py, pz, SoundEvents.ENTITY_PLAYER_LEVELUP, SoundSource.PLAYERS, 1f, 1f);
+        world.playSound(player, px, py, pz, SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 1f, 1f);
+        world.playSound(player, px, py, pz, SoundEvents.ENTITY_FIREWORK_ROCKET_BLAST, SoundSource.AMBIENT, 1f, 1f);
+        world.playSound(player, px, py, pz, SoundEvents.ENTITY_FIREWORK_ROCKET_TWINKLE, SoundSource.AMBIENT, 0.8f, 1f);
 
-        victoryCelebrationEndTick = world.getTime() + GSRBroadcastParameters.VICTORY_CELEBRATION_TICKS;
+        victoryCelebrationEndTick = world.getGameTime() + GSRBroadcastParameters.VICTORY_CELEBRATION_TICKS;
     }
 
     /**
      * Called each client tick. Spawns firework particles during victory celebration.
      */
-    public static void tick(MinecraftClient client) {
+    public static void tick(Minecraft client) {
         if (client == null || victoryCelebrationEndTick < 0) return;
-        var world = client.world;
+        var world = client.level;
         if (world == null || client.player == null) return;
-        if (world.getTime() >= victoryCelebrationEndTick) {
+        if (world.getGameTime() >= victoryCelebrationEndTick) {
             victoryCelebrationEndTick = -1;
             return;
         }
-        if (world.getTime() % GSRBroadcastParameters.VICTORY_FIREWORK_INTERVAL_TICKS != 0) return;
+        if (world.getGameTime() % GSRBroadcastParameters.VICTORY_FIREWORK_INTERVAL_TICKS != 0) return;
 
         var players = world.getPlayers();
         if (players.isEmpty()) return;

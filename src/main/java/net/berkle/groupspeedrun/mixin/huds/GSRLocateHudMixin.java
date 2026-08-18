@@ -1,15 +1,15 @@
 package net.berkle.groupspeedrun.mixin.huds;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.hud.InGameHud;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.berkle.groupspeedrun.util.GSRLocatorIconHelper;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.world.World;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
 import net.berkle.groupspeedrun.GSRClient;
 import net.berkle.groupspeedrun.config.GSRConfigPlayer;
 import net.berkle.groupspeedrun.config.GSRConfigWorld;
@@ -24,15 +24,15 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(InGameHud.class)
+@Mixin(Gui.class)
 @SuppressWarnings("null")
 public class GSRLocateHudMixin {
 
-    /** Injects at end of InGameHud.render to draw GSR locator bar with structure icons. */
-    @Inject(method = "render", at = @At("TAIL"))
-    private void groupspeedrun$renderLocateHud(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null || client.options.hudHidden || client.world == null) return;
+    /** Injects at end of Gui.render to draw GSR locator bar with structure icons. */
+    @Inject(method = "extractRenderState", at = @At("TAIL"))
+    private void groupspeedrun$renderLocateHud(GuiGraphicsExtractor context, DeltaTracker tickCounter, CallbackInfo ci) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || client.options.hideGui || client.level == null) return;
 
         GSRConfigWorld config = GSRClient.clientWorldConfig;
         if (config == null || config.startTime <= 0) return;
@@ -41,12 +41,12 @@ public class GSRLocateHudMixin {
         if (pConfig == null) return;
 
         boolean isFinished = config.isVictorious || config.isFailed;
-        long currentTime = client.world.getTime();
+        long currentTime = client.level.getGameTime();
         long ticksSinceSplit = currentTime - config.lastSplitTime;
         float fadeAlpha = GSRAlphaUtil.getFadeAlpha(client, config, isFinished, ticksSinceSplit);
         if (fadeAlpha <= GSRHudParameters.ALPHA_CUTOFF) return;
 
-        RegistryKey<World> currentDim = client.world.getRegistryKey();
+        ResourceKey<World> currentDim = client.level.dimension();
         boolean showFortress = config.fortressLocated && pConfig.fortressLocatorOn && currentDim == World.NETHER;
         boolean showBastion = config.bastionLocated && pConfig.bastionLocatorOn && currentDim == World.NETHER;
         boolean showStronghold = config.strongholdLocated && pConfig.strongholdLocatorOn && currentDim == World.OVERWORLD;
@@ -64,21 +64,21 @@ public class GSRLocateHudMixin {
 
         if (!showFortress && !showBastion && !showStronghold && !showShip && !showFadeFortress && !showFadeBastion && !showFadeStronghold && !showFadeShip) return;
 
-        int centerX = context.getScaledWindowWidth() / 2;
-        int y = pConfig.locateHudOnTop ? GSRLocatorParameters.LOCATE_TOP_Y : context.getScaledWindowHeight() - GSRLocatorParameters.LOCATE_BOTTOM_OFFSET;
+        int centerX = context.guiWidth() / 2;
+        int y = pConfig.locateHudOnTop ? GSRLocatorParameters.LOCATE_TOP_Y : context.guiHeight() - GSRLocatorParameters.LOCATE_BOTTOM_OFFSET;
 
         if (pConfig.locateHudOnTop) {
-            var bossBarHud = client.inGameHud.getBossBarHud();
+            var bossBarHud = client.gui.getBossOverlay();
             var activeBars = ((GSRBossBarHudAccessor) bossBarHud).getBossBars();
             if (!activeBars.isEmpty()) {
                 y += activeBars.size() * GSRLocatorParameters.BOSS_BAR_ROW_HEIGHT;
             }
         }
 
-        context.getMatrices().pushMatrix();
-        context.getMatrices().translate(centerX, y);
-        context.getMatrices().scale(pConfig.locateScale, pConfig.locateScale);
-        context.getMatrices().translate(-centerX, -y);
+        context.pose().pushMatrix();
+        context.pose().translate(centerX, y);
+        context.pose().scale(pConfig.locateScale, pConfig.locateScale);
+        context.pose().translate(-centerX, -y);
 
         float barAlpha = (showFortress || showBastion || showStronghold || showShip) ? fadeAlpha : fadeAlpha * fadeOutAlpha;
         renderTrackingBar(context, pConfig, centerX, y, barAlpha);
@@ -94,11 +94,11 @@ public class GSRLocateHudMixin {
         if (showFadeStronghold) renderIcon(context, client, pConfig, centerX, y, config.strongholdX, config.strongholdZ, GSRLocatorIconHelper.getItemStack(pConfig.strongholdItem, Items.ENDER_EYE), pConfig.strongholdColor, iconFadeAlpha);
         if (showFadeShip) renderIcon(context, client, pConfig, centerX, y, config.shipX, config.shipZ, GSRLocatorIconHelper.getItemStack(pConfig.shipItem, Items.ELYTRA), pConfig.shipColor, iconFadeAlpha);
 
-        context.getMatrices().popMatrix();
+        context.pose().popMatrix();
     }
 
     @Unique
-    private void renderTrackingBar(DrawContext context, GSRConfigPlayer pConfig, int centerX, int y, float alpha) {
+    private void renderTrackingBar(GuiGraphicsExtractor context, GSRConfigPlayer pConfig, int centerX, int y, float alpha) {
         float scale = pConfig.locateScale;
         int halfW = (int) ((GSRLocatorParameters.DEFAULT_BAR_WIDTH / 2.0) * scale);
         int barH = Math.max(1, (int) (GSRLocatorParameters.DEFAULT_BAR_HEIGHT * scale));
@@ -120,7 +120,7 @@ public class GSRLocateHudMixin {
     }
 
     @Unique
-    private void renderIcon(DrawContext context, MinecraftClient client, GSRConfigPlayer pConfig, int centerX, int y, int tX, int tZ, ItemStack stack, int themeColor, float alpha) {
+    private void renderIcon(GuiGraphicsExtractor context, Minecraft client, GSRConfigPlayer pConfig, int centerX, int y, int tX, int tZ, ItemStack stack, int themeColor, float alpha) {
         float locateScale = pConfig.locateScale;
         float maxOff = ((GSRLocatorParameters.DEFAULT_BAR_WIDTH / 2.0f) * locateScale) - ((float) GSRLocatorParameters.ICON_MARGIN * locateScale);
         int halfW = (int) ((GSRLocatorParameters.DEFAULT_BAR_WIDTH / 2.0) * locateScale);
@@ -153,14 +153,14 @@ public class GSRLocateHudMixin {
             return;
         }
 
-        float xOff = -MathHelper.clamp(normalized, -1.0f, 1.0f) * maxOff;
+        float xOff = -Mth.clamp(normalized, -1.0f, 1.0f) * maxOff;
         float drawX = centerX + xOff;
         float drawY = barCenterY;
 
         // Gradual fade: when looking directly at structure, theme color at full opacity;
         // as you look away, theme fades and gray fill shows through until fully gray when 90° off
         float angleDeg = Math.abs(angle);
-        float themeAlpha = MathHelper.clamp(1.0f - angleDeg / GSRLocatorParameters.ICON_ANGLE_RANGE, 0.0f, 1.0f);
+        float themeAlpha = Mth.clamp(1.0f - angleDeg / GSRLocatorParameters.ICON_ANGLE_RANGE, 0.0f, 1.0f);
         float grayAlpha = 1.0f - themeAlpha;
         int r = GSRLocatorParameters.ICON_MARGIN;
         int inner = GSRLocatorParameters.ICON_INNER_RADIUS;
@@ -175,12 +175,12 @@ public class GSRLocateHudMixin {
             float range = farThreshold - GSRLocatorParameters.ICON_SCALE_NEAR_THRESHOLD;
             distFactor = (float) ((farThreshold - distance) / range);
         }
-        float rawScale = MathHelper.lerp(distFactor, pConfig.minIconScale, 1.0f) * locateScale;
+        float rawScale = Mth.lerp(distFactor, pConfig.minIconScale, 1.0f) * locateScale;
         float dynamicIconScale = Math.min(rawScale, GSRLocatorParameters.ICON_MAX_SCALE_FIT_BOX * locateScale);
 
-        context.getMatrices().pushMatrix();
-        context.getMatrices().translate(drawX, drawY);
-        context.getMatrices().scale(locateScale, locateScale);
+        context.pose().pushMatrix();
+        context.pose().translate(drawX, drawY);
+        context.pose().scale(locateScale, locateScale);
 
         // Outer box: theme color when looking at structure, gray when looking away
         int rgbTheme = themeColor & 0x00FFFFFF;
@@ -189,26 +189,26 @@ public class GSRLocateHudMixin {
         context.fill(-inner, -inner, inner, inner, GSRColorHelper.applyAlpha(GSRLocatorParameters.BAR_BG, 1.0f));
 
         // Item centered in inner box
-        context.getMatrices().scale(dynamicIconScale / locateScale, dynamicIconScale / locateScale);
+        context.pose().scale(dynamicIconScale / locateScale, dynamicIconScale / locateScale);
         context.drawItem(stack, -inner, -inner);
-        context.getMatrices().popMatrix();
+        context.pose().popMatrix();
     }
 
     /** Draws arrow (→/←) at bar edge pointing toward structure when off-screen. Left edge → ←; right edge → →. */
     @Unique
-    private void renderOffScreenArrow(DrawContext context, MinecraftClient client, int centerX, int centerY, boolean onLeftEdge, float scale, int color) {
+    private void renderOffScreenArrow(GuiGraphicsExtractor context, Minecraft client, int centerX, int centerY, boolean onLeftEdge, float scale, int color) {
         String arrow = onLeftEdge ? "\u2190" : "\u2192"; // ← when structure left, → when structure right
-        var tr = client.textRenderer;
-        int h = tr.fontHeight;
-        context.getMatrices().pushMatrix();
-        context.getMatrices().translate(centerX, centerY);
-        context.getMatrices().scale(scale, scale);
-        context.drawCenteredTextWithShadow(tr, arrow, 0, -h / 2, color);
-        context.getMatrices().popMatrix();
+        var tr = client.font;
+        int h = tr.lineHeight;
+        context.pose().pushMatrix();
+        context.pose().translate(centerX, centerY);
+        context.pose().scale(scale, scale);
+        context.centeredText(tr, arrow, 0, -h / 2, color);
+        context.pose().popMatrix();
     }
 
     @Unique
-    private void renderHorizontalGradient(DrawContext context, int x1, int y1, int x2, int y2, int colorStart, int colorEnd) {
+    private void renderHorizontalGradient(GuiGraphicsExtractor context, int x1, int y1, int x2, int y2, int colorStart, int colorEnd) {
         for (int i = x1; i < x2; i++) {
             float ratio = (float) (i - x1) / (x2 - x1);
             context.fill(i, y1, i + 1, y2, interpolateColor(colorStart, colorEnd, ratio));
@@ -217,10 +217,10 @@ public class GSRLocateHudMixin {
 
     @Unique
     private int interpolateColor(int color1, int color2, float ratio) {
-        int a = (int) MathHelper.lerp(ratio, (color1 >> 24) & 0xFF, (color2 >> 24) & 0xFF);
-        int r = (int) MathHelper.lerp(ratio, (color1 >> 16) & 0xFF, (color2 >> 16) & 0xFF);
-        int g = (int) MathHelper.lerp(ratio, (color1 >> 8) & 0xFF, (color2 >> 8) & 0xFF);
-        int b = (int) MathHelper.lerp(ratio, color1 & 0xFF, color2 & 0xFF);
+        int a = (int) Mth.lerp(ratio, (color1 >> 24) & 0xFF, (color2 >> 24) & 0xFF);
+        int r = (int) Mth.lerp(ratio, (color1 >> 16) & 0xFF, (color2 >> 16) & 0xFF);
+        int g = (int) Mth.lerp(ratio, (color1 >> 8) & 0xFF, (color2 >> 8) & 0xFF);
+        int b = (int) Mth.lerp(ratio, color1 & 0xFF, color2 & 0xFF);
         return (a << 24) | (r << 16) | (g << 8) | b;
     }
 }

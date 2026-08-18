@@ -1,7 +1,7 @@
 package net.berkle.groupspeedrun.config;
 
 import net.berkle.groupspeedrun.parameter.GSRHudParameters;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 /** Separator alpha options (0–1). Used for single-selection in GSR Preferences. */
 public enum GSRSeparatorAlphaOption {

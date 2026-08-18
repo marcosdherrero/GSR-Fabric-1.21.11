@@ -1,13 +1,13 @@
 package net.berkle.groupspeedrun.gui;
 
 // Minecraft screen and drawing
-import net.minecraft.client.gl.RenderPipelines;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.input.KeyInput;
-import net.minecraft.client.toast.SystemToast;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.gui.components.toasts.SystemToast;
+import net.minecraft.network.chat.Component;
 
 // GSR run loading and data
 import net.berkle.groupspeedrun.client.GSRSharedRunLoader;
@@ -173,9 +173,9 @@ public class GSRExportCsvScreen extends Screen {
     protected void init() {
         super.init();
         var footer = GSRMenuComponents.footerLayout(width, height, GSRRunHistoryParameters.RUN_HISTORY_FOOTER_Y_OFFSET);
-        addDrawableChild(GSRMenuComponents.button(GSRButtonParameters.FOOTER_BACK, this::cancel,
+        addRenderableWidget(GSRMenuComponents.button(GSRButtonParameters.FOOTER_BACK, this::cancel,
                 footer.leftX(), footer.footerY(), footer.buttonWidth(), footer.buttonHeight()));
-        addDrawableChild(GSRMenuComponents.button(GSRButtonParameters.EXPORT_CSV_EXPORT, this::doExport,
+        addRenderableWidget(GSRMenuComponents.button(GSRButtonParameters.EXPORT_CSV_EXPORT, this::doExport,
                 footer.rightX(), footer.footerY(), footer.buttonWidth(), footer.buttonHeight()));
         if (initialFilters != null) {
             model.allRuns = new ArrayList<>(initialFilters.allRuns);
@@ -284,10 +284,10 @@ public class GSRExportCsvScreen extends Screen {
     public static final int RUNS_PRESET_COUNT = 3;
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, width, height, GSRUiParameters.SCREEN_BG_DARK);
         super.render(context, mouseX, mouseY, delta);
-        context.drawCenteredTextWithShadow(textRenderer, getTitle(), width / 2, GSRRunHistoryParameters.RUN_HISTORY_TITLE_Y, GSRUiParameters.TITLE_COLOR);
+        context.centeredText(textRenderer, getTitle(), width / 2, GSRRunHistoryParameters.RUN_HISTORY_TITLE_Y, GSRUiParameters.TITLE_COLOR);
 
         boolean dropdownOpen = model.runsDropdownOpen || model.playerCountDropdownOpen || model.filterDropdownOpen;
         if (dropdownOpen) {
@@ -369,9 +369,9 @@ public class GSRExportCsvScreen extends Screen {
         int contentHeight = contentBottom - contentTop;
         List<GSRRunSaveState> runsToShow = getRunsForExportPreview();
         if (runsToShow.isEmpty()) {
-            context.drawCenteredTextWithShadow(textRenderer, "No runs to export",
+            context.centeredText(textRenderer, "No runs to export",
                     (contentLeft + contentRight) / 2,
-                    contentTop + contentHeight / 2 - textRenderer.fontHeight / 2,
+                    contentTop + contentHeight / 2 - textRenderer.lineHeight / 2,
                     GSRRunHistoryParameters.EMPTY_MESSAGE_COLOR);
         } else {
             String avgText = GSRStatusText.buildAverageRunInfo(runsToShow);
@@ -400,7 +400,7 @@ public class GSRExportCsvScreen extends Screen {
         return out;
     }
 
-    private void renderMakeSelectionButton(DrawContext context, int listLeft, int listWidth, int overlayBottom, int mouseX, int mouseY, boolean hasPendingChanges) {
+    private void renderMakeSelectionButton(GuiGraphicsExtractor context, int listLeft, int listWidth, int overlayBottom, int mouseX, int mouseY, boolean hasPendingChanges) {
         int selectionListBottom = overlayBottom - GSRRunHistoryParameters.SELECTION_CONTAINER_MARGIN
                 - GSRRunHistoryParameters.MAKE_SELECTION_CONTAINER_HEIGHT;
         int confirmButtonTop = selectionListBottom + GSRRunHistoryParameters.SELECTION_SCROLL_BEHIND_HEIGHT
@@ -423,8 +423,8 @@ public class GSRExportCsvScreen extends Screen {
             context.fill(confirmLeft + confirmWidth, confirmButtonTop, confirmLeft + confirmWidth + border, confirmButtonTop + GSRRunHistoryParameters.FILTER_MAKE_SELECTION_BUTTON_HEIGHT, glowColor);
         }
         int confirmCenterX = listLeft + listWidth / 2;
-        int confirmTextY = confirmButtonTop + (GSRRunHistoryParameters.FILTER_MAKE_SELECTION_BUTTON_HEIGHT - textRenderer.fontHeight) / 2;
-        context.drawCenteredTextWithShadow(textRenderer, GSRMultiSelectDropdown.CONFIRM_BUTTON_TEXT, confirmCenterX, confirmTextY, GSRRunHistoryParameters.TEXT_COLOR);
+        int confirmTextY = confirmButtonTop + (GSRRunHistoryParameters.FILTER_MAKE_SELECTION_BUTTON_HEIGHT - textRenderer.lineHeight) / 2;
+        context.centeredText(textRenderer, GSRMultiSelectDropdown.CONFIRM_BUTTON_TEXT, confirmCenterX, confirmTextY, GSRRunHistoryParameters.TEXT_COLOR);
     }
 
     /** True when pending player filter differs from confirmed. */
@@ -843,7 +843,7 @@ public class GSRExportCsvScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(KeyInput keyInput) {
+    public boolean keyPressed(KeyEvent keyInput) {
         if (keyInput.key() == GLFW.GLFW_KEY_ESCAPE) {
             cancel();
             return true;

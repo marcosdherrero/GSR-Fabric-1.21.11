@@ -4,8 +4,8 @@ import net.berkle.groupspeedrun.GSRMain;
 import net.berkle.groupspeedrun.config.GSRConfigWorld;
 import net.berkle.groupspeedrun.parameter.GSRUiParameters;
 import net.berkle.groupspeedrun.parameter.GSRSharedHealthParameters;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
 
 import java.util.Map;
 import java.util.UUID;
@@ -31,7 +31,7 @@ public final class GSRSharedHealthEatAllowance {
      * @param player Server player
      * @param exhaustion Amount added (from sprint, mine, jump, etc.)
      */
-    public static void recordExhaustion(ServerPlayerEntity player, float exhaustion) {
+    public static void recordExhaustion(ServerPlayer player, float exhaustion) {
         if (player == null || exhaustion <= 0) return;
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null || !config.sharedHealthEnabled || !config.isInSharedHealth(player.getUuid())) return;
@@ -45,7 +45,7 @@ public final class GSRSharedHealthEatAllowance {
      * @param player Server player
      * @param worldTick Current server tick
      */
-    public static void recordDamage(ServerPlayerEntity player, long worldTick) {
+    public static void recordDamage(ServerPlayer player, long worldTick) {
         if (player == null) return;
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null || !config.sharedHealthEnabled || !config.isInSharedHealth(player.getUuid())) return;
@@ -61,7 +61,7 @@ public final class GSRSharedHealthEatAllowance {
      * @param worldTick Current server tick
      * @return true if eating is allowed
      */
-    public static boolean canEat(ServerPlayerEntity player, int nutrition, long worldTick) {
+    public static boolean canEat(ServerPlayer player, int nutrition, long worldTick) {
         if (player == null || nutrition <= 0) return true;
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null || !config.sharedHealthEnabled || !config.isInSharedHealth(player.getUuid())) return true;
@@ -83,7 +83,7 @@ public final class GSRSharedHealthEatAllowance {
      * @param player Server player
      * @param nutrition Nutrition points consumed
      */
-    public static void deductAllowance(ServerPlayerEntity player, int nutrition) {
+    public static void deductAllowance(ServerPlayer player, int nutrition) {
         if (player == null || nutrition <= 0) return;
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null || !config.sharedHealthEnabled || !config.isInSharedHealth(player.getUuid())) return;
@@ -99,9 +99,9 @@ public final class GSRSharedHealthEatAllowance {
     /**
      * Sends the "need activity" message to the player. Call when eating is blocked.
      */
-    public static void sendNeedActivityMessage(ServerPlayerEntity player) {
+    public static void sendNeedActivityMessage(ServerPlayer player) {
         if (player != null) {
-            player.sendMessage(net.minecraft.text.Text.literal(GSRUiParameters.MSG_PREFIX + GSRSharedHealthParameters.MSG_NEED_ACTIVITY), false);
+            player.sendMessage(net.minecraft.network.chat.Component.literal(GSRUiParameters.MSG_PREFIX + GSRSharedHealthParameters.MSG_NEED_ACTIVITY), false);
         }
     }
 

@@ -1,7 +1,7 @@
 package net.berkle.groupspeedrun.config;
 
 import net.berkle.groupspeedrun.parameter.GSRHudParameters;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 /** HUD padding options (0–24 px). Used for single-selection in GSR Preferences. */
 public enum GSRHudPaddingOption {

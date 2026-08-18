@@ -1,6 +1,6 @@
 package net.berkle.groupspeedrun.util;
 
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import net.berkle.groupspeedrun.GSRClient;
 import net.berkle.groupspeedrun.config.GSRConfigWorld;
 import net.berkle.groupspeedrun.config.GSRConfigPlayer;
@@ -31,7 +31,7 @@ public final class GSRAlphaUtil {
         if (menuCloseFadeTicks > 0) menuCloseFadeTicks--;
     }
 
-    public static float getFadeAlpha(MinecraftClient client, GSRConfigWorld worldConfig, boolean isFinished, long ticksSinceSplit) {
+    public static float getFadeAlpha(Minecraft client, GSRConfigWorld worldConfig, boolean isFinished, long ticksSinceSplit) {
         GSRConfigPlayer playerConfig = GSRClient.PLAYER_CONFIG;
         if (playerConfig == null) return 0.0f;
 

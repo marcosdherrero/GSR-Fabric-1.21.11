@@ -10,10 +10,10 @@ import net.berkle.groupspeedrun.config.GSRStrongholdIconOption;
 import net.berkle.groupspeedrun.parameter.GSRLocatorParameters;
 import net.berkle.groupspeedrun.util.GSRColorHelper;
 import net.berkle.groupspeedrun.util.GSRLocatorIconHelper;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.item.Items;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.util.Mth;
 
 /**
  * Renders the locator bar preview in the Preferences screen "Locator HUD" category.
@@ -42,7 +42,7 @@ public final class GSRPreferencesPreviewRenderer {
      * @param barTop  Top Y of preview area
      * @param categoryHeaderHeight Height to fit preview within
      */
-    public static void drawLocatorPreview(DrawContext context, GSRPreferencesScreenModel model,
+    public static void drawLocatorPreview(GuiGraphicsExtractor context, GSRPreferencesScreenModel model,
             int barLeft, int barTop, int categoryHeaderHeight) {
         GSRConfigPlayer pc = GSRClient.PLAYER_CONFIG;
         float scale = pc.locateScale;
@@ -53,7 +53,7 @@ public final class GSRPreferencesPreviewRenderer {
         int inner = GSRLocatorParameters.ICON_INNER_RADIUS;
         float naturalHeight = GSRLocatorParameters.BAR_Y_OFFSET + barH + 1 + 2 * r * scale;
         float fitScale = Math.min(1f, categoryHeaderHeight / naturalHeight);
-        var matrices = context.getMatrices();
+        var matrices = context.pose();
         matrices.pushMatrix();
         matrices.translate(barLeft, barTop);
         matrices.scale(fitScale, fitScale);
@@ -86,7 +86,7 @@ public final class GSRPreferencesPreviewRenderer {
         };
         int[] colors = { previewColor(0, pc, model), previewColor(1, pc, model), previewColor(2, pc, model), previewColor(3, pc, model) };
         float maxOff = ((pc.barWidth / 2.0f) * scale) - ((float) r * scale);
-        float iconScale = MathHelper.lerp(0.5f, pc.minIconScale, pc.maxIconScale) * scale;
+        float iconScale = Mth.lerp(0.5f, pc.minIconScale, pc.maxIconScale) * scale;
         for (int i = 0; i < 4; i++) {
             float xOff = -positions[i] * maxOff;
             int iconX = centerX + (int) xOff;
@@ -132,9 +132,9 @@ public final class GSRPreferencesPreviewRenderer {
     }
 
     private static int lerpColor(int c1, int c2, float ratio) {
-        int r = (int) MathHelper.lerp(ratio, (c1 >> 16) & 0xFF, (c2 >> 16) & 0xFF);
-        int g = (int) MathHelper.lerp(ratio, (c1 >> 8) & 0xFF, (c2 >> 8) & 0xFF);
-        int b = (int) MathHelper.lerp(ratio, c1 & 0xFF, c2 & 0xFF);
+        int r = (int) Mth.lerp(ratio, (c1 >> 16) & 0xFF, (c2 >> 16) & 0xFF);
+        int g = (int) Mth.lerp(ratio, (c1 >> 8) & 0xFF, (c2 >> 8) & 0xFF);
+        int b = (int) Mth.lerp(ratio, c1 & 0xFF, c2 & 0xFF);
         return (r << 16) | (g << 8) | b;
     }
 }

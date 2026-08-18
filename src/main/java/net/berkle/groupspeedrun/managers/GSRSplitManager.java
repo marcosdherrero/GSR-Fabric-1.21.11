@@ -2,10 +2,10 @@ package net.berkle.groupspeedrun.managers;
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.world.World;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.Level;
 import net.berkle.groupspeedrun.GSRMain;
 import net.berkle.groupspeedrun.config.GSRConfigWorld;
 import net.berkle.groupspeedrun.data.GSRRunPlayerSnapshot;
@@ -31,10 +31,10 @@ public final class GSRSplitManager {
         if (config == null || config.startTime <= 0 || config.isTimerFrozen) return;
         if (config.isVictorious || config.isFailed) return;
 
-        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+        for (ServerPlayer player : server.getPlayerManager().getPlayerList()) {
             if (config.excludedFromRun.contains(player.getUuid())) continue;
-            ServerWorld world = (ServerWorld) player.getEntityWorld();
-            if (world.getRegistryKey() == World.NETHER) {
+            ServerLevel world = (ServerLevel) player.level();
+            if (world.dimension() == World.NETHER) {
                 if (config.timeNether <= 0) {
                     setNetherSplit(server);
                     return;
@@ -48,11 +48,11 @@ public final class GSRSplitManager {
                     return;
                 }
             }
-            if (world.getRegistryKey() == World.END && config.timeEnd <= 0) {
+            if (world.dimension() == World.END && config.timeEnd <= 0) {
                 setEndSplit(server);
                 return;
             }
-            if (world.getRegistryKey() == World.OVERWORLD && config.timeFirstOverworldReturnAfterNether <= 0
+            if (world.dimension() == World.OVERWORLD && config.timeFirstOverworldReturnAfterNether <= 0
                     && config.timeFortress > 0 && config.timeBastion > 0) {
                 setOverworldReturnAfterNether(server);
                 return;
@@ -72,7 +72,7 @@ public final class GSRSplitManager {
         var payload = new GSRSplitAchievedPayload(splitName, timeMs);
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config != null) {
-            for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
+            for (ServerPlayer p : server.getPlayerManager().getPlayerList()) {
                 if (!config.excludedFromRun.contains(p.getUuid())) {
                     ServerPlayNetworking.send(p, payload);
                 }
@@ -85,7 +85,7 @@ public final class GSRSplitManager {
         if (config == null || config.timeNether > 0) return;
         long elapsed = config.getElapsedTime();
         config.timeNether = elapsed;
-        config.lastSplitTime = server.getOverworld().getTime();
+        config.lastSplitTime = server.getOverworld().getGameTime();
         GSRMain.CONFIG.save(server);
         onSplitAchieved(server, "Nether", elapsed);
     }
@@ -95,7 +95,7 @@ public final class GSRSplitManager {
         if (config == null || config.timeEnd > 0) return;
         long elapsed = config.getElapsedTime();
         config.timeEnd = elapsed;
-        config.lastSplitTime = server.getOverworld().getTime();
+        config.lastSplitTime = server.getOverworld().getGameTime();
         GSRMain.CONFIG.save(server);
         onSplitAchieved(server, "End", elapsed);
     }
@@ -105,7 +105,7 @@ public final class GSRSplitManager {
         if (config == null || config.timeBastion > 0) return;
         long elapsed = config.getElapsedTime();
         config.timeBastion = elapsed;
-        config.lastSplitTime = server.getOverworld().getTime();
+        config.lastSplitTime = server.getOverworld().getGameTime();
         GSRMain.CONFIG.save(server);
         onSplitAchieved(server, "Bastion", elapsed);
     }
@@ -115,7 +115,7 @@ public final class GSRSplitManager {
         if (config == null || config.timeFortress > 0) return;
         long elapsed = config.getElapsedTime();
         config.timeFortress = elapsed;
-        config.lastSplitTime = server.getOverworld().getTime();
+        config.lastSplitTime = server.getOverworld().getGameTime();
         GSRMain.CONFIG.save(server);
         onSplitAchieved(server, "Fortress", elapsed);
     }
@@ -135,7 +135,7 @@ public final class GSRSplitManager {
         config.frozenTime = elapsed;
         config.runParticipantCount = (int) server.getPlayerManager().getPlayerList().stream()
                 .filter(p -> !config.excludedFromRun.contains(p.getUuid())).count();
-        config.lastSplitTime = server.getOverworld().getTime();
+        config.lastSplitTime = server.getOverworld().getGameTime();
         GSRMain.CONFIG.save(server);
         onSplitAchieved(server, "Dragon", elapsed);
         var state = GSRDataStore.recordCurrentRun(server);
@@ -149,7 +149,7 @@ public final class GSRSplitManager {
             }
             GSRBroadcastManager.broadcastRunEnd(server, state);
             var victoryPayload = new GSRVictoryCelebrationPayload();
-            for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
+            for (ServerPlayer p : server.getPlayerManager().getPlayerList()) {
                 if (!config.excludedFromRun.contains(p.getUuid())) {
                     ServerPlayNetworking.send(p, victoryPayload);
                 }

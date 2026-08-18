@@ -2,8 +2,8 @@ package net.berkle.groupspeedrun.managers;
 
 import net.berkle.groupspeedrun.config.GSRConfigWorld;
 import net.berkle.groupspeedrun.parameter.GSRLocatorParameters;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.CommandSourceStack;
 
 /**
  * Time gates and permission checks for locator toggles. Non-admin access depends on
@@ -17,8 +17,8 @@ public final class GSRLocatorGate {
     private GSRLocatorGate() {}
 
     /** True if the source has permission to bypass time gates (same as ADMINS_CHECK). */
-    public static boolean isAdmin(ServerCommandSource source) {
-        return source != null && CommandManager.ADMINS_CHECK.allows(source.getPermissions());
+    public static boolean isAdmin(CommandSourceStack source) {
+        return source != null && Commands.LEVEL_ADMINS.allows(source.getPermissions());
     }
 
     /**

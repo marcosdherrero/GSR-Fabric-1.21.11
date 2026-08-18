@@ -1,7 +1,7 @@
 package net.berkle.groupspeedrun.config;
 
 import net.berkle.groupspeedrun.parameter.GSRLocatorParameters;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 /** Icon scale options (0.2–3.0) for Min/Max icon scale. Used for single-selection in GSR Preferences. */
 public enum GSRIconScaleOption {

@@ -1,22 +1,22 @@
 package net.berkle.groupspeedrun.network;
 
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
 /**
  * S2C: Server notifies client that the run was victorious. Client plays victory sounds
  * and spawns firework particles around players for the celebration duration.
  */
-public record GSRVictoryCelebrationPayload() implements CustomPayload {
+public record GSRVictoryCelebrationPayload() implements CustomPacketPayload {
 
-    public static final Id<GSRVictoryCelebrationPayload> ID = new Id<>(Identifier.of("gsr", "victory_celebration"));
+    public static final Type<GSRVictoryCelebrationPayload> ID = new Type<>(Identifier.fromNamespaceAndPath("gsr", "victory_celebration"));
 
-    public static final PacketCodec<PacketByteBuf, GSRVictoryCelebrationPayload> CODEC = PacketCodec.unit(new GSRVictoryCelebrationPayload());
+    public static final StreamCodec<RegistryFriendlyByteBuf, GSRVictoryCelebrationPayload> CODEC = StreamCodec.unit(new GSRVictoryCelebrationPayload());
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

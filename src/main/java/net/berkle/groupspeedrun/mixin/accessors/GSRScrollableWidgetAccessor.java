@@ -1,12 +1,12 @@
 package net.berkle.groupspeedrun.mixin.accessors;
 
-import net.minecraft.util.Identifier;
-import net.minecraft.client.gui.widget.ScrollableWidget;
+import net.minecraft.resources.Identifier;
+import net.minecraft.client.gui.components.AbstractScrollArea;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
 /** Exposes scrollbar textures and width so GSR can draw keybinds-style scrollbars. */
-@Mixin(ScrollableWidget.class)
+@Mixin(AbstractScrollArea.class)
 public interface GSRScrollableWidgetAccessor {
     @Accessor("SCROLLER_TEXTURE")
     static Identifier gsr$getScrollerTexture() {

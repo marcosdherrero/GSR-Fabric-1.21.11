@@ -1,10 +1,10 @@
 package net.berkle.groupspeedrun.util;
 
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 
 /**
  * Resolves locator icon items from registry ID strings. Used by the locator HUD and preview.
@@ -22,8 +22,8 @@ public final class GSRLocatorIconHelper {
         try {
             String s = registryId.trim();
             String[] parts = s.split(":", 2);
-            Identifier id = parts.length == 2 ? Identifier.of(parts[0], parts[1]) : Identifier.of("minecraft", s);
-            Item item = Registries.ITEM.get(id);
+            Identifier id = parts.length == 2 ? Identifier.fromNamespaceAndPath(parts[0], parts[1]) : Identifier.fromNamespaceAndPath("minecraft", s);
+            Item item = BuiltInRegistries.ITEM.get(id);
             if (item != null && item != Items.AIR) return new ItemStack(item);
         } catch (Exception ignored) {}
         return new ItemStack(defaultItem);

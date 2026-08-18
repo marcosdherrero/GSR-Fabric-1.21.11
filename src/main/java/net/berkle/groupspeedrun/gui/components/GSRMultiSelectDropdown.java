@@ -4,12 +4,12 @@ import net.berkle.groupspeedrun.gui.GSRTickerState;
 import net.berkle.groupspeedrun.mixin.accessors.GSRPressableWidgetAccessor;
 import net.berkle.groupspeedrun.parameter.GSRRunHistoryParameters;
 import net.berkle.groupspeedrun.util.GSRScrollbarHelper;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.OrderedText;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.network.chat.Component;
 
 import java.util.List;
 import java.util.Set;
@@ -48,13 +48,13 @@ public final class GSRMultiSelectDropdown<M> {
     }
 
     /** Renders the trigger bar. */
-    public void renderTrigger(M model, DrawContext context, TextRenderer textRenderer,
+    public void renderTrigger(M model, GuiGraphicsExtractor context, Font textRenderer,
                               GSRTickerState tickerState, int sectionLeft, int sectionTop, int barTop,
                               int barWidth, int barHeight, float labelScale, boolean isOpen, boolean hovered) {
         if (label == null || behavior == null) return;
         int labelX = sectionLeft + GSRRunHistoryParameters.LIST_TEXT_INSET;
         int labelY = sectionTop + GSRRunHistoryParameters.LIST_VERTICAL_GAP;
-        var matrices = context.getMatrices();
+        var matrices = context.pose();
         matrices.pushMatrix();
         matrices.translate(labelX, labelY);
         matrices.scale(labelScale, labelScale);
@@ -97,12 +97,12 @@ public final class GSRMultiSelectDropdown<M> {
     }
 
     /** Draws an item with margin and scale inside the given bounds. When tint is non-null, draws a color mask overlay. */
-    private static void drawScaledItem(DrawContext context, ItemStack stack, int x, int y, int size, int margin,
+    private static void drawScaledItem(GuiGraphicsExtractor context, ItemStack stack, int x, int y, int size, int margin,
                                        Integer tint) {
         int inner = size - 2 * margin;
         if (inner <= 0) return;
         float scale = inner / 16f;
-        var matrices = context.getMatrices();
+        var matrices = context.pose();
         matrices.pushMatrix();
         matrices.translate(x + margin, y + margin);
         matrices.scale(scale, scale);
@@ -130,7 +130,7 @@ public final class GSRMultiSelectDropdown<M> {
         return multiSelect ? n + 2 : n;
     }
 
-    public void renderOverlay(M model, DrawContext context, TextRenderer textRenderer,
+    public void renderOverlay(M model, GuiGraphicsExtractor context, Font textRenderer,
                               GSRTickerState tickerState, int listLeft, int listTop, int listBottom, int listWidth,
                               int scroll, int mouseX, int mouseY) {
         renderOverlay(model, context, textRenderer, tickerState, listLeft, listTop, listBottom, listWidth, scroll, mouseX, mouseY, listLeft + listWidth);
@@ -140,7 +140,7 @@ public final class GSRMultiSelectDropdown<M> {
      * Renders overlay with optional scrollbar position. When scrollbarX >= 0, draws scrollbar outside
      * the list (at scrollbarX) instead of inside; content uses full listWidth. Pass -1 for inside scrollbar.
      */
-    public void renderOverlay(M model, DrawContext context, TextRenderer textRenderer,
+    public void renderOverlay(M model, GuiGraphicsExtractor context, Font textRenderer,
                               GSRTickerState tickerState, int listLeft, int listTop, int listBottom, int listWidth,
                               int scroll, int mouseX, int mouseY, int scrollbarX) {
         if (behavior == null) return;
@@ -150,14 +150,14 @@ public final class GSRMultiSelectDropdown<M> {
                 items, selectedIndices, scroll, mouseX, mouseY, scrollbarX);
     }
 
-    private void drawTriggerLabel(DrawContext context, TextRenderer textRenderer, GSRTickerState tickerState,
+    private void drawTriggerLabel(GuiGraphicsExtractor context, Font textRenderer, GSRTickerState tickerState,
                                   int textLeft, int barTop, int barRight, int barBottom, String labelText,
                                   float scale, boolean hoveredOrOpen, long selectionTimeMs, int textColor) {
         drawTriggerLabel(context, textRenderer, tickerState, textLeft, barTop, barRight, barBottom,
                 labelText, null, scale, hoveredOrOpen, selectionTimeMs, textColor, textColor);
     }
 
-    private void drawTriggerLabel(DrawContext context, TextRenderer textRenderer, GSRTickerState tickerState,
+    private void drawTriggerLabel(GuiGraphicsExtractor context, Font textRenderer, GSRTickerState tickerState,
                                   int textLeft, int barTop, int barRight, int barBottom, String prefix, String suffix,
                                   float scale, boolean hoveredOrOpen, long selectionTimeMs, int prefixColor, int suffixColor) {
         String labelText = suffix != null ? prefix + suffix : prefix;
@@ -167,11 +167,11 @@ public final class GSRMultiSelectDropdown<M> {
         int innerRight = barRight - margin;
         int maxWidth = Math.max(1, (int) ((barWidth - margin) / scale));
         int textWidth = textRenderer.getWidth(labelText);
-        int scaledFontHeight = (int) (textRenderer.fontHeight * scale);
+        int scaledFontHeight = (int) (textRenderer.lineHeight * scale);
         int textY = barTop + (barBottom - barTop - scaledFontHeight) / 2;
 
         context.enableScissor(innerLeft, barTop, innerRight, barBottom);
-        var matrices = context.getMatrices();
+        var matrices = context.pose();
         matrices.pushMatrix();
         matrices.translate(textLeft, textY);
         matrices.scale(scale, scale);
@@ -199,7 +199,7 @@ public final class GSRMultiSelectDropdown<M> {
         context.disableScissor();
     }
 
-    private static String truncateWithPeriod(TextRenderer textRenderer, String text, int maxWidth) {
+    private static String truncateWithPeriod(Font textRenderer, String text, int maxWidth) {
         if (textRenderer.getWidth(text) <= maxWidth) return text;
         int periodWidth = textRenderer.getWidth(".");
         int availableWidth = maxWidth - periodWidth;
@@ -210,7 +210,7 @@ public final class GSRMultiSelectDropdown<M> {
         return ".";
     }
 
-    private void render(M model, DrawContext context, TextRenderer textRenderer, GSRTickerState tickerState,
+    private void render(M model, GuiGraphicsExtractor context, Font textRenderer, GSRTickerState tickerState,
                         int listLeft, int listTop, int listBottom, int listWidth,
                         List<String> items, Set<Integer> selectedIndices, int scroll,
                         int mouseX, int mouseY, int scrollbarX) {
@@ -289,17 +289,17 @@ public final class GSRMultiSelectDropdown<M> {
         }
     }
 
-    private int drawHeader(DrawContext context, TextRenderer textRenderer, String text, int left, int top, int maxWidth) {
-        List<OrderedText> lines = textRenderer.wrapLines(Text.literal(text), Math.max(1, maxWidth));
+    private int drawHeader(GuiGraphicsExtractor context, Font textRenderer, String text, int left, int top, int maxWidth) {
+        List<FormattedCharSequence> lines = textRenderer.wrapLines(Text.literal(text), Math.max(1, maxWidth));
         int y = top;
-        for (OrderedText line : lines) {
+        for (FormattedCharSequence line : lines) {
             context.drawText(textRenderer, line, left, y, GSRRunHistoryParameters.LABEL_COLOR, false);
-            y += textRenderer.fontHeight;
+            y += textRenderer.lineHeight;
         }
-        return lines.size() * textRenderer.fontHeight;
+        return lines.size() * textRenderer.lineHeight;
     }
 
-    private void drawItemLabel(DrawContext context, TextRenderer textRenderer, GSRTickerState tickerState, String tickerKey,
+    private void drawItemLabel(GuiGraphicsExtractor context, Font textRenderer, GSRTickerState tickerState, String tickerKey,
                               String fullLabel, int itemLeft, int itemRight, int rowTop, int rowBottom, int color, boolean hovered) {
         int itemWidth = itemRight - itemLeft;
         int margin = GSRRunHistoryParameters.BUTTON_TICKER_MARGIN;
@@ -312,7 +312,7 @@ public final class GSRMultiSelectDropdown<M> {
 
         context.enableScissor(innerLeft, rowTop, innerRight, rowBottom);
         if (textWidth > maxWidth) {
-            int textY = rowTop + (rowHeight - textRenderer.fontHeight) / 2;
+            int textY = rowTop + (rowHeight - textRenderer.lineHeight) / 2;
             if (hovered) {
                 String loopingLabel = fullLabel + "    " + fullLabel;
                 int loopWidth = textRenderer.getWidth(loopingLabel);
@@ -325,14 +325,14 @@ public final class GSRMultiSelectDropdown<M> {
                 context.drawTextWithShadow(textRenderer, Text.literal(truncated), textLeft, textY, color);
             }
         } else {
-            List<OrderedText> lines = textRenderer.wrapLines(Text.literal(fullLabel), maxWidth);
+            List<FormattedCharSequence> lines = textRenderer.wrapLines(Text.literal(fullLabel), maxWidth);
             if (!lines.isEmpty()) {
-                int maxLines = Math.max(1, (rowHeight - GSRRunHistoryParameters.LIST_VERTICAL_GAP) / textRenderer.fontHeight);
+                int maxLines = Math.max(1, (rowHeight - GSRRunHistoryParameters.LIST_VERTICAL_GAP) / textRenderer.lineHeight);
                 int linesToDraw = Math.min(lines.size(), maxLines);
-                int totalHeight = linesToDraw * textRenderer.fontHeight;
+                int totalHeight = linesToDraw * textRenderer.lineHeight;
                 int startY = rowTop + (rowHeight - totalHeight) / 2;
                 for (int i = 0; i < linesToDraw; i++) {
-                    context.drawTextWithShadow(textRenderer, lines.get(i), textLeft, startY + i * textRenderer.fontHeight, color);
+                    context.drawTextWithShadow(textRenderer, lines.get(i), textLeft, startY + i * textRenderer.lineHeight, color);
                 }
             }
         }
@@ -354,9 +354,9 @@ public final class GSRMultiSelectDropdown<M> {
         }
     }
 
-    public static DropdownGeometry computeGeometry(TextRenderer textRenderer, String header, int listLeft, int listTop, int listBottom, int listWidth, int itemCount) {
+    public static DropdownGeometry computeGeometry(Font textRenderer, String header, int listLeft, int listTop, int listBottom, int listWidth, int itemCount) {
         int ddHeaderMaxWidth = listWidth - 2 * GSRRunHistoryParameters.LIST_TEXT_INSET;
-        int headerHeight = textRenderer.wrapLines(Text.literal(header), Math.max(1, ddHeaderMaxWidth)).size() * textRenderer.fontHeight;
+        int headerHeight = textRenderer.wrapLines(Text.literal(header), Math.max(1, ddHeaderMaxWidth)).size() * textRenderer.lineHeight;
         int overlayListTop = listTop + GSRRunHistoryParameters.LIST_VERTICAL_GAP + headerHeight + GSRRunHistoryParameters.LIST_VERTICAL_GAP;
         int listAreaBottom = listBottom;
         int confirmButtonTop = listBottom + GSRRunHistoryParameters.SELECTION_DELIMITER_BUTTON_GAP;

@@ -9,9 +9,9 @@ import net.berkle.groupspeedrun.mixin.accessors.GSRPressableWidgetAccessor;
 import net.berkle.groupspeedrun.parameter.GSRRunHistoryParameters;
 import net.berkle.groupspeedrun.parameter.GSRUiParameters;
 import net.berkle.groupspeedrun.util.GSRColorHelper;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -237,7 +237,7 @@ public final class GSRRunHistoryLeftColumn {
      * @param mouseX       Mouse X.
      * @param mouseY       Mouse Y.
      */
-    public void render(GSRRunHistoryScreenModel model, DrawContext context, TextRenderer textRenderer,
+    public void render(GSRRunHistoryScreenModel model, GuiGraphicsExtractor context, Font textRenderer,
                       GSRTickerState tickerState, GSRRunHistoryLayout.TwoColumnBounds bounds, int mouseX, int mouseY) {
         int overlayLeft = bounds.overlayLeft();
         int overlayWidth = bounds.overlayWidth();
@@ -296,8 +296,8 @@ public final class GSRRunHistoryLeftColumn {
                 context.fill(confirmLeft + confirmWidth, confirmButtonTop, confirmLeft + confirmWidth + border, confirmButtonTop + GSRRunHistoryParameters.FILTER_MAKE_SELECTION_BUTTON_HEIGHT, glowColor);
             }
             int confirmCenterX = overlayLeft + overlayWidth / 2;
-            int confirmTextY = confirmButtonTop + (GSRRunHistoryParameters.FILTER_MAKE_SELECTION_BUTTON_HEIGHT - textRenderer.fontHeight) / 2;
-            context.drawCenteredTextWithShadow(textRenderer, GSRMultiSelectDropdown.CONFIRM_BUTTON_TEXT, confirmCenterX, confirmTextY, GSRRunHistoryParameters.TEXT_COLOR);
+            int confirmTextY = confirmButtonTop + (GSRRunHistoryParameters.FILTER_MAKE_SELECTION_BUTTON_HEIGHT - textRenderer.lineHeight) / 2;
+            context.centeredText(textRenderer, GSRMultiSelectDropdown.CONFIRM_BUTTON_TEXT, confirmCenterX, confirmTextY, GSRRunHistoryParameters.TEXT_COLOR);
         } else {
             context.fill(bounds.leftPanelLeft(), bounds.leftPanelTop(), bounds.leftPanelLeft() + bounds.leftPanelWidth(), bounds.leftPanelBottom(), GSRUiParameters.CONTENT_BOX_BG);
             int[] st = bounds.sectionTops();

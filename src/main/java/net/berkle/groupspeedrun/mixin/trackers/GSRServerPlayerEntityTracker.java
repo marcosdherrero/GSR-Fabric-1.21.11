@@ -1,11 +1,11 @@
 package net.berkle.groupspeedrun.mixin.trackers;
 
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.screen.ScreenHandler;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
 import net.berkle.groupspeedrun.GSREvents;
 import net.berkle.groupspeedrun.GSRMain;
 import net.berkle.groupspeedrun.GSRStats;
@@ -21,27 +21,27 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * Tracks distance moved per player when run is active. Auto-starts the timer on first movement when armed (startTime == -1).
  * Delegates auto-start/resume logic to {@link GSRMovementAutoStartListener}.
  */
-@Mixin(ServerPlayerEntity.class)
+@Mixin(ServerPlayer.class)
 public abstract class GSRServerPlayerEntityTracker {
 
     @Unique private double gsrPrevX, gsrPrevY, gsrPrevZ;
     @Unique private boolean gsrInitialized = false;
-    /** True only when baseline was set while player was in ServerWorld (avoids false trigger on spawn/teleport). */
+    /** True only when baseline was set while player was in ServerLevel (avoids false trigger on spawn/teleport). */
     @Unique private boolean gsrBaselineFromServerWorld = false;
-    /** Ticks spent in ServerWorld while armed; need warmup before movement can trigger auto-start. */
+    /** Ticks spent in ServerLevel while armed; need warmup before movement can trigger auto-start. */
     @Unique private int gsrArmedTicksInWorld = 0;
 
     /** Injects at end of tick to track distance moved, auto-start timer, or resume when frozen. */
     @Inject(method = "tick", at = @At("TAIL"))
     private void groupspeedrun$onTick(CallbackInfo ci) {
-        ServerPlayerEntity player = (ServerPlayerEntity) (Object) this;
+        ServerPlayer player = (ServerPlayer) (Object) this;
         if (!GSRMovementAutoStartListener.isInServerWorld(player)) {
             gsrBaselineFromServerWorld = false;
             gsrArmedTicksInWorld = 0;
             updateCache(player.getX(), player.getY(), player.getZ());
             return;
         }
-        ServerWorld sw = (ServerWorld) player.getEntityWorld();
+        ServerLevel sw = (ServerLevel) player.level();
         MinecraftServer server = sw.getServer();
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null || config.isVictorious || config.isFailed) {
@@ -60,17 +60,17 @@ public abstract class GSRServerPlayerEntityTracker {
         updateCacheInServerWorld(x, y, z);
 
         if (config.startTime > 0 && !config.isVictorious && !config.isFailed && !config.isTimerFrozen) {
-            ScreenHandler sh = player.currentScreenHandler;
+            AbstractContainerMenu sh = player.currentScreenHandler;
             if (sh != player.playerScreenHandler && sh != null) {
                 try {
-                    var id = sw.getRegistryManager().getOrThrow(RegistryKeys.SCREEN_HANDLER).getId(sh.getType());
+                    var id = sw.getRegistryManager().getOrThrow(Registries.SCREEN_HANDLER).getId(sh.getType());
                     if (id != null) GSRStats.addScreenTime(player.getUuid(), id.toString());
                 } catch (Exception ignored) {}
             }
         }
     }
 
-    /** Updates position cache and marks baseline as valid (we are in ServerWorld). */
+    /** Updates position cache and marks baseline as valid (we are in ServerLevel). */
     @Unique
     private void updateCacheInServerWorld(double x, double y, double z) {
         gsrPrevX = x;
@@ -81,10 +81,10 @@ public abstract class GSRServerPlayerEntityTracker {
     }
 
     /** Injects at head of onDeath to trigger GSR run death handling. */
-    @Inject(method = "onDeath", at = @At("HEAD"))
+    @Inject(method = "die", at = @At("HEAD"))
     private void groupspeedrun$onDeath(DamageSource damageSource, CallbackInfo ci) {
-        ServerPlayerEntity player = (ServerPlayerEntity) (Object) this;
-        if (player.getEntityWorld() instanceof ServerWorld sw) {
+        ServerPlayer player = (ServerPlayer) (Object) this;
+        if (player.level() instanceof ServerLevel sw) {
             MinecraftServer server = sw.getServer();
             if (server != null) GSREvents.handlePlayerDeath(player, server);
         }

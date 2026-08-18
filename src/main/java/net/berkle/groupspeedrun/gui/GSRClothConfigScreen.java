@@ -30,10 +30,10 @@ import net.berkle.groupspeedrun.config.GSRStrongholdIconOption;
 import net.berkle.groupspeedrun.parameter.GSRKeyBindingParameters;
 import net.berkle.groupspeedrun.parameter.GSRLocatorParameters;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 
 import java.util.Arrays;
 
@@ -53,7 +53,7 @@ public final class GSRClothConfigScreen {
                 .setSavingRunnable(() -> {
                     config.clampAll();
                     int prevVisibility = GSRClient.PLAYER_CONFIG.hudVisibility;
-                    NbtCompound nbt = new NbtCompound();
+                    CompoundTag nbt = new CompoundTag();
                     config.writeNbt(nbt);
                     GSRClient.PLAYER_CONFIG.readNbt(nbt);
                     if (config.hudVisibility == GSRConfigPlayer.VISIBILITY_TOGGLE
@@ -61,7 +61,7 @@ public final class GSRClothConfigScreen {
                         GSRClient.setHudToggledVisible(true);
                     }
                     GSRClient.setPreviousHudVisibility(config.hudVisibility);
-                    if (MinecraftClient.getInstance().player != null) {
+                    if (Minecraft.getInstance().player != null) {
                         ClientPlayNetworking.send(new GSRConfigPayload(nbt));
                     }
                 });
@@ -208,7 +208,7 @@ public final class GSRClothConfigScreen {
                 .setTooltip(Text.literal("When ON (host only): using locators invalidates the run for ranking. When OFF: locator use does not invalidate. Only the host's setting applies; other players' settings are ignored."))
                 .setSaveConsumer(v -> {
                     GSRClient.clientWorldConfig.antiCheatEnabled = v;
-                    if (MinecraftClient.getInstance().player != null) {
+                    if (Minecraft.getInstance().player != null) {
                         ClientPlayNetworking.send(new GSRWorldConfigPayload(GSRWorldConfigPayload.fromConfig()));
                     }
                 })
@@ -218,7 +218,7 @@ public final class GSRClothConfigScreen {
                 .setTooltip(Text.literal("When ON (default): run auto-starts on first movement or block break. When OFF: admin must press Start Run to begin."))
                 .setSaveConsumer(v -> {
                     GSRClient.clientWorldConfig.autoStartEnabled = v;
-                    if (MinecraftClient.getInstance().player != null) {
+                    if (Minecraft.getInstance().player != null) {
                         ClientPlayNetworking.send(new GSRWorldConfigPayload(GSRWorldConfigPayload.fromConfig()));
                     }
                 })
@@ -228,7 +228,7 @@ public final class GSRClothConfigScreen {
                         e -> ((GSRLocatorNonAdminMode) e).getDisplayName(),
                         v -> {
                             GSRClient.clientWorldConfig.locatorNonAdminMode = ((GSRLocatorNonAdminMode) v).getValue();
-                            if (MinecraftClient.getInstance().player != null) {
+                            if (Minecraft.getInstance().player != null) {
                                 ClientPlayNetworking.send(new GSRWorldConfigPayload(GSRWorldConfigPayload.fromConfig()));
                             }
                         })

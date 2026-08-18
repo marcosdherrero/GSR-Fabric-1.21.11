@@ -1,10 +1,10 @@
 package net.berkle.groupspeedrun.util;
 
 import net.berkle.groupspeedrun.parameter.GSRUiParameters;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.OrderedText;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.network.chat.Component;
 
 /**
  * Minecraft § (section sign) color code parsing. Shared by Status screen and Run History.
@@ -37,7 +37,7 @@ public final class GSRSectionCodeUtil {
     }
 
     /** Draw one line, parsing § color codes and drawing each segment with the correct color. */
-    public static void drawLineWithSectionColors(DrawContext context, TextRenderer textRenderer, String line, int x, int y) {
+    public static void drawLineWithSectionColors(GuiGraphicsExtractor context, Font textRenderer, String line, int x, int y) {
         int defaultColor = GSRUiParameters.STATUS_DEFAULT_TEXT_COLOR;
         int currentColor = defaultColor;
         StringBuilder segment = new StringBuilder();
@@ -45,7 +45,7 @@ public final class GSRSectionCodeUtil {
             char c = line.charAt(i);
             if (c == '§' && i + 1 < line.length()) {
                 if (segment.length() > 0) {
-                    OrderedText ordered = Text.literal(segment.toString()).asOrderedText();
+                    FormattedCharSequence ordered = Text.literal(segment.toString()).asOrderedText();
                     context.drawTextWithShadow(textRenderer, ordered, x, y, currentColor);
                     x += textRenderer.getWidth(ordered);
                     segment.setLength(0);
@@ -57,7 +57,7 @@ public final class GSRSectionCodeUtil {
             segment.append(c);
         }
         if (segment.length() > 0) {
-            OrderedText ordered = Text.literal(segment.toString()).asOrderedText();
+            FormattedCharSequence ordered = Text.literal(segment.toString()).asOrderedText();
             context.drawTextWithShadow(textRenderer, ordered, x, y, currentColor);
         }
     }

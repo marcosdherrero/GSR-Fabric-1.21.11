@@ -1,9 +1,9 @@
 package net.berkle.groupspeedrun.server;
 
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtString;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 
 import java.util.Set;
 import java.util.UUID;
@@ -15,21 +15,21 @@ public final class GSRRunManagerNbt {
 
     private GSRRunManagerNbt() {}
 
-    public static void writeUuidSet(NbtCompound nbt, String key, Set<UUID> set) {
-        NbtList list = new NbtList();
+    public static void writeUuidSet(CompoundTag nbt, String key, Set<UUID> set) {
+        ListTag list = new ListTag();
         for (UUID u : set) {
-            if (u != null) list.add(NbtString.of(u.toString()));
+            if (u != null) list.add(StringTag.of(u.toString()));
         }
         nbt.put(key, list);
     }
 
-    public static void readUuidSet(NbtCompound nbt, String key, Set<UUID> out) {
+    public static void readUuidSet(CompoundTag nbt, String key, Set<UUID> out) {
         out.clear();
-        NbtList list = nbt.getList(key).orElse(new NbtList());
+        ListTag list = nbt.getList(key).orElse(new ListTag());
         for (int i = 0; i < list.size(); i++) {
             try {
-                NbtElement el = list.get(i);
-                if (el instanceof NbtString nbtStr) {
+                Tag el = list.get(i);
+                if (el instanceof StringTag nbtStr) {
                     String s = nbtStr.asString().orElse("");
                     if (!s.isEmpty()) out.add(UUID.fromString(s));
                 }

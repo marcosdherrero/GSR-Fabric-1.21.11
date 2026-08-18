@@ -8,10 +8,10 @@ import net.berkle.groupspeedrun.managers.GSRProfileManager;
 import net.berkle.groupspeedrun.parameter.GSRLocatorParameters;
 import net.berkle.groupspeedrun.parameter.GSRServerParameters;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 
 /**
  * Server tick: locator enter detection and fade. When a player enters a tracked
@@ -24,7 +24,7 @@ public final class GSRLocatorTickHandler {
     public static void checkLocatorEnterAndFade(MinecraftServer server) {
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null) return;
-        long worldTime = server.getOverworld().getTime();
+        long worldTime = server.getOverworld().getGameTime();
 
         if (config.locatorFadeStartTime > 0) {
             long elapsed = worldTime - config.locatorFadeStartTime;
@@ -39,19 +39,19 @@ public final class GSRLocatorTickHandler {
 
         if (server.getTicks() % GSRServerParameters.LOCATOR_CHECK_INTERVAL != 0) return;
 
-        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-            if (!(player.getEntityWorld() instanceof ServerWorld sw)) continue;
+        for (ServerPlayer player : server.getPlayerManager().getPlayerList()) {
+            if (!(player.level() instanceof ServerLevel sw)) continue;
             BlockPos pos = player.getBlockPos();
             GSRConfigPlayer pc = GSRProfileManager.getPlayerConfig(player);
             if (pc == null) continue;
 
-            if (sw.getRegistryKey() == World.OVERWORLD && config.strongholdLocated && pc.strongholdLocatorOn) {
+            if (sw.dimension() == World.OVERWORLD && config.strongholdLocated && pc.strongholdLocatorOn) {
                 if (GSRLocateHelper.isInTrackedStructure(sw, pos, "stronghold", config.strongholdX, config.strongholdZ)) {
                     turnOffLocator(config, pc, "stronghold", worldTime, server);
                     return;
                 }
             }
-            if (sw.getRegistryKey() == World.NETHER) {
+            if (sw.dimension() == World.NETHER) {
                 if (config.fortressLocated && pc.fortressLocatorOn && GSRLocateHelper.isInTrackedStructure(sw, pos, "fortress", config.fortressX, config.fortressZ)) {
                     turnOffLocator(config, pc, "fortress", worldTime, server);
                     return;
@@ -61,7 +61,7 @@ public final class GSRLocatorTickHandler {
                     return;
                 }
             }
-            if (sw.getRegistryKey() == World.END && config.shipLocated && pc.shipLocatorOn) {
+            if (sw.dimension() == World.END && config.shipLocated && pc.shipLocatorOn) {
                 if (GSRLocateHelper.isInTrackedStructure(sw, pos, "ship", config.shipX, config.shipY, config.shipZ)) {
                     turnOffLocator(config, pc, "ship", worldTime, server);
                     return;

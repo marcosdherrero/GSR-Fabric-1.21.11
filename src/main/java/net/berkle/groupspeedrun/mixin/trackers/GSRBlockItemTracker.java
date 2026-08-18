@@ -1,9 +1,9 @@
 package net.berkle.groupspeedrun.mixin.trackers;
 
 import net.berkle.groupspeedrun.GSRStats;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.util.ActionResult;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.InteractionResult;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -16,9 +16,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class GSRBlockItemTracker {
 
     /** Injects at return of place to record blocks placed for stats (overall + per-type for most-placed). */
-    @Inject(method = "place(Lnet/minecraft/item/ItemPlacementContext;)Lnet/minecraft/util/ActionResult;", at = @At("RETURN"))
+    @Inject(method = "place(Lnet/minecraft/world/item/context/BlockPlaceContext;)Lnet/minecraft/world/InteractionResult;", at = @At("RETURN"))
     @SuppressWarnings("deprecation")
-    private void groupspeedrun$onPlace(ItemPlacementContext context, CallbackInfoReturnable<ActionResult> cir) {
+    private void groupspeedrun$onPlace(BlockPlaceContext context, CallbackInfoReturnable<InteractionResult> cir) {
         var player = context.getPlayer();
         if (player != null && cir.getReturnValue().isAccepted() && !context.getWorld().isClient()) {
             BlockItem self = (BlockItem) (Object) this;

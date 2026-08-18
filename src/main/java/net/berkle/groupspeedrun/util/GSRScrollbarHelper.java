@@ -1,8 +1,8 @@
 package net.berkle.groupspeedrun.util;
 
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.resources.Identifier;
 import net.berkle.groupspeedrun.mixin.accessors.GSRScrollableWidgetAccessor;
 
 /**
@@ -10,8 +10,8 @@ import net.berkle.groupspeedrun.mixin.accessors.GSRScrollableWidgetAccessor;
  */
 public final class GSRScrollbarHelper {
 
-    private static final Identifier FALLBACK_TRACK = Identifier.of("minecraft", "widget/scroller_background");
-    private static final Identifier FALLBACK_THUMB = Identifier.of("minecraft", "widget/scroller");
+    private static final Identifier FALLBACK_TRACK = Identifier.fromNamespaceAndPath("minecraft", "widget/scroller_background");
+    private static final Identifier FALLBACK_THUMB = Identifier.fromNamespaceAndPath("minecraft", "widget/scroller");
     private static final int FALLBACK_WIDTH = 6;
 
     /** Extra pixels for scrollbar hit area on each side of the track. Makes scrolling easier to click. */
@@ -49,7 +49,7 @@ public final class GSRScrollbarHelper {
      * @param fadeHeight Height of each fade in pixels.
      * @param bgColor   Background color (ARGB) for the fade. Use container/screen bg.
      */
-    public static void drawScrollFade(DrawContext context, int left, int top, int right, int bottom,
+    public static void drawScrollFade(GuiGraphicsExtractor context, int left, int top, int right, int bottom,
                                      int scroll, int maxScroll, int fadeHeight, int bgColor) {
         if (maxScroll <= 0) return;
         int rgb = bgColor & 0x00FFFFFF;
@@ -89,7 +89,7 @@ public final class GSRScrollbarHelper {
      * @param maxScroll maximum scroll (positive when content overflows)
      * @param minThumbHeight minimum thumb height in pixels
      */
-    public static void drawScrollbar(DrawContext context, int trackX, int trackTop, int trackHeight,
+    public static void drawScrollbar(GuiGraphicsExtractor context, int trackX, int trackTop, int trackHeight,
             int scroll, int maxScroll, int minThumbHeight) {
         if (maxScroll <= 0) return;
         Identifier trackTex;
@@ -119,7 +119,7 @@ public final class GSRScrollbarHelper {
      * @param maxScroll maximum scroll (positive when content overflows)
      * @param minThumbWidth minimum thumb width in pixels
      */
-    public static void drawHorizontalScrollbar(DrawContext context, int trackLeft, int trackTop, int trackWidth,
+    public static void drawHorizontalScrollbar(GuiGraphicsExtractor context, int trackLeft, int trackTop, int trackWidth,
             int scroll, int maxScroll, int minThumbWidth) {
         if (maxScroll <= 0) return;
         Identifier trackTex;

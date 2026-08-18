@@ -1,7 +1,7 @@
 package net.berkle.groupspeedrun.config;
 
 import net.berkle.groupspeedrun.parameter.GSRHudParameters;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 /** Split show duration options (1–60 seconds). Displayed in seconds; stored as ticks internally. */
 public enum GSRSplitShowTicksOption {

@@ -6,8 +6,8 @@ import net.berkle.groupspeedrun.managers.GSRBroadcastManager;
 import net.berkle.groupspeedrun.managers.GSRDataStore;
 import net.berkle.groupspeedrun.managers.GSRRunSyncManager;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.world.GameMode;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.GameType;
 
 /**
  * Handles player death when group death is enabled: mark run failed, store death info,
@@ -17,7 +17,7 @@ public final class GSRDeathHandler {
 
     private GSRDeathHandler() {}
 
-    public static void handlePlayerDeath(ServerPlayerEntity deadPlayer, MinecraftServer server) {
+    public static void handlePlayerDeath(ServerPlayer deadPlayer, MinecraftServer server) {
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null || config.startTime <= 0 || config.isVictorious || config.isFailed) return;
         if (!config.groupDeathEnabled) return;
@@ -27,7 +27,7 @@ public final class GSRDeathHandler {
         config.isFailed = true;
         config.isTimerFrozen = true;
         config.frozenTime = elapsed;
-        config.lastSplitTime = server.getOverworld().getTime();
+        config.lastSplitTime = server.getOverworld().getGameTime();
         config.failedByPlayerName = deadPlayer.getName().getString();
         config.failedByDeathMessage = deadPlayer.getDamageTracker().getDeathMessage().getString();
         config.runParticipantCount = (int) server.getPlayerManager().getPlayerList().stream()
@@ -35,8 +35,8 @@ public final class GSRDeathHandler {
         config.save(server);
         GSRConfigSync.syncConfigWithAll(server);
 
-        for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
-            p.changeGameMode(GameMode.SPECTATOR);
+        for (ServerPlayer p : server.getPlayerManager().getPlayerList()) {
+            p.changeGameMode(GameType.SPECTATOR);
         }
         var state = GSRDataStore.recordCurrentRun(server);
         if (state != null) {

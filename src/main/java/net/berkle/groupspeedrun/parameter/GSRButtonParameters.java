@@ -1,6 +1,6 @@
 package net.berkle.groupspeedrun.parameter;
 
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 /**
  * Button labels and screen titles for GSR UI. Centralizes all button text for consistency

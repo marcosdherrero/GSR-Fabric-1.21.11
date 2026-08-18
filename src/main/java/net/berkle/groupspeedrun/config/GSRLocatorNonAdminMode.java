@@ -1,6 +1,6 @@
 package net.berkle.groupspeedrun.config;
 
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 /**
  * When non-admins can use locator bar commands: Never, Always, or 30 minutes after the relevant split.

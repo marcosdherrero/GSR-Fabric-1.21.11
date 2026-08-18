@@ -1,15 +1,15 @@
 package net.berkle.groupspeedrun.gui;
 
 import net.berkle.groupspeedrun.parameter.GSRTooltipParameters;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.PlayerSkinDrawer;
-import net.minecraft.client.gui.tooltip.TooltipPositioner;
-import net.minecraft.entity.player.SkinTextures;
-import net.minecraft.text.OrderedText;
-import net.minecraft.text.StringVisitable;
-import net.minecraft.text.Text;
-import net.minecraft.text.TextVisitFactory;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.PlayerFaceRenderer;
+import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
+import net.minecraft.client.resources.PlayerSkin;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.network.chat.FormattedText;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Component;
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
 
@@ -26,7 +26,7 @@ public final class GSRStandardTooltip {
     private GSRStandardTooltip() {}
 
     /**
-     * Draws a standardized tooltip from OrderedText lines.
+     * Draws a standardized tooltip from FormattedCharSequence lines.
      *
      * @param context Draw context.
      * @param textRenderer Text renderer.
@@ -38,9 +38,9 @@ public final class GSRStandardTooltip {
      * @param screenHeight Screen height.
      * @param elapsedMs Elapsed ms in scroll cycle (from state.getTooltipElapsedMs(key, now)).
      */
-    public static void draw(DrawContext context, TextRenderer textRenderer,
-                            List<OrderedText> lines,
-                            TooltipPositioner positioner,
+    public static void draw(GuiGraphicsExtractor context, Font textRenderer,
+                            List<FormattedCharSequence> lines,
+                            ClientTooltipPositioner positioner,
                             int mouseX, int mouseY,
                             int screenWidth, int screenHeight,
                             long elapsedMs) {
@@ -52,16 +52,16 @@ public final class GSRStandardTooltip {
         int maxContentW = Math.max(1, maxBoxW - 2 * padding);
         int maxContentH = Math.max(1, maxBoxH - 2 * padding);
 
-        List<OrderedText> wrapped = wrapLines(textRenderer, lines, maxContentW);
+        List<FormattedCharSequence> wrapped = wrapLines(textRenderer, lines, maxContentW);
         if (wrapped.isEmpty()) return;
 
         int maxLineWidth = 0;
-        for (OrderedText ot : wrapped) {
+        for (FormattedCharSequence ot : wrapped) {
             maxLineWidth = Math.max(maxLineWidth, textRenderer.getWidth(ot));
         }
 
         float scale = maxLineWidth > maxContentW ? (float) maxContentW / maxLineWidth : 1.0f;
-        int lineHeightPx = (int) (textRenderer.fontHeight * scale);
+        int lineHeightPx = (int) (textRenderer.lineHeight * scale);
         int contentHeightPx = wrapped.size() * lineHeightPx;
 
         int tooltipW = (int) (maxLineWidth * scale) + 2 * padding;
@@ -89,20 +89,20 @@ public final class GSRStandardTooltip {
         int scrollRange = Math.max(0, contentHeightPx - innerHeight);
         int scrollOffset = computeScrollOffset(elapsedMs, scrollRange, contentHeightPx);
 
-        var matrices = context.getMatrices();
+        var matrices = context.pose();
         matrices.pushMatrix();
         matrices.translate(innerLeft, innerTop - scrollOffset);
         matrices.scale(scale, scale);
 
         int y = 0;
-        for (OrderedText ot : wrapped) {
+        for (FormattedCharSequence ot : wrapped) {
             context.drawText(textRenderer, ot, 0, y, GSRTooltipParameters.TEXT_COLOR, false);
-            y += textRenderer.fontHeight;
+            y += textRenderer.lineHeight;
         }
         if (scrollRange > 0) {
-            for (OrderedText ot : wrapped) {
+            for (FormattedCharSequence ot : wrapped) {
                 context.drawText(textRenderer, ot, 0, y, GSRTooltipParameters.TEXT_COLOR, false);
-                y += textRenderer.fontHeight;
+                y += textRenderer.lineHeight;
             }
         }
 
@@ -122,7 +122,7 @@ public final class GSRStandardTooltip {
     }
 
     /** Positioner for cursor-offset tooltips (e.g. chart bars). */
-    public static final TooltipPositioner CURSOR_OFFSET = (sw, sh, mx, my, tw, th) -> {
+    public static final ClientTooltipPositioner CURSOR_OFFSET = (sw, sh, mx, my, tw, th) -> {
         int offset = GSRTooltipParameters.CURSOR_OFFSET;
         int edge = GSRTooltipParameters.EDGE_MARGIN;
         int tx = mx + offset;
@@ -135,19 +135,19 @@ public final class GSRStandardTooltip {
     /**
      * Draws a standardized tooltip from String lines (e.g. chart bar tooltips).
      */
-    public static void drawFromStrings(DrawContext context, TextRenderer textRenderer,
+    public static void drawFromStrings(GuiGraphicsExtractor context, Font textRenderer,
                                        List<String> lines,
-                                       TooltipPositioner positioner,
+                                       ClientTooltipPositioner positioner,
                                        int mouseX, int mouseY,
                                        int screenWidth, int screenHeight,
                                        long elapsedMs) {
         if (lines == null || lines.isEmpty()) return;
         int maxBoxW = Math.max(GSRTooltipParameters.MIN_BOX_WIDTH, (int) (screenWidth * GSRTooltipParameters.MAX_SCREEN_FRACTION));
         int maxContentW = Math.max(1, maxBoxW - 2 * GSRTooltipParameters.PADDING);
-        List<OrderedText> ordered = new ArrayList<>();
+        List<FormattedCharSequence> ordered = new ArrayList<>();
         for (String line : lines) {
             if (line == null) continue;
-            for (OrderedText ot : textRenderer.wrapLines(Text.literal(line), maxContentW)) {
+            for (FormattedCharSequence ot : textRenderer.wrapLines(Text.literal(line), maxContentW)) {
                 ordered.add(ot);
             }
         }
@@ -157,10 +157,10 @@ public final class GSRStandardTooltip {
     /**
      * Draws a tooltip with player face and info. Convenience when no highlighted value; uses stats row and scores row.
      */
-    public static void drawWithPlayerHeader(DrawContext context, TextRenderer textRenderer,
-                                           SkinTextures skin, String playerName, String statsRow,
+    public static void drawWithPlayerHeader(GuiGraphicsExtractor context, Font textRenderer,
+                                           PlayerSkin skin, String playerName, String statsRow,
                                            String scoresRow,
-                                           TooltipPositioner positioner,
+                                           ClientTooltipPositioner positioner,
                                            int mouseX, int mouseY,
                                            int screenWidth, int screenHeight,
                                            long elapsedMs) {
@@ -176,10 +176,10 @@ public final class GSRStandardTooltip {
      * @param statsRow Single line for runs/win/loss/avg; scrolls horizontally when wider than tooltip.
      * @param scoresRow Single line of run values (icon+value per run); scrolls horizontally when wider.
      */
-    public static void drawWithPlayerChartTooltip(DrawContext context, TextRenderer textRenderer,
-                                                  SkinTextures skin, String playerName, String highlightedValueLine,
+    public static void drawWithPlayerChartTooltip(GuiGraphicsExtractor context, Font textRenderer,
+                                                  PlayerSkin skin, String playerName, String highlightedValueLine,
                                                   String statsRow, String scoresRow,
-                                                  TooltipPositioner positioner,
+                                                  ClientTooltipPositioner positioner,
                                                   int mouseX, int mouseY,
                                                   int screenWidth, int screenHeight,
                                                   long elapsedMs) {
@@ -199,13 +199,13 @@ public final class GSRStandardTooltip {
             maxBoxH = swap;
         }
         int maxContentW = Math.max(1, maxBoxW - 2 * padding);
-        int fontHeight = textRenderer.fontHeight;
+        int lineHeight = textRenderer.lineHeight;
 
-        int headerContentHeight = (skin != null) ? Math.max(faceSize, fontHeight) : fontHeight;
-        int headerHeight = (skin != null) ? headerContentHeight + 2 * headerMargin : fontHeight;
-        int highlightedH = (highlightedValueLine != null && !highlightedValueLine.isEmpty()) ? fontHeight + statsRowGap : 0;
-        int statsRowH = (statsRow != null && !statsRow.isEmpty()) ? fontHeight + statsRowGap : 0;
-        int scoresRowH = (scoresRow != null && !scoresRow.isEmpty()) ? fontHeight + scoresGap : 0;
+        int headerContentHeight = (skin != null) ? Math.max(faceSize, lineHeight) : lineHeight;
+        int headerHeight = (skin != null) ? headerContentHeight + 2 * headerMargin : lineHeight;
+        int highlightedH = (highlightedValueLine != null && !highlightedValueLine.isEmpty()) ? lineHeight + statsRowGap : 0;
+        int statsRowH = (statsRow != null && !statsRow.isEmpty()) ? lineHeight + statsRowGap : 0;
+        int scoresRowH = (scoresRow != null && !scoresRow.isEmpty()) ? lineHeight + scoresGap : 0;
         int staticSectionH = headerHeight + highlightedH + statsRowH + scoresRowH;
 
         int tooltipW = Math.max((int) (textRenderer.getWidth(playerName) + 2 * padding), maxContentW);
@@ -233,9 +233,9 @@ public final class GSRStandardTooltip {
         if (skin != null) {
             int faceX = innerLeft + headerMargin;
             int faceY = headerTop + headerMargin;
-            PlayerSkinDrawer.draw(context, skin, faceX, faceY, faceSize);
+            PlayerFaceRenderer.draw(context, skin, faceX, faceY, faceSize);
             int nameX = faceX + faceSize + faceGap;
-            int nameY = headerTop + headerMargin + (headerContentHeight - fontHeight) / 2;
+            int nameY = headerTop + headerMargin + (headerContentHeight - lineHeight) / 2;
             context.drawText(textRenderer, playerName, nameX, nameY, GSRTooltipParameters.TEXT_COLOR, false);
         } else {
             context.drawText(textRenderer, playerName, innerLeft, headerTop, GSRTooltipParameters.TEXT_COLOR, false);
@@ -244,18 +244,18 @@ public final class GSRStandardTooltip {
 
         if (highlightedValueLine != null && !highlightedValueLine.isEmpty()) {
             context.drawText(textRenderer, highlightedValueLine, innerLeft, y, GSRTooltipParameters.TEXT_COLOR, false);
-            y += fontHeight + statsRowGap;
+            y += lineHeight + statsRowGap;
         }
 
         if (statsRow != null && !statsRow.isEmpty()) {
-            drawHorizontalTickerRow(context, textRenderer, statsRow, innerLeft, innerRight, y, fontHeight, elapsedMs);
-            y += fontHeight + statsRowGap;
+            drawHorizontalTickerRow(context, textRenderer, statsRow, innerLeft, innerRight, y, lineHeight, elapsedMs);
+            y += lineHeight + statsRowGap;
             context.enableScissor(innerLeft, innerTop, innerRight, innerBottom);
         }
 
         if (scoresRow != null && !scoresRow.isEmpty()) {
             y += scoresGap;
-            drawHorizontalTickerRow(context, textRenderer, scoresRow, innerLeft, innerRight, y, fontHeight, elapsedMs);
+            drawHorizontalTickerRow(context, textRenderer, scoresRow, innerLeft, innerRight, y, lineHeight, elapsedMs);
         }
 
         context.disableScissor();
@@ -267,8 +267,8 @@ public final class GSRStandardTooltip {
      * Scrolls the full segment (content + separator) before wrapping; restart aligns when text
      * returns to the beginning. Draws enough copies to cover the scroll range.
      */
-    private static void drawHorizontalTickerRow(DrawContext context, TextRenderer textRenderer,
-                                                String text, int innerLeft, int innerRight, int y, int fontHeight,
+    private static void drawHorizontalTickerRow(GuiGraphicsExtractor context, Font textRenderer,
+                                                String text, int innerLeft, int innerRight, int y, int lineHeight,
                                                 long elapsedMs) {
         int innerWidth = innerRight - innerLeft;
         int contentWidth = textRenderer.getWidth(text);
@@ -281,8 +281,8 @@ public final class GSRStandardTooltip {
             float scrolledPx = afterDelay * GSRTooltipParameters.TICKER_SPEED_PX_PER_MS;
             scrollOffset = (int) (scrolledPx % segmentWidth);
         }
-        context.enableScissor(innerLeft, y, innerRight, y + fontHeight);
-        var matrices = context.getMatrices();
+        context.enableScissor(innerLeft, y, innerRight, y + lineHeight);
+        var matrices = context.pose();
         matrices.pushMatrix();
         matrices.translate(innerLeft - scrollOffset, y);
         if (overflow) {
@@ -304,7 +304,7 @@ public final class GSRStandardTooltip {
     }
 
     /** Draws the tooltip box (background and border). Renders on top via depth. */
-    private static void drawTooltipBox(DrawContext context, int x, int y, int w, int h) {
+    private static void drawTooltipBox(GuiGraphicsExtractor context, int x, int y, int w, int h) {
         context.fill(x, y, x + w, y + h, GSRTooltipParameters.BG);
         context.fill(x, y, x + w, y + 1, GSRTooltipParameters.BORDER);
         context.fill(x, y + h - 1, x + w, y + h, GSRTooltipParameters.BORDER);
@@ -319,16 +319,16 @@ public final class GSRStandardTooltip {
         return Math.min(contentHeightPx, (int) (((elapsedMs - GSRTooltipParameters.SCROLL_START_DELAY_MS) / (double) scrollDuration) * contentHeightPx));
     }
 
-    private static List<OrderedText> wrapLines(TextRenderer textRenderer, List<OrderedText> lines, int maxContentW) {
-        List<OrderedText> wrapped = new ArrayList<>();
-        for (OrderedText ot : lines) {
+    private static List<FormattedCharSequence> wrapLines(Font textRenderer, List<FormattedCharSequence> lines, int maxContentW) {
+        List<FormattedCharSequence> wrapped = new ArrayList<>();
+        for (FormattedCharSequence ot : lines) {
             if (ot == null) continue;
             int w = textRenderer.getWidth(ot);
             if (w <= maxContentW) {
                 wrapped.add(ot);
             } else {
                 String plain = orderedTextToPlainString(ot);
-                for (OrderedText sub : textRenderer.wrapLines(StringVisitable.plain(plain), maxContentW)) {
+                for (FormattedCharSequence sub : textRenderer.wrapLines(FormattedText.plain(plain), maxContentW)) {
                     wrapped.add(sub);
                 }
             }
@@ -336,20 +336,20 @@ public final class GSRStandardTooltip {
         return wrapped;
     }
 
-    /** Extracts plain text from OrderedText. Avoids StringVisitable cast (lambdas are not StringVisitable). */
-    private static String orderedTextToPlainString(OrderedText ot) {
+    /** Extracts plain text from FormattedCharSequence. Avoids FormattedText cast (lambdas are not FormattedText). */
+    private static String orderedTextToPlainString(FormattedCharSequence ot) {
         StringBuilder sb = new StringBuilder();
         ot.accept((index, style, codePoint) -> {
             sb.appendCodePoint(codePoint);
             return true;
         });
-        return TextVisitFactory.removeFormattingCodes(StringVisitable.plain(sb.toString()));
+        return TextVisitFactory.removeFormattingCodes(FormattedText.plain(sb.toString()));
     }
 
-    /** Builds a stable key from tooltip content for scroll state. Never casts to StringVisitable. */
-    public static String buildTooltipKey(List<OrderedText> lines) {
+    /** Builds a stable key from tooltip content for scroll state. Never casts to FormattedText. */
+    public static String buildTooltipKey(List<FormattedCharSequence> lines) {
         StringBuilder sb = new StringBuilder();
-        for (OrderedText ot : lines) {
+        for (FormattedCharSequence ot : lines) {
             if (ot != null) {
                 sb.append(orderedTextToPlainString(ot));
                 sb.append('\n');

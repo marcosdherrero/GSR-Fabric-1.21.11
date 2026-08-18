@@ -1,9 +1,9 @@
 package net.berkle.groupspeedrun.config;
 
-import net.minecraft.item.Item;
-import net.minecraft.item.Items;
-import net.minecraft.text.Text;
-import net.minecraft.util.DyeColor;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.DyeColor;
 
 /**
  * Locator icon color options: Default (location-specific) or Minecraft ink (DyeColor) colors.

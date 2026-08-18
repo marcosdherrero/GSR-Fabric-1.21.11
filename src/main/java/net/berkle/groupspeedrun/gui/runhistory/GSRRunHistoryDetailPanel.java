@@ -10,9 +10,9 @@ import net.berkle.groupspeedrun.parameter.GSRRunHistoryParameters;
 import net.berkle.groupspeedrun.parameter.GSRUiParameters;
 import net.berkle.groupspeedrun.util.GSRScrollbarHelper;
 import net.berkle.groupspeedrun.util.GSRStatusText;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.util.Set;
 
@@ -51,7 +51,7 @@ public final class GSRRunHistoryDetailPanel {
      * @param screenWidth         Screen width.
      * @param screenHeight         Screen height.
      */
-    public void render(DrawContext context, TextRenderer textRenderer, GSRTickerState tickerState,
+    public void render(GuiGraphicsExtractor context, Font textRenderer, GSRTickerState tickerState,
                       int contentLeft, int contentTop, int contentRight, int contentBottom,
                       int selectedTab, GSRRunSaveState selectedRun, List<GSRRunSaveState> selectedRunsForCharts,
                       List<GSRRunSaveState> runs, List<GSRRunSaveState> filteredRunsForCharts, Set<String> selectedPlayerFilter,
@@ -60,13 +60,13 @@ public final class GSRRunHistoryDetailPanel {
                       float detailScroll, int chartScrollX,
                       int mouseX, int mouseY, int screenWidth, int screenHeight) {
         if (selectedTab == GSRRunHistoryParameters.TAB_RUN_INFO && selectedRun == null) {
-            context.drawCenteredTextWithShadow(textRenderer, "Select a run",
+            context.centeredText(textRenderer, "Select a run",
                     (contentLeft + contentRight) / 2, contentTop + (contentBottom - contentTop) / 2 - 6,
                     GSRRunHistoryParameters.EMPTY_MESSAGE_COLOR);
             return;
         }
         if (selectedTab == GSRRunHistoryParameters.TAB_RUN_GRAPHS && runs.isEmpty()) {
-            context.drawCenteredTextWithShadow(textRenderer, "No run data.",
+            context.centeredText(textRenderer, "No run data.",
                     (contentLeft + contentRight) / 2, contentTop + (contentBottom - contentTop) / 2 - 6,
                     GSRRunHistoryParameters.EMPTY_MESSAGE_COLOR);
             return;
@@ -122,25 +122,25 @@ public final class GSRRunHistoryDetailPanel {
                     String msg = selectedPlayerFilter.isEmpty()
                             ? "No run data."
                             : "No runs for selected players.";
-                    context.drawCenteredTextWithShadow(textRenderer, msg, (contentLeft + contentRight) / 2,
+                    context.centeredText(textRenderer, msg, (contentLeft + contentRight) / 2,
                             contentTop + (contentBottom - contentTop) / 2 - 6, GSRRunHistoryParameters.EMPTY_MESSAGE_COLOR);
                 }
             } catch (NoClassDefFoundError | ExceptionInInitializerError e) {
-                context.drawCenteredTextWithShadow(textRenderer, "Player chart unavailable. Restart the game.",
+                context.centeredText(textRenderer, "Player chart unavailable. Restart the game.",
                         (contentLeft + contentRight) / 2, contentTop + (contentBottom - contentTop) / 2 - 6,
                         GSRRunHistoryParameters.EMPTY_MESSAGE_COLOR);
             }
         }
     }
 
-    private void renderRunInfo(DrawContext context, TextRenderer textRenderer, GSRRunSaveState selectedRun,
+    private void renderRunInfo(GuiGraphicsExtractor context, Font textRenderer, GSRRunSaveState selectedRun,
                               List<String> activeRunLeaderboardLines,
                               int left, int top, int right, int bottom, float scrollY) {
         String text = GSRStatusText.buildForCompletedRun(selectedRun.record(), selectedRun.snapshots(), activeRunLeaderboardLines);
         String[] lines = text.split("\n", -1);
         context.enableScissor(left, top, right, bottom);
-        context.getMatrices().pushMatrix();
-        context.getMatrices().translate(0, -scrollY);
+        context.pose().pushMatrix();
+        context.pose().translate(0, -scrollY);
         int y = top + GSRRunHistoryParameters.CONTENT_PADDING;
         for (String line : lines) {
             if (y + GSRUiParameters.STATUS_LINE_HEIGHT > top + scrollY && y < bottom + scrollY) {
@@ -157,11 +157,11 @@ public final class GSRRunHistoryDetailPanel {
             var textures = GSRPressableWidgetAccessor.gsr$getTextures();
             var tex = textures.get(true, false);
             context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, tex, buttonLeft, buttonTop, buttonWidth, buttonHeight);
-            int textY = buttonTop + (buttonHeight - textRenderer.fontHeight) / 2;
-            context.drawCenteredTextWithShadow(textRenderer, GSRButtonParameters.RUN_HISTORY_DELETE_RUN,
+            int textY = buttonTop + (buttonHeight - textRenderer.lineHeight) / 2;
+            context.centeredText(textRenderer, GSRButtonParameters.RUN_HISTORY_DELETE_RUN,
                     buttonLeft + buttonWidth / 2, textY, GSRRunHistoryParameters.TEXT_COLOR);
         }
-        context.getMatrices().popMatrix();
+        context.pose().popMatrix();
         context.disableScissor();
     }
 
@@ -243,13 +243,13 @@ public final class GSRRunHistoryDetailPanel {
     /**
      * Renders pre-built run info text (e.g. average run info) with scroll. No Delete Run button.
      */
-    public static void renderRunInfoFromText(DrawContext context, TextRenderer textRenderer, String text,
+    public static void renderRunInfoFromText(GuiGraphicsExtractor context, Font textRenderer, String text,
                                              int left, int top, int right, int bottom, float scrollY) {
         if (text == null || text.isEmpty()) return;
         String[] lines = text.split("\n", -1);
         context.enableScissor(left, top, right, bottom);
-        context.getMatrices().pushMatrix();
-        context.getMatrices().translate(0, -scrollY);
+        context.pose().pushMatrix();
+        context.pose().translate(0, -scrollY);
         int y = top + GSRRunHistoryParameters.CONTENT_PADDING;
         for (String line : lines) {
             if (y + GSRUiParameters.STATUS_LINE_HEIGHT > top + scrollY && y < bottom + scrollY) {
@@ -257,7 +257,7 @@ public final class GSRRunHistoryDetailPanel {
             }
             y += line.isEmpty() ? GSRUiParameters.STATUS_LINE_HEIGHT / 2 : GSRUiParameters.STATUS_LINE_HEIGHT;
         }
-        context.getMatrices().popMatrix();
+        context.pose().popMatrix();
         context.disableScissor();
     }
 

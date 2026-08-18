@@ -4,14 +4,14 @@ package net.berkle.groupspeedrun;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 
 // Minecraft: NBT, commands, server, world
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 
 // GSR: config, managers, network payloads, parameters, server
 import net.berkle.groupspeedrun.config.GSRConfigPayload;
@@ -47,12 +47,12 @@ public final class GSRNetworking {
     private GSRNetworking() {}
 
     /** Sync world + player config to a single player. Delegates to {@link GSRConfigSync}. */
-    public static void syncConfigWithPlayer(ServerPlayerEntity player) {
+    public static void syncConfigWithPlayer(ServerPlayer player) {
         GSRConfigSync.syncConfigWithPlayer(player);
     }
 
     /** No-op: group death uses exclusion list; everyone is in by default. Kept for API compatibility. */
-    public static void addJoinerToGroupDeath(net.minecraft.server.MinecraftServer server, ServerPlayerEntity joiner) {}
+    public static void addJoinerToGroupDeath(net.minecraft.server.MinecraftServer server, ServerPlayer joiner) {}
 
     /** Sync world + player config to all players. Delegates to {@link GSRConfigSync}. */
     public static void syncConfigWithAll(net.minecraft.server.MinecraftServer server) {
@@ -63,9 +63,9 @@ public final class GSRNetworking {
     public static void registerWorldConfigReceiver() {
         ServerPlayNetworking.registerGlobalReceiver(GSRWorldConfigPayload.ID, (payload, context) -> {
             context.server().execute(() -> {
-                ServerPlayerEntity player = context.player();
-                ServerCommandSource src = context.server().getCommandSource().withEntity(player).withWorld((ServerWorld) player.getEntityWorld());
-                if (!CommandManager.ADMINS_CHECK.allows(src.getPermissions())) return;
+                ServerPlayer player = context.player();
+                CommandSourceStack src = context.server().getCommandSource().withEntity(player).withWorld((ServerLevel) player.level());
+                if (!Commands.LEVEL_ADMINS.allows(src.getPermissions())) return;
                 if (!GSRDesignatedConfigSource.isDesignatedConfigPlayer(context.server(), player)) return;
                 GSRConfigWorld config = GSRMain.CONFIG;
                 if (config == null) return;
@@ -82,7 +82,7 @@ public final class GSRNetworking {
     public static void registerC2SReceiver() {
         ServerPlayNetworking.registerGlobalReceiver(GSRConfigPayload.ID, (payload, context) -> {
             context.server().execute(() -> {
-                ServerPlayerEntity player = context.player();
+                ServerPlayer player = context.player();
                 GSRConfigPlayer config = GSRProfileManager.getPlayerConfig(player);
                 config.readNbt(payload.nbt());
                 GSRProfileManager.updatePlayerSettings(player, config);
@@ -92,7 +92,7 @@ public final class GSRNetworking {
     }
 
     /** Tell the client to open a GSR screen (config or controls). Call from /gsr config or /gsr controls. */
-    public static void sendOpenScreen(ServerPlayerEntity player, byte screenType) {
+    public static void sendOpenScreen(ServerPlayer player, byte screenType) {
         if (player == null) return;
         ServerPlayNetworking.send(player, new GSROpenScreenPayload(screenType));
     }
@@ -101,20 +101,20 @@ public final class GSRNetworking {
     public static void registerRunActionReceiver() {
         ServerPlayNetworking.registerGlobalReceiver(GSRRunActionPayload.ID, (payload, context) -> {
             context.server().execute(() -> {
-                ServerPlayerEntity player = context.player();
+                ServerPlayer player = context.player();
                 var config = GSRMain.CONFIG;
                 if (config == null) return;
                 byte action = payload.action();
-                ServerCommandSource src = context.server().getCommandSource().withEntity(player).withWorld((ServerWorld) player.getEntityWorld());
+                CommandSourceStack src = context.server().getCommandSource().withEntity(player).withWorld((ServerLevel) player.level());
                 switch (action) {
                     case GSRRunActionPayload.ACTION_START -> {
-                        if (!CommandManager.ADMINS_CHECK.allows(src.getPermissions())) return;
+                        if (!Commands.LEVEL_ADMINS.allows(src.getPermissions())) return;
                         if (config.startTime > 0 || config.isVictorious || config.isFailed) return;
                         GSREvents.startTimerNow(context.server());
                         GSRConfigSync.syncConfigWithAll(context.server());
                     }
                     case GSRRunActionPayload.ACTION_PAUSE -> {
-                        if (!CommandManager.ADMINS_CHECK.allows(src.getPermissions())) return;
+                        if (!Commands.LEVEL_ADMINS.allows(src.getPermissions())) return;
                         GSRMain.frozenByClientPause = false;
                         config.frozenByServerStop = false;
                         config.manualPause = true;
@@ -127,7 +127,7 @@ public final class GSRNetworking {
                         GSRConfigSync.syncConfigWithAll(context.server());
                     }
                     case GSRRunActionPayload.ACTION_RESUME -> {
-                        if (!CommandManager.ADMINS_CHECK.allows(src.getPermissions())) return;
+                        if (!Commands.LEVEL_ADMINS.allows(src.getPermissions())) return;
                         if (config.isVictorious || config.isFailed) return;
                         config.manualPause = false;
                         config.isTimerFrozen = false;
@@ -160,7 +160,7 @@ public final class GSRNetworking {
                         GSRConfigSync.syncConfigWithAll(context.server());
                     }
                     case GSRRunActionPayload.ACTION_RESET -> {
-                        if (!CommandManager.ADMINS_CHECK.allows(src.getPermissions())) return;
+                        if (!Commands.LEVEL_ADMINS.allows(src.getPermissions())) return;
                         GSREvents.resetRun(context.server());
                         GSRConfigSync.syncConfigWithAll(context.server());
                     }
@@ -174,7 +174,7 @@ public final class GSRNetworking {
     public static void registerScreenTimeReceiver() {
         ServerPlayNetworking.registerGlobalReceiver(GSRScreenTimePayload.ID, (payload, context) -> {
             context.server().execute(() -> {
-                ServerPlayerEntity player = context.player();
+                ServerPlayer player = context.player();
                 GSRConfigWorld config = GSRMain.CONFIG;
                 if (config == null || config.startTime <= 0 || config.isTimerFrozen || config.isVictorious || config.isFailed) return;
                 String id = payload.screenTypeId();
@@ -189,11 +189,11 @@ public final class GSRNetworking {
     public static void registerLocatorActionReceiver() {
         ServerPlayNetworking.registerGlobalReceiver(GSRLocatorActionPayload.ID, (payload, context) -> {
             context.server().execute(() -> {
-                ServerPlayerEntity player = context.player();
+                ServerPlayer player = context.player();
                 GSRConfigWorld config = GSRMain.CONFIG;
                 if (config == null) return;
                 var server = context.server();
-                ServerCommandSource src = server.getCommandSource().withEntity(player).withWorld((ServerWorld) player.getEntityWorld());
+                CommandSourceStack src = server.getCommandSource().withEntity(player).withWorld((ServerLevel) player.level());
                 boolean isAdmin = GSRLocatorGate.isAdmin(src);
                 byte action = payload.action();
 
@@ -214,7 +214,7 @@ public final class GSRNetworking {
                     config.shipZ = 0;
                     config.locatorFadeStartTime = 0;
                     config.locatorFadeType = "";
-                    for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
+                    for (ServerPlayer p : server.getPlayerManager().getPlayerList()) {
                         GSRConfigPlayer pc = GSRProfileManager.getPlayerConfig(p);
                         if (pc != null) {
                             pc.fortressLocatorOn = false;
@@ -228,7 +228,7 @@ public final class GSRNetworking {
                     GSRProfileManager.save(server);
                     GSRConfigSync.syncConfigWithAll(server);
                     String derankMsg = config.antiCheatEnabled ? " Run is deranked for ranking." : "";
-                    player.sendMessage(net.minecraft.text.Text.literal(GSRUiParameters.MSG_PREFIX + "Locators cleared." + derankMsg), false);
+                    player.sendMessage(net.minecraft.network.chat.Component.literal(GSRUiParameters.MSG_PREFIX + "Locators cleared." + derankMsg), false);
                     return;
                 }
 
@@ -243,18 +243,18 @@ public final class GSRNetworking {
 
                 if (!GSRLocatorGate.canUseLocator(config, type, isAdmin)) {
                     String reason = GSRLocatorGate.getLockReason(config, type, isAdmin);
-                    player.sendMessage(net.minecraft.text.Text.literal(GSRUiParameters.MSG_PREFIX + (reason.isEmpty() ? "Locator locked." : reason)), false);
+                    player.sendMessage(net.minecraft.network.chat.Component.literal(GSRUiParameters.MSG_PREFIX + (reason.isEmpty() ? "Locator locked." : reason)), false);
                     return;
                 }
 
-                ServerWorld world = switch (type) {
+                ServerLevel world = switch (type) {
                     case "fortress", "bastion" -> server.getWorld(World.NETHER);
                     case "stronghold" -> server.getOverworld();
                     case "ship" -> server.getWorld(World.END);
                     default -> null;
                 };
                 if (world == null) {
-                    player.sendMessage(net.minecraft.text.Text.literal(GSRUiParameters.MSG_PREFIX + "Dimension not loaded."), false);
+                    player.sendMessage(net.minecraft.network.chat.Component.literal(GSRUiParameters.MSG_PREFIX + "Dimension not loaded."), false);
                     return;
                 }
                 BlockPos from = player.getBlockPos();
@@ -272,7 +272,7 @@ public final class GSRNetworking {
                         GSRProfileManager.save(server);
                         GSRConfigSync.syncConfigWithPlayer(player);
                     }
-                    player.sendMessage(net.minecraft.text.Text.literal(GSRUiParameters.MSG_PREFIX + String.format(GSRUiParameters.MSG_LOCATOR_NOT_FOUND, type)), false);
+                    player.sendMessage(net.minecraft.network.chat.Component.literal(GSRUiParameters.MSG_PREFIX + String.format(GSRUiParameters.MSG_LOCATOR_NOT_FOUND, type)), false);
                     return;
                 }
                 int x = found.getX();
@@ -325,7 +325,7 @@ public final class GSRNetworking {
                     default -> pc.shipLocatorOn;
                 };
                 String derankMsg = config.antiCheatEnabled ? " Run is deranked for ranking." : "";
-                player.sendMessage(net.minecraft.text.Text.literal(GSRUiParameters.MSG_PREFIX + "Locator " + type + ": " + (nowActive ? "ON at " + x + ", " + z : "OFF") + "." + derankMsg), false);
+                player.sendMessage(net.minecraft.network.chat.Component.literal(GSRUiParameters.MSG_PREFIX + "Locator " + type + ": " + (nowActive ? "ON at " + x + ", " + z : "OFF") + "." + derankMsg), false);
             });
         });
     }
@@ -334,14 +334,14 @@ public final class GSRNetworking {
     public static void registerRunManagerReceivers() {
         ServerPlayNetworking.registerGlobalReceiver(GSRRunManagerRequestPayload.ID, (payload, context) -> {
             context.server().execute(() -> {
-                ServerPlayerEntity player = context.player();
+                ServerPlayer player = context.player();
                 GSRConfigWorld config = GSRMain.CONFIG;
                 if (config == null) return;
-                NbtCompound nbt = new NbtCompound();
-                NbtList playersList = new NbtList();
-                for (ServerPlayerEntity p : context.server().getPlayerManager().getPlayerList()) {
+                CompoundTag nbt = new CompoundTag();
+                ListTag playersList = new ListTag();
+                for (ServerPlayer p : context.server().getPlayerManager().getPlayerList()) {
                     if (p == null) continue;
-                    NbtCompound entry = new NbtCompound();
+                    CompoundTag entry = new CompoundTag();
                     entry.putString("uuid", p.getUuid().toString());
                     entry.putString("name", p.getName().getString());
                     playersList.add(entry);
@@ -356,12 +356,12 @@ public final class GSRNetworking {
 
         ServerPlayNetworking.registerGlobalReceiver(GSRRunManagerUpdatePayload.ID, (payload, context) -> {
             context.server().execute(() -> {
-                ServerPlayerEntity player = context.player();
-                ServerCommandSource src = context.server().getCommandSource().withEntity(player).withWorld((ServerWorld) player.getEntityWorld());
-                if (!CommandManager.ADMINS_CHECK.allows(src.getPermissions())) return;
+                ServerPlayer player = context.player();
+                CommandSourceStack src = context.server().getCommandSource().withEntity(player).withWorld((ServerLevel) player.level());
+                if (!Commands.LEVEL_ADMINS.allows(src.getPermissions())) return;
                 GSRConfigWorld config = GSRMain.CONFIG;
                 if (config == null) return;
-                NbtCompound nbt = payload.nbt();
+                CompoundTag nbt = payload.nbt();
                 GSRRunManagerNbt.readUuidSet(nbt, GSRWorldConfigParameters.K_GROUP_DEATH_PARTICIPANTS, config.groupDeathParticipants);
                 GSRRunManagerNbt.readUuidSet(nbt, GSRWorldConfigParameters.K_SHARED_HEALTH_PARTICIPANTS, config.sharedHealthParticipants);
                 GSRRunManagerNbt.readUuidSet(nbt, GSRWorldConfigParameters.K_EXCLUDED_FROM_RUN, config.excludedFromRun);
@@ -371,7 +371,7 @@ public final class GSRNetworking {
                 config.save(context.server());
                 GSRConfigSync.syncConfigWithAll(context.server());
                 String derankMsg = config.antiCheatEnabled && config.locatorDeranked ? " Run is deranked for ranking." : "";
-                player.sendMessage(net.minecraft.text.Text.literal(GSRUiParameters.MSG_PREFIX + "Run Manager settings saved." + derankMsg), false);
+                player.sendMessage(net.minecraft.network.chat.Component.literal(GSRUiParameters.MSG_PREFIX + "Run Manager settings saved." + derankMsg), false);
             });
         });
     }
@@ -380,14 +380,14 @@ public final class GSRNetworking {
     public static void registerRunSyncReceivers() {
         ServerPlayNetworking.registerGlobalReceiver(GSRRunIdsPayload.ID, (payload, context) -> {
             context.server().execute(() -> {
-                ServerPlayerEntity player = context.player();
+                ServerPlayer player = context.player();
                 java.util.List<String> runIds = GSRRunIdsPayload.fromNbt(payload.nbt());
                 GSRRunSyncManager.handleRunIds(context.server(), player, runIds);
             });
         });
         ServerPlayNetworking.registerGlobalReceiver(GSRRunRequestPayload.ID, (payload, context) -> {
             context.server().execute(() -> {
-                ServerPlayerEntity player = context.player();
+                ServerPlayer player = context.player();
                 java.util.List<String> runIds = GSRRunIdsPayload.fromNbt(payload.nbt());
                 GSRRunSyncManager.handleRunRequest(context.server(), player, runIds);
             });
@@ -395,7 +395,7 @@ public final class GSRNetworking {
         ServerPlayNetworking.registerGlobalReceiver(GSRRunDataPayload.ID, (payload, context) -> {
             context.server().execute(() -> {
                 if (!GSRRunDataPayload.isValid(payload.nbt())) return;
-                ServerPlayerEntity player = context.player();
+                ServerPlayer player = context.player();
                 GSRRunSyncManager.handleRunData(context.server(), player, payload.nbt());
             });
         });

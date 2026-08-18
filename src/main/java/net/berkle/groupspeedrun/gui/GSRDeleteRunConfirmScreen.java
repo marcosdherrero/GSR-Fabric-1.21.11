@@ -1,11 +1,11 @@
 package net.berkle.groupspeedrun.gui;
 
 // Minecraft: screen, GUI, input
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.input.KeyInput;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
 // GSR: parameters
@@ -49,16 +49,16 @@ public class GSRDeleteRunConfirmScreen extends Screen {
         if (onConfirmAll != null) {
             int totalWidth = 3 * buttonWidth + 2 * gap;
             int leftX = centerX - totalWidth / 2;
-            addDrawableChild(ButtonWidget.builder(GSRButtonParameters.literal(GSRButtonParameters.RUN_HISTORY_DELETE_ONE), btn -> confirmOne())
+            addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.RUN_HISTORY_DELETE_ONE), btn -> confirmOne())
                     .dimensions(leftX, y, buttonWidth, buttonHeight).build());
-            addDrawableChild(ButtonWidget.builder(GSRButtonParameters.literal(GSRButtonParameters.RUN_HISTORY_DELETE_ALL_SELECTED), btn -> confirmAll())
+            addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.RUN_HISTORY_DELETE_ALL_SELECTED), btn -> confirmAll())
                     .dimensions(leftX + buttonWidth + gap, y, buttonWidth, buttonHeight).build());
-            addDrawableChild(ButtonWidget.builder(GSRButtonParameters.literal(GSRButtonParameters.NEW_WORLD_CANCEL), btn -> cancel())
+            addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.NEW_WORLD_CANCEL), btn -> cancel())
                     .dimensions(leftX + 2 * (buttonWidth + gap), y, buttonWidth, buttonHeight).build());
         } else {
-            addDrawableChild(ButtonWidget.builder(GSRButtonParameters.literal(GSRButtonParameters.RUN_HISTORY_DELETE_ONE), btn -> confirmOne())
+            addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.RUN_HISTORY_DELETE_ONE), btn -> confirmOne())
                     .dimensions(centerX - buttonWidth - gap / 2, y, buttonWidth, buttonHeight).build());
-            addDrawableChild(ButtonWidget.builder(GSRButtonParameters.literal(GSRButtonParameters.NEW_WORLD_CANCEL), btn -> cancel())
+            addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.NEW_WORLD_CANCEL), btn -> cancel())
                     .dimensions(centerX + gap / 2, y, buttonWidth, buttonHeight).build());
         }
     }
@@ -78,19 +78,19 @@ public class GSRDeleteRunConfirmScreen extends Screen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, width, height, GSRUiParameters.STATUS_BG_COLOR);
         super.render(context, mouseX, mouseY, delta);
 
-        context.drawCenteredTextWithShadow(textRenderer, getTitle(), width / 2, height / 2 - GSRUiParameters.LOCATOR_CONFIRM_TITLE_OFFSET, GSRUiParameters.NEW_WORLD_TITLE_COLOR);
+        context.centeredText(textRenderer, getTitle(), width / 2, height / 2 - GSRUiParameters.LOCATOR_CONFIRM_TITLE_OFFSET, GSRUiParameters.NEW_WORLD_TITLE_COLOR);
         String message = onConfirmAll != null
                 ? "Delete the displayed run, or delete all selected runs from your personal and shared lists."
                 : "This will remove the run from your personal and shared lists.";
-        context.drawCenteredTextWithShadow(textRenderer, message, width / 2, height / 2 - GSRUiParameters.LOCATOR_CONFIRM_MESSAGE_OFFSET, GSRUiParameters.NEW_WORLD_LINE1_COLOR);
+        context.centeredText(textRenderer, message, width / 2, height / 2 - GSRUiParameters.LOCATOR_CONFIRM_MESSAGE_OFFSET, GSRUiParameters.NEW_WORLD_LINE1_COLOR);
     }
 
     @Override
-    public boolean keyPressed(KeyInput keyInput) {
+    public boolean keyPressed(KeyEvent keyInput) {
         if (keyInput.key() == GLFW.GLFW_KEY_ESCAPE) {
             cancel();
             return true;

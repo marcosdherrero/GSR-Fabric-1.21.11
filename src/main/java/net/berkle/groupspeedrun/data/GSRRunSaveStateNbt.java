@@ -1,8 +1,8 @@
 package net.berkle.groupspeedrun.data;
 
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtList;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.ListTag;
 
 /**
  * Shared NBT serialization for GSRRunSaveState. Used by server (payload) and client (shared run loader).
@@ -11,38 +11,38 @@ public final class GSRRunSaveStateNbt {
 
     private GSRRunSaveStateNbt() {}
 
-    public static NbtCompound toNbt(GSRRunSaveState state) {
-        if (state == null) return new NbtCompound();
-        NbtCompound root = new NbtCompound();
+    public static CompoundTag toNbt(GSRRunSaveState state) {
+        if (state == null) return new CompoundTag();
+        CompoundTag root = new CompoundTag();
         root.put("run", runToNbt(state.record()));
-        NbtList parts = new NbtList();
+        ListTag parts = new ListTag();
         for (GSRRunParticipant p : state.participants()) parts.add(participantToNbt(p));
         root.put("participants", parts);
-        NbtList snaps = new NbtList();
+        ListTag snaps = new ListTag();
         for (GSRRunPlayerSnapshot s : state.snapshots()) snaps.add(snapshotToNbt(s));
         root.put("snapshots", snaps);
         return root;
     }
 
-    public static GSRRunSaveState fromNbt(NbtCompound root) {
-        GSRRunRecord run = runFromNbt(root.getCompound("run").orElse(new NbtCompound()));
-        NbtList partsList = root.getList("participants").orElse(new NbtList());
+    public static GSRRunSaveState fromNbt(CompoundTag root) {
+        GSRRunRecord run = runFromNbt(root.getCompound("run").orElse(new CompoundTag()));
+        ListTag partsList = root.getList("participants").orElse(new ListTag());
         java.util.List<GSRRunParticipant> participants = new java.util.ArrayList<>();
         for (int i = 0; i < partsList.size(); i++) {
-            NbtElement el = partsList.get(i);
-            if (el instanceof NbtCompound c) participants.add(participantFromNbt(c));
+            Tag el = partsList.get(i);
+            if (el instanceof CompoundTag c) participants.add(participantFromNbt(c));
         }
-        NbtList snapsList = root.getList("snapshots").orElse(new NbtList());
+        ListTag snapsList = root.getList("snapshots").orElse(new ListTag());
         java.util.List<GSRRunPlayerSnapshot> snapshots = new java.util.ArrayList<>();
         for (int i = 0; i < snapsList.size(); i++) {
-            NbtElement el = snapsList.get(i);
-            if (el instanceof NbtCompound c) snapshots.add(snapshotFromNbt(c));
+            Tag el = snapsList.get(i);
+            if (el instanceof CompoundTag c) snapshots.add(snapshotFromNbt(c));
         }
         return new GSRRunSaveState(run, participants, snapshots);
     }
 
-    private static NbtCompound runToNbt(GSRRunRecord r) {
-        NbtCompound c = new NbtCompound();
+    private static CompoundTag runToNbt(GSRRunRecord r) {
+        CompoundTag c = new CompoundTag();
         c.putString("runId", r.runId());
         c.putString("worldName", r.worldName());
         c.putLong("startMs", r.startMs());
@@ -63,7 +63,7 @@ public final class GSRRunSaveStateNbt {
         return c;
     }
 
-    private static GSRRunRecord runFromNbt(NbtCompound c) {
+    private static GSRRunRecord runFromNbt(CompoundTag c) {
         return new GSRRunRecord(
             c.getString("runId").orElse(""),
             c.getString("worldName").orElse(""),
@@ -85,15 +85,15 @@ public final class GSRRunSaveStateNbt {
         );
     }
 
-    private static NbtCompound participantToNbt(GSRRunParticipant p) {
-        NbtCompound c = new NbtCompound();
+    private static CompoundTag participantToNbt(GSRRunParticipant p) {
+        CompoundTag c = new CompoundTag();
         c.putString("runId", p.runId());
         c.putString("playerUuid", p.playerUuid());
         c.putString("playerName", p.playerName());
         return c;
     }
 
-    private static GSRRunParticipant participantFromNbt(NbtCompound c) {
+    private static GSRRunParticipant participantFromNbt(CompoundTag c) {
         return new GSRRunParticipant(
             c.getString("runId").orElse(""),
             c.getString("playerUuid").orElse(""),
@@ -101,8 +101,8 @@ public final class GSRRunSaveStateNbt {
         );
     }
 
-    private static NbtCompound snapshotToNbt(GSRRunPlayerSnapshot s) {
-        NbtCompound c = new NbtCompound();
+    private static CompoundTag snapshotToNbt(GSRRunPlayerSnapshot s) {
+        CompoundTag c = new CompoundTag();
         c.putString("runId", s.runId());
         c.putString("playerUuid", s.playerUuid());
         c.putString("playerName", s.playerName());
@@ -137,7 +137,7 @@ public final class GSRRunSaveStateNbt {
         return c;
     }
 
-    private static GSRRunPlayerSnapshot snapshotFromNbt(NbtCompound c) {
+    private static GSRRunPlayerSnapshot snapshotFromNbt(CompoundTag c) {
         return new GSRRunPlayerSnapshot(
             c.getString("runId").orElse(""),
             c.getString("playerUuid").orElse(""),

@@ -1,19 +1,19 @@
 package net.berkle.groupspeedrun.network;
 
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
 /** S2C: Server tells client to send their run IDs. */
-public record GSRRunIdsRequestPayload() implements CustomPayload {
+public record GSRRunIdsRequestPayload() implements CustomPacketPayload {
 
-    public static final Id<GSRRunIdsRequestPayload> ID = new Id<>(Identifier.of("gsr", "run_ids_request"));
+    public static final Type<GSRRunIdsRequestPayload> ID = new Type<>(Identifier.fromNamespaceAndPath("gsr", "run_ids_request"));
 
-    public static final PacketCodec<PacketByteBuf, GSRRunIdsRequestPayload> CODEC = PacketCodec.unit(new GSRRunIdsRequestPayload());
+    public static final StreamCodec<RegistryFriendlyByteBuf, GSRRunIdsRequestPayload> CODEC = StreamCodec.unit(new GSRRunIdsRequestPayload());
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

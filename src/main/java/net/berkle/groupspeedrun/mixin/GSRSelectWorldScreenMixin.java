@@ -1,9 +1,9 @@
 package net.berkle.groupspeedrun.mixin;
 
 import net.berkle.groupspeedrun.GSRClient;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.world.CreateWorldScreen;
-import net.minecraft.client.gui.screen.world.SelectWorldScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen;
+import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

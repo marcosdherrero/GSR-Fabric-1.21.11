@@ -4,11 +4,11 @@ import net.berkle.groupspeedrun.GSRMain;
 import net.berkle.groupspeedrun.GSRStats;
 import net.berkle.groupspeedrun.config.GSRConfigWorld;
 import net.berkle.groupspeedrun.parameter.GSRTrackerParameters;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.item.Items;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.Items;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
 
 /**
  * Event handler for movement-based auto-start and auto-resume triggers.
@@ -24,7 +24,7 @@ public final class GSRMovementAutoStartListener {
     private GSRMovementAutoStartListener() {}
 
     /**
-     * Called each tick when player is in ServerWorld. Evaluates movement and triggers start/resume if appropriate.
+     * Called each tick when player is in ServerLevel. Evaluates movement and triggers start/resume if appropriate.
      *
      * @param server server instance
      * @param player the player
@@ -35,10 +35,10 @@ public final class GSRMovementAutoStartListener {
      * @param prevY previous Y
      * @param prevZ previous Z
      * @param armedTicksInWorld ticks spent in world while armed (for warmup)
-     * @param baselineFromServerWorld true if baseline was set in ServerWorld
+     * @param baselineFromServerWorld true if baseline was set in ServerLevel
      * @return true if caller should increment armedTicksInWorld (for Primed state)
      */
-    public static boolean onTick(MinecraftServer server, ServerPlayerEntity player,
+    public static boolean onTick(MinecraftServer server, ServerPlayer player,
             double x, double y, double z, double prevX, double prevY, double prevZ,
             int armedTicksInWorld, boolean baselineFromServerWorld) {
         GSRConfigWorld config = GSRMain.CONFIG;
@@ -78,13 +78,13 @@ public final class GSRMovementAutoStartListener {
         return false;
     }
 
-    /** Returns true if player is in a ServerWorld (for movement evaluation). */
-    public static boolean isInServerWorld(ServerPlayerEntity player) {
-        return player.getEntityWorld() instanceof ServerWorld;
+    /** Returns true if player is in a ServerLevel (for movement evaluation). */
+    public static boolean isInServerWorld(ServerPlayer player) {
+        return player.level() instanceof ServerLevel;
     }
 
     /** Resolves travel type for distance stats. Keys: walk, sprint, swim, fly, climb, fall. */
-    private static String resolveTravelType(ServerPlayerEntity player) {
+    private static String resolveTravelType(ServerPlayer player) {
         if (player.getAbilities().flying) return "fly";
         if (player.isSwimming()) return "swim";
         if (player.isClimbing()) return "climb";

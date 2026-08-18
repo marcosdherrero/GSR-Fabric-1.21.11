@@ -54,7 +54,7 @@ public final class GSRTimerConfig {
     /** Brown for deranked run (invalid for ranking). §6 fallback when ARGB not used. */
     public static final String COLOR_DERANKED = "§6";
 
-    // --- ARGB colors (custom hex for timer title/time; used with DrawContext) ---
+    // --- ARGB colors (custom hex for timer title/time; used with GuiGraphicsExtractor) ---
     /** Running (ranked). #DDD605. */
     public static final int COLOR_RUNNING_ARGB = 0xFFDDD605;
     /** Deranked run. #B4684D. */

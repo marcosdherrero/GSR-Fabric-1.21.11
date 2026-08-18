@@ -2,10 +2,10 @@ package net.berkle.groupspeedrun.client;
 
 import net.berkle.groupspeedrun.parameter.GSRButtonParameters;
 import net.berkle.groupspeedrun.parameter.GSRUiParameters;
-import net.minecraft.client.gui.Element;
-import net.minecraft.client.gui.ParentElement;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.ClickableWidget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.components.events.ContainerEventHandler;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.AbstractWidget;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,12 +21,12 @@ public final class GSRTitleScreenLayout {
 
     /** Create GSR Controls button for title screen. Caller must add the returned button.
      * If alone in row (Realms absent), uses full width and centers. */
-    public static ButtonWidget createControlsButton(net.minecraft.client.MinecraftClient client, net.minecraft.client.gui.screen.Screen screen, int width, int height) {
+    public static Button createControlsButton(net.minecraft.client.Minecraft client, net.minecraft.client.gui.screens.Screen screen, int width, int height) {
         LayoutResult layout = computeLayout(screen, width, height);
         boolean aloneInRow = layout.realmsButton == null;
         int x = aloneInRow ? layout.fullX : layout.gsrX;
         int w = aloneInRow ? layout.fullW : layout.halfW;
-        return ButtonWidget.builder(GSRButtonParameters.literal(GSRButtonParameters.TITLE_GSR_CONTROLS),
+        return Button.builder(GSRButtonParameters.literal(GSRButtonParameters.TITLE_GSR_CONTROLS),
                         btn -> {
                             if (client != null) client.setScreen(new net.berkle.groupspeedrun.gui.GSRControlsScreen(screen));
                         })
@@ -34,8 +34,8 @@ public final class GSRTitleScreenLayout {
                 .build();
     }
 
-    /** Re-apply layout for all main menu buttons. Call after init and refreshWidgetPositions. */
-    public static void applyRunHistoryLayout(net.minecraft.client.gui.screen.Screen screen) {
+    /** Re-apply layout for all main menu buttons. Call after init and repositionElements. */
+    public static void applyRunHistoryLayout(net.minecraft.client.gui.screens.Screen screen) {
         LayoutResult layout = computeLayout(screen, screen.width, screen.height);
 
         if (layout.singleplayerButton != null) {
@@ -46,7 +46,7 @@ public final class GSRTitleScreenLayout {
             layout.multiplayerButton.setPosition(layout.fullX, layout.row2Y);
             layout.multiplayerButton.setDimensions(layout.fullW, layout.btnH);
         }
-        ClickableWidget gsrBtn = findGsrMainMenuButton(screen);
+        AbstractWidget gsrBtn = findGsrMainMenuButton(screen);
         boolean row3HasGsr = gsrBtn != null;
         boolean row3HasRealms = layout.realmsButton != null;
         if (gsrBtn != null) {
@@ -85,25 +85,25 @@ public final class GSRTitleScreenLayout {
         }
     }
 
-    private static ClickableWidget findGsrMainMenuButton(net.minecraft.client.gui.screen.Screen screen) {
+    private static AbstractWidget findGsrMainMenuButton(net.minecraft.client.gui.screens.Screen screen) {
         return findButtonByLabel(screen, GSRButtonParameters.TITLE_GSR_CONTROLS);
     }
 
-    private static ClickableWidget findButtonByLabel(net.minecraft.client.gui.screen.Screen screen, String label) {
-        for (ClickableWidget b : collectClickableWidgets(screen)) {
+    private static AbstractWidget findButtonByLabel(net.minecraft.client.gui.screens.Screen screen, String label) {
+        for (AbstractWidget b : collectClickableWidgets(screen)) {
             if (label.equals(b.getMessage().getString())) return b;
         }
         return null;
     }
 
-    private static LayoutResult computeLayout(net.minecraft.client.gui.screen.Screen screen, int width, int height) {
-        List<ClickableWidget> allButtons = collectClickableWidgets(screen);
-        ClickableWidget singleplayerButton = findSingleplayerButton(allButtons);
-        ClickableWidget multiplayerButton = findMultiplayerButton(allButtons);
-        ClickableWidget realmsButton = findRealmsButton(allButtons);
-        ClickableWidget modsButton = findModsButton(allButtons);
-        ClickableWidget optionsButton = findOptionsButton(allButtons);
-        ClickableWidget quitButton = findQuitButton(allButtons);
+    private static LayoutResult computeLayout(net.minecraft.client.gui.screens.Screen screen, int width, int height) {
+        List<AbstractWidget> allButtons = collectClickableWidgets(screen);
+        AbstractWidget singleplayerButton = findSingleplayerButton(allButtons);
+        AbstractWidget multiplayerButton = findMultiplayerButton(allButtons);
+        AbstractWidget realmsButton = findRealmsButton(allButtons);
+        AbstractWidget modsButton = findModsButton(allButtons);
+        AbstractWidget optionsButton = findOptionsButton(allButtons);
+        AbstractWidget quitButton = findQuitButton(allButtons);
 
         int fullW = GSRUiParameters.TITLE_FULL_BUTTON_WIDTH;
         int halfW = GSRUiParameters.TITLE_HALF_BUTTON_WIDTH;
@@ -134,44 +134,44 @@ public final class GSRTitleScreenLayout {
         );
     }
 
-    private static ClickableWidget findSingleplayerButton(List<ClickableWidget> buttons) {
-        for (ClickableWidget b : buttons) {
+    private static AbstractWidget findSingleplayerButton(List<AbstractWidget> buttons) {
+        for (AbstractWidget b : buttons) {
             if (b.getMessage().getString().toLowerCase().contains("single")) return b;
         }
         return null;
     }
 
-    private static ClickableWidget findMultiplayerButton(List<ClickableWidget> buttons) {
-        for (ClickableWidget b : buttons) {
+    private static AbstractWidget findMultiplayerButton(List<AbstractWidget> buttons) {
+        for (AbstractWidget b : buttons) {
             if (b.getMessage().getString().toLowerCase().contains("multi")) return b;
         }
         return null;
     }
 
-    private static ClickableWidget findRealmsButton(List<ClickableWidget> buttons) {
-        for (ClickableWidget b : buttons) {
+    private static AbstractWidget findRealmsButton(List<AbstractWidget> buttons) {
+        for (AbstractWidget b : buttons) {
             if (b.getMessage().getString().toLowerCase().contains("realms")) return b;
         }
         return null;
     }
 
-    private static ClickableWidget findModsButton(List<ClickableWidget> buttons) {
-        for (ClickableWidget b : buttons) {
+    private static AbstractWidget findModsButton(List<AbstractWidget> buttons) {
+        for (AbstractWidget b : buttons) {
             String msg = b.getMessage().getString().toLowerCase();
             if ("mods".equals(msg) || msg.contains("mod menu")) return b;
         }
         return null;
     }
 
-    private static ClickableWidget findOptionsButton(List<ClickableWidget> buttons) {
-        for (ClickableWidget b : buttons) {
+    private static AbstractWidget findOptionsButton(List<AbstractWidget> buttons) {
+        for (AbstractWidget b : buttons) {
             if (b.getMessage().getString().toLowerCase().contains("options")) return b;
         }
         return null;
     }
 
-    private static ClickableWidget findQuitButton(List<ClickableWidget> buttons) {
-        for (ClickableWidget b : buttons) {
+    private static AbstractWidget findQuitButton(List<AbstractWidget> buttons) {
+        for (AbstractWidget b : buttons) {
             if (b.getMessage().getString().toLowerCase().contains("quit")) return b;
         }
         return null;
@@ -191,22 +191,22 @@ public final class GSRTitleScreenLayout {
             int row3Y,
             int row4Y,
             int optionsQuitY,
-            ClickableWidget singleplayerButton,
-            ClickableWidget multiplayerButton,
-            ClickableWidget realmsButton,
-            ClickableWidget modsButton,
-            ClickableWidget optionsButton,
-            ClickableWidget quitButton
+            AbstractWidget singleplayerButton,
+            AbstractWidget multiplayerButton,
+            AbstractWidget realmsButton,
+            AbstractWidget modsButton,
+            AbstractWidget optionsButton,
+            AbstractWidget quitButton
     ) {}
 
-    private static List<ClickableWidget> collectClickableWidgets(net.minecraft.client.gui.screen.Screen screen) {
-        List<ClickableWidget> out = new ArrayList<>();
+    private static List<AbstractWidget> collectClickableWidgets(net.minecraft.client.gui.screens.Screen screen) {
+        List<AbstractWidget> out = new ArrayList<>();
         collectClickableWidgetsRecursive(screen, out);
         return out;
     }
 
-    private static void collectClickableWidgetsRecursive(Element parent, List<ClickableWidget> out) {
-        if (parent instanceof ClickableWidget cw) {
+    private static void collectClickableWidgetsRecursive(Element parent, List<AbstractWidget> out) {
+        if (parent instanceof AbstractWidget cw) {
             out.add(cw);
         }
         if (parent instanceof ParentElement pe) {

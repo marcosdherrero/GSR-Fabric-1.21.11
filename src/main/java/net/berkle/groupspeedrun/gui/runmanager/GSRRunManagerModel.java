@@ -1,10 +1,10 @@
 package net.berkle.groupspeedrun.gui.runmanager;
 
 import net.berkle.groupspeedrun.parameter.GSRWorldConfigParameters;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtString;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -40,12 +40,12 @@ public final class GSRRunManagerModel {
     public long healthSelectionTimeMs;
 
     /** Load from NBT (from server). */
-    public void loadFrom(NbtCompound nbt) {
+    public void loadFrom(CompoundTag nbt) {
         allPlayers.clear();
-        NbtList playersList = nbt.getList("players").orElse(new NbtList());
+        ListTag playersList = nbt.getList("players").orElse(new ListTag());
         for (int i = 0; i < playersList.size(); i++) {
-            NbtElement el = playersList.get(i);
-            if (!(el instanceof NbtCompound c)) continue;
+            Tag el = playersList.get(i);
+            if (!(el instanceof CompoundTag c)) continue;
             String uuidStr = c.getString("uuid").orElse("");
             String name = c.getString("name").orElse("Unknown");
             if (!uuidStr.isEmpty()) {
@@ -62,13 +62,13 @@ public final class GSRRunManagerModel {
         readUuidSet(nbt, GSRWorldConfigParameters.K_EXCLUDED_FROM_RUN, excluded);
     }
 
-    private static void readUuidSet(NbtCompound nbt, String key, Set<UUID> out) {
+    private static void readUuidSet(CompoundTag nbt, String key, Set<UUID> out) {
         out.clear();
-        NbtList list = nbt.getList(key).orElse(new NbtList());
+        ListTag list = nbt.getList(key).orElse(new ListTag());
         for (int i = 0; i < list.size(); i++) {
             try {
-                NbtElement el = list.get(i);
-                if (el instanceof NbtString nbtStr) {
+                Tag el = list.get(i);
+                if (el instanceof StringTag nbtStr) {
                     String s = nbtStr.asString().orElse("");
                     if (!s.isEmpty()) out.add(UUID.fromString(s));
                 }

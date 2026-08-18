@@ -1,7 +1,7 @@
 package net.berkle.groupspeedrun.config;
 
 import net.berkle.groupspeedrun.parameter.GSRHudParameters;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 /** HUD row height options (6–24 px). Used for single-selection in GSR Preferences. */
 public enum GSRRowHeightOption {

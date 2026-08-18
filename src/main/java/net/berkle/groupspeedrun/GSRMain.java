@@ -11,10 +11,10 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 
 // Minecraft: server, world, damage
-import net.minecraft.entity.damage.DamageTypes;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.world.World;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 
 // GSR: config, managers, payloads, parameters, server
 import net.berkle.groupspeedrun.config.GSRConfigPayload;
@@ -103,11 +103,11 @@ public class GSRMain implements ModInitializer {
         });
 
         ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamageTaken, damageTaken, blocked) -> {
-            if (entity instanceof ServerPlayerEntity player && damageTaken > 0) {
+            if (entity instanceof ServerPlayer player && damageTaken > 0) {
                 GSRSharedHealthBroadcast.onSharedHealthPlayerDamaged(player, source, damageTaken);
                 // Track damage taken using actual amount (post-armor); covers all damage types
                 if (GSRMain.CONFIG != null && GSRMain.CONFIG.startTime > 0 && !GSRMain.CONFIG.isTimerFrozen
-                        && entity.getEntityWorld() instanceof ServerWorld world) {
+                        && entity.level() instanceof ServerLevel world) {
                     String typeId = GSRStats.getDamageTypeId(world, source);
                     GSRStats.addDamageTakenByType(player.getUuid(), typeId, damageTaken);
                     if (source.isOf(DamageTypes.FALL) || "minecraft:fall".equals(typeId)) {
@@ -118,9 +118,9 @@ public class GSRMain implements ModInitializer {
         });
 
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> {
-            if (entity instanceof net.minecraft.server.network.ServerPlayerEntity) return;
+            if (entity instanceof net.minecraft.server.level.ServerPlayer) return;
             var attacker = damageSource.getAttacker();
-            if (attacker instanceof ServerPlayerEntity player && GSRStats.shouldRecordForPlayer(player.getUuid())) {
+            if (attacker instanceof ServerPlayer player && GSRStats.shouldRecordForPlayer(player.getUuid())) {
                 if (GSRMain.CONFIG != null && GSRMain.CONFIG.startTime > 0 && !GSRMain.CONFIG.isTimerFrozen) {
                     String entityTypeId = entity.getType().getRegistryEntry().getKey().map(k -> k.getValue().toString()).orElse(null);
                     if (entityTypeId != null) GSRStats.addEntityKill(player.getUuid(), entityTypeId);
@@ -129,7 +129,7 @@ public class GSRMain implements ModInitializer {
         });
 
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-            ServerPlayerEntity player = handler.getPlayer();
+            ServerPlayer player = handler.getPlayer();
             getTimer().primeRunIfArmed(server);
             // Resume runs frozen by server stop before syncing so client gets running state, not frozen
             getTimer().tryAutoStartOrResumeOnJoin(server);
@@ -149,7 +149,7 @@ public class GSRMain implements ModInitializer {
         });
         ServerWorldEvents.LOAD.register((server, world) -> {
             // Load config when overworld loads so save path is definitely available
-            if (world.getRegistryKey() == World.OVERWORLD) {
+            if (world.dimension() == World.OVERWORLD) {
                 CONFIG = GSRConfigWorld.load(server);
                 // Prime armed state immediately so auto-start works even if LOAD fires after SERVER_STARTED
                 getTimer().primeRunIfArmed(server);

@@ -2,7 +2,7 @@ package net.berkle.groupspeedrun.gui.components;
 
 import net.berkle.groupspeedrun.parameter.GSRButtonParameters;
 import net.berkle.groupspeedrun.parameter.GSRUiParameters;
-import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.components.Button;
 
 /**
  * Shared factory for menus and buttons.
@@ -22,8 +22,8 @@ public final class GSRMenuComponents {
      * @param width   Button width.
      * @param height  Button height.
      */
-    public static ButtonWidget button(String label, Runnable action, int x, int y, int width, int height) {
-        return ButtonWidget.builder(GSRButtonParameters.literal(label), b -> action.run())
+    public static Button button(String label, Runnable action, int x, int y, int width, int height) {
+        return Button.builder(GSRButtonParameters.literal(label), b -> action.run())
                 .dimensions(x, y, width, height)
                 .build();
     }

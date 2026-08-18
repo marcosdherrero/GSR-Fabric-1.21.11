@@ -1,44 +1,44 @@
 package net.berkle.groupspeedrun.network;
 
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtString;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /** C2S: Client sends their run IDs. S2C: Server sends other players' run IDs to a joiner. */
-public record GSRRunIdsPayload(net.minecraft.nbt.NbtCompound nbt) implements CustomPayload {
+public record GSRRunIdsPayload(net.minecraft.nbt.CompoundTag nbt) implements CustomPacketPayload {
 
-    public static final Id<GSRRunIdsPayload> ID = new Id<>(Identifier.of("gsr", "run_ids"));
+    public static final Type<GSRRunIdsPayload> ID = new Type<>(Identifier.fromNamespaceAndPath("gsr", "run_ids"));
 
-    public static final PacketCodec<PacketByteBuf, GSRRunIdsPayload> CODEC = PacketCodec.tuple(
-            PacketCodecs.NBT_COMPOUND, GSRRunIdsPayload::nbt,
+    public static final StreamCodec<RegistryFriendlyByteBuf, GSRRunIdsPayload> CODEC = StreamCodec.composite(
+            ByteBufCodecs.COMPOUND_TAG_COMPOUND, GSRRunIdsPayload::nbt,
             GSRRunIdsPayload::new
     );
 
     public static final String KEY_RUN_IDS = "runIds";
 
-    public static NbtCompound toNbt(List<String> runIds) {
-        NbtCompound nbt = new NbtCompound();
-        NbtList list = new NbtList();
-        for (String id : runIds) list.add(NbtString.of(id));
+    public static CompoundTag toNbt(List<String> runIds) {
+        CompoundTag nbt = new CompoundTag();
+        ListTag list = new ListTag();
+        for (String id : runIds) list.add(StringTag.of(id));
         nbt.put(KEY_RUN_IDS, list);
         return nbt;
     }
 
-    public static List<String> fromNbt(NbtCompound nbt) {
+    public static List<String> fromNbt(CompoundTag nbt) {
         List<String> out = new ArrayList<>();
-        NbtList list = nbt.getList(KEY_RUN_IDS).orElse(new NbtList());
+        ListTag list = nbt.getList(KEY_RUN_IDS).orElse(new ListTag());
         for (int i = 0; i < list.size(); i++) {
-            NbtElement el = list.get(i);
-            if (el instanceof NbtString nbtStr) {
+            Tag el = list.get(i);
+            if (el instanceof StringTag nbtStr) {
                 nbtStr.asString().ifPresent(out::add);
             }
         }
@@ -46,7 +46,7 @@ public record GSRRunIdsPayload(net.minecraft.nbt.NbtCompound nbt) implements Cus
     }
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

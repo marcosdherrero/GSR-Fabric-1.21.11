@@ -2,10 +2,10 @@ package net.berkle.groupspeedrun.gui;
 
 // Minecraft: screen, GUI, input, text
 import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.input.KeyInput;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.network.chat.Component;
 
 // GSR: client, config, data, gui components, parameters, util
 import net.berkle.groupspeedrun.GSRClient;
@@ -110,9 +110,9 @@ public class GSRRunHistoryScreen extends Screen {
         model.deriveSelectedRunForTab0();
 
         var footer = GSRMenuComponents.footerLayout(width, height, GSRRunHistoryParameters.RUN_HISTORY_FOOTER_Y_OFFSET);
-        addDrawableChild(GSRMenuComponents.button(GSRButtonParameters.FOOTER_BACK, this::goBack,
+        addRenderableWidget(GSRMenuComponents.button(GSRButtonParameters.FOOTER_BACK, this::goBack,
                 footer.leftX(), footer.footerY(), footer.buttonWidth(), footer.buttonHeight()));
-        addDrawableChild(GSRMenuComponents.button(GSRButtonParameters.RUN_HISTORY_EXPORT_CSV, this::openExportCsvPopup,
+        addRenderableWidget(GSRMenuComponents.button(GSRButtonParameters.RUN_HISTORY_EXPORT_CSV, this::openExportCsvPopup,
                 footer.rightX(), footer.footerY(), footer.buttonWidth(), footer.buttonHeight()));
     }
 
@@ -191,7 +191,7 @@ public class GSRRunHistoryScreen extends Screen {
      */
     private GSRRunSaveState buildCurrentRunState() {
         GSRConfigWorld config = GSRClient.clientWorldConfig;
-        if (config == null || config.startTime <= 0 || client == null || client.world == null) return null;
+        if (config == null || config.startTime <= 0 || client == null || client.level == null) return null;
         long startMs = config.startTime;
         long endMs = config.isTimerFrozen ? startMs + config.frozenTime : System.currentTimeMillis();
         String startDateIso = DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(startMs));
@@ -201,7 +201,7 @@ public class GSRRunHistoryScreen extends Screen {
         var server = client.getServer();
         String worldName = server != null
                 ? server.getSaveProperties().getLevelName()
-                : (client.world != null ? "World" : "Current");
+                : (client.level != null ? "World" : "Current");
         boolean deranked = config.antiCheatEnabled && config.locatorDeranked;
         int participantCount = Math.max(1, config.runParticipantCount);
         String runDifficulty = GSRRunRecord.computeRunDifficulty(participantCount, config.lowestDifficultyOrdinal);
@@ -312,10 +312,10 @@ public class GSRRunHistoryScreen extends Screen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, width, height, GSRUiParameters.SCREEN_BG_DARK);
         super.render(context, mouseX, mouseY, delta);
-        context.drawCenteredTextWithShadow(textRenderer, getTitle(), width / 2, GSRRunHistoryParameters.RUN_HISTORY_TITLE_Y, GSRUiParameters.TITLE_COLOR);
+        context.centeredText(textRenderer, getTitle(), width / 2, GSRRunHistoryParameters.RUN_HISTORY_TITLE_Y, GSRUiParameters.TITLE_COLOR);
 
         boolean dropdownOpen = model.filterDropdownOpen || model.playerCountDropdownOpen || model.runsDropdownOpen || model.compareDropdownOpen || model.chartViewDropdownOpen || model.typeDropdownOpen;
         if (dropdownOpen) {
@@ -386,7 +386,7 @@ public class GSRRunHistoryScreen extends Screen {
 
     /** Returns height in pixels for wrapped dropdown header text. */
     private int getDropdownHeaderHeight(String text, int maxWidth) {
-        return textRenderer.wrapLines(Text.literal(text), Math.max(1, maxWidth)).size() * textRenderer.fontHeight;
+        return textRenderer.wrapLines(Text.literal(text), Math.max(1, maxWidth)).size() * textRenderer.lineHeight;
     }
 
     private static final int RUN_INFO_AUTO_IDLE = 0;
@@ -1166,7 +1166,7 @@ public class GSRRunHistoryScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(KeyInput keyInput) {
+    public boolean keyPressed(KeyEvent keyInput) {
         if (keyInput.key() == GLFW.GLFW_KEY_ESCAPE) {
             goBack();
             return true;

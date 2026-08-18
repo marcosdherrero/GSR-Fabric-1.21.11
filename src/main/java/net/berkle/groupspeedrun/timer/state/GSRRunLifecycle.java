@@ -9,15 +9,15 @@ import net.berkle.groupspeedrun.managers.GSRWorldSnapshotManager;
 import net.berkle.groupspeedrun.network.GSRSplitAchievedPayload;
 import net.berkle.groupspeedrun.server.GSRConfigSync;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.advancement.AdvancementEntry;
-import net.minecraft.advancement.AdvancementProgress;
+import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.text.Text;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.Difficulty;
-import net.minecraft.world.GameMode;
+import net.minecraft.world.level.GameType;
 
 import java.util.Collections;
 
@@ -41,7 +41,7 @@ public final class GSRRunLifecycle {
         config.frozenTime = 0;
         config.lowestDifficultyOrdinal = -1;
         config.clearSplitsOnly();
-        config.lastSplitTime = server.getOverworld().getTime();
+        config.lastSplitTime = server.getOverworld().getGameTime();
         Difficulty prevDifficulty = server.getSaveProperties().getDifficulty();
         server.getSaveProperties().setDifficulty(Difficulty.HARD);
         config.save(server);
@@ -105,7 +105,7 @@ public final class GSRRunLifecycle {
         if (config.frozenTime > 0) {
             config.startTime = System.currentTimeMillis() - config.frozenTime;
         }
-        config.lastSplitTime = server.getOverworld().getTime();
+        config.lastSplitTime = server.getOverworld().getGameTime();
         config.save(server);
         GSRConfigSync.syncConfigWithAll(server);
         sendTimerStartEffect(server);
@@ -117,7 +117,7 @@ public final class GSRRunLifecycle {
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null) return;
         var payload = new GSRSplitAchievedPayload("Start", 0L);
-        for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
+        for (ServerPlayer p : server.getPlayerManager().getPlayerList()) {
             if (!config.excludedFromRun.contains(p.getUuid())) {
                 ServerPlayNetworking.send(p, payload);
             }
@@ -137,12 +137,12 @@ public final class GSRRunLifecycle {
         config.resetRunData();
         GSRStats.reset();
 
-        ServerWorld overworld = server.getOverworld();
+        ServerLevel overworld = server.getOverworld();
         BlockPos spawnPos = overworld.getSpawnPoint().getPos();
 
-        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+        for (ServerPlayer player : server.getPlayerManager().getPlayerList()) {
             player.stopRiding();
-            player.changeGameMode(GameMode.SURVIVAL);
+            player.changeGameMode(GameType.SURVIVAL);
             player.getInventory().clear();
             player.setHealth(player.getMaxHealth());
             player.getHungerManager().setFoodLevel(20);
@@ -168,8 +168,8 @@ public final class GSRRunLifecycle {
         GSRBroadcastManager.broadcastToRunParticipants(server, Text.literal("§6§l[GSR] Run reset."));
     }
 
-    private static void revokeAllAdvancements(ServerPlayerEntity player, MinecraftServer server) {
-        for (AdvancementEntry advancement : server.getAdvancementLoader().getAdvancements()) {
+    private static void revokeAllAdvancements(ServerPlayer player, MinecraftServer server) {
+        for (AdvancementHolder advancement : server.getAdvancementLoader().getAdvancements()) {
             AdvancementProgress progress = player.getAdvancementTracker().getProgress(advancement);
             if (progress.isAnyObtained()) {
                 for (String criterion : progress.getObtainedCriteria()) {

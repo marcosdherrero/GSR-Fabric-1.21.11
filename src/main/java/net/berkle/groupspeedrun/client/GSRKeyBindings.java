@@ -1,9 +1,9 @@
 package net.berkle.groupspeedrun.client;
 
 import net.berkle.groupspeedrun.parameter.GSRKeyBindingParameters;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.KeyMapping;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.resources.Identifier;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 
 /**
@@ -19,45 +19,45 @@ public final class GSRKeyBindings {
     public static final String PRESS_TO_SHOW_HUD_KEY = GSRKeyBindingParameters.PRESS_TO_SHOW_HUD_KEY;
 
     /** Category for Options → Controls so GSR keybinds appear in a "GSR" section. */
-    private static final KeyBinding.Category GSR_CATEGORY = KeyBinding.Category.create(Identifier.of("gsr", "category"));
+    private static final KeyMapping.Category GSR_CATEGORY = KeyMapping.Category.create(Identifier.fromNamespaceAndPath("gsr", "category"));
 
-    public static KeyBinding newGsrWorldKey;
-    public static KeyBinding openGsrOptionsKey;
+    public static KeyMapping newGsrWorldKey;
+    public static KeyMapping openGsrOptionsKey;
     /** Open GSR Config (default G+C: hold G, press C). */
-    public static KeyBinding openGsrConfigKey;
+    public static KeyMapping openGsrConfigKey;
     /** Toggle HUD on/off (default V). */
-    public static KeyBinding toggleGsrHudKey;
+    public static KeyMapping toggleGsrHudKey;
     /** Hold to show HUD (default Tab). */
-    public static KeyBinding pressToShowGsrHudKey;
+    public static KeyMapping pressToShowGsrHudKey;
 
     public static void register() {
-        newGsrWorldKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        newGsrWorldKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 NEW_WORLD_KEY,
-                InputUtil.Type.KEYSYM,
+                InputConstants.Type.KEYSYM,
                 GSRKeyBindingParameters.DEFAULT_NEW_WORLD,
                 GSR_CATEGORY
         ));
-        openGsrOptionsKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        openGsrOptionsKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 OPEN_OPTIONS_KEY,
-                InputUtil.Type.KEYSYM,
+                InputConstants.Type.KEYSYM,
                 GSRKeyBindingParameters.DEFAULT_OPEN_OPTIONS,
                 GSR_CATEGORY
         ));
-        openGsrConfigKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        openGsrConfigKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 OPEN_CONFIG_KEY,
-                InputUtil.Type.KEYSYM,
+                InputConstants.Type.KEYSYM,
                 GSRKeyBindingParameters.DEFAULT_OPEN_CONFIG,
                 GSR_CATEGORY
         ));
-        toggleGsrHudKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        toggleGsrHudKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 TOGGLE_HUD_KEY,
-                InputUtil.Type.KEYSYM,
+                InputConstants.Type.KEYSYM,
                 GSRKeyBindingParameters.DEFAULT_TOGGLE_HUD,
                 GSR_CATEGORY
         ));
-        pressToShowGsrHudKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        pressToShowGsrHudKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 PRESS_TO_SHOW_HUD_KEY,
-                InputUtil.Type.KEYSYM,
+                InputConstants.Type.KEYSYM,
                 GSRKeyBindingParameters.DEFAULT_PRESS_TO_SHOW_HUD,
                 GSR_CATEGORY
         ));

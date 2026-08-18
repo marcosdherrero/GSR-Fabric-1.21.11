@@ -5,12 +5,12 @@ import net.berkle.groupspeedrun.mixin.accessors.GSRButtonWidgetAccessor;
 import net.berkle.groupspeedrun.mixin.accessors.GSRGameMenuScreenAccessor;
 import net.berkle.groupspeedrun.parameter.GSRButtonParameters;
 import net.berkle.groupspeedrun.parameter.GSRUiParameters;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.GameMenuScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.input.KeyInput;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.PauseScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
 /**
@@ -38,9 +38,9 @@ public class GSRNewWorldConfirmScreen extends Screen {
         int y = height / 2 + GSRUiParameters.CONTROLS_PADDING;
 
         // Two buttons: Continue (saves world and opens Create World) and Cancel
-        addDrawableChild(ButtonWidget.builder(GSRButtonParameters.literal(GSRButtonParameters.NEW_WORLD_SAVE_CREATE), btn -> confirm())
+        addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.NEW_WORLD_SAVE_CREATE), btn -> confirm())
                 .dimensions(centerX - buttonWidth - gap / 2, y, buttonWidth, buttonHeight).build());
-        addDrawableChild(ButtonWidget.builder(GSRButtonParameters.literal(GSRButtonParameters.NEW_WORLD_CANCEL), btn -> cancel())
+        addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.NEW_WORLD_CANCEL), btn -> cancel())
                 .dimensions(centerX + gap / 2, y, buttonWidth, buttonHeight).build());
     }
 
@@ -48,10 +48,10 @@ public class GSRNewWorldConfirmScreen extends Screen {
         GSRClient.nextGsrWorldName = suggestedWorldName;
         if (client != null && client.getServer() != null) {
             // Open pause menu, then simulate clicking "Save and Quit" on next tick (same code path as user click).
-            client.setScreen(new GameMenuScreen(true));
+            client.setScreen(new PauseScreen(true));
             client.execute(() -> {
-                if (client.currentScreen instanceof GameMenuScreen menu) {
-                    ButtonWidget exitBtn = ((GSRGameMenuScreenAccessor) menu).gsr$getExitButton();
+                if (client.currentScreen instanceof PauseScreen menu) {
+                    Button exitBtn = ((GSRGameMenuScreenAccessor) menu).gsr$getExitButton();
                     if (exitBtn != null) {
                         ((GSRButtonWidgetAccessor) exitBtn).gsr$getOnPress().onPress(exitBtn);
                     }
@@ -69,19 +69,19 @@ public class GSRNewWorldConfirmScreen extends Screen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, width, height, GSRUiParameters.STATUS_BG_COLOR);
         super.render(context, mouseX, mouseY, delta);
 
-        context.drawCenteredTextWithShadow(textRenderer, getTitle(), width / 2, height / 2 - GSRUiParameters.NEW_WORLD_TITLE_OFFSET, GSRUiParameters.NEW_WORLD_TITLE_COLOR);
+        context.centeredText(textRenderer, getTitle(), width / 2, height / 2 - GSRUiParameters.NEW_WORLD_TITLE_OFFSET, GSRUiParameters.NEW_WORLD_TITLE_COLOR);
         String line1 = "Saves the world and opens Create World with:";
         String line2 = suggestedWorldName;
-        context.drawCenteredTextWithShadow(textRenderer, line1, width / 2, height / 2 - GSRUiParameters.NEW_WORLD_LINE1_OFFSET, GSRUiParameters.NEW_WORLD_LINE1_COLOR);
-        context.drawCenteredTextWithShadow(textRenderer, line2, width / 2, height / 2 - GSRUiParameters.NEW_WORLD_LINE2_OFFSET, GSRUiParameters.NEW_WORLD_LINE2_COLOR);
+        context.centeredText(textRenderer, line1, width / 2, height / 2 - GSRUiParameters.NEW_WORLD_LINE1_OFFSET, GSRUiParameters.NEW_WORLD_LINE1_COLOR);
+        context.centeredText(textRenderer, line2, width / 2, height / 2 - GSRUiParameters.NEW_WORLD_LINE2_OFFSET, GSRUiParameters.NEW_WORLD_LINE2_COLOR);
     }
 
     @Override
-    public boolean keyPressed(KeyInput keyInput) {
+    public boolean keyPressed(KeyEvent keyInput) {
         if (keyInput.key() == GLFW.GLFW_KEY_ESCAPE) {
             cancel();
             return true;

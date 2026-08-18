@@ -6,10 +6,10 @@ import net.berkle.groupspeedrun.config.GSRConfigWorld;
 import net.berkle.groupspeedrun.parameter.GSRUiParameters;
 // Minecraft: server, commands, networking
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.chat.Component;
 
 /**
  * Deranks the run when an admin executes a run-affecting command during an active run.
@@ -30,10 +30,10 @@ public final class GSRAdminCommandDerank {
      * @param command the command string (may have leading slash)
      * @param server the server
      */
-    public static void onCommandExecuted(ServerCommandSource source, String command, MinecraftServer server) {
+    public static void onCommandExecuted(CommandSourceStack source, String command, MinecraftServer server) {
         if (source == null || command == null || server == null) return;
-        if (!(source.getEntity() instanceof ServerPlayerEntity player)) return;
-        if (!CommandManager.ADMINS_CHECK.allows(source.getPermissions())) return;
+        if (!(source.getEntity() instanceof ServerPlayer player)) return;
+        if (!Commands.LEVEL_ADMINS.allows(source.getPermissions())) return;
 
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null) return;

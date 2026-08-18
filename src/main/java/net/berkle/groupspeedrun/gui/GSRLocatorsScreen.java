@@ -92,8 +92,8 @@ public class GSRLocatorsScreen extends Screen {
 
     private void goBack() {
         if (minecraft != null) {
-            if (parent != null) minecraft.setScreen(parent);
-            else minecraft.setScreen(null);
+            if (parent != null) minecraft.gui.setScreen(parent);
+            else minecraft.gui.setScreen(null);
         }
     }
 
@@ -214,7 +214,7 @@ public class GSRLocatorsScreen extends Screen {
                     case 3 -> GSRButtonParameters.LOCATORS_WINGS;
                     default -> "";
                 };
-                if (minecraft != null) minecraft.setScreen(new GSRLocatorInvalidateConfirmScreen(this, label, () -> gsr$sendToggle(index)));
+                if (minecraft != null) minecraft.gui.setScreen(new GSRLocatorInvalidateConfirmScreen(this, label, () -> gsr$sendToggle(index)));
             } else {
                 gsr$sendToggle(index);
             }

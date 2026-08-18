@@ -446,7 +446,7 @@ public final class GSRPreferencesScreen extends Screen {
         backButton = Button.builder(GSRButtonParameters.literal(GSRButtonParameters.FOOTER_BACK), b -> goBack())
                 .bounds(footer.leftX(), footer.footerY(), footer.buttonWidth(), footer.buttonHeight()).build();
         keybindsButton = Button.builder(GSRButtonParameters.literal(GSRButtonParameters.PREFERENCES_KEYBINDS), b -> {
-            if (minecraft != null && minecraft.options != null) minecraft.setScreen(new KeyBindsScreen(this, minecraft.options));
+            if (minecraft != null && minecraft.options != null) minecraft.gui.setScreen(new KeyBindsScreen(this, minecraft.options));
         }).bounds(footer.rightX(), footer.footerY(), footer.buttonWidth(), footer.buttonHeight()).build();
         addRenderableWidget(backButton);
         addRenderableWidget(keybindsButton);
@@ -454,8 +454,8 @@ public final class GSRPreferencesScreen extends Screen {
 
     private void goBack() {
         if (minecraft != null) {
-            if (parent != null) minecraft.setScreen(parent);
-            else minecraft.setScreen(null);
+            if (parent != null) minecraft.gui.setScreen(parent);
+            else minecraft.gui.setScreen(null);
         }
     }
 
@@ -1030,7 +1030,7 @@ public final class GSRPreferencesScreen extends Screen {
             } else if (rowType == 4 && rowId == 0) {
                 gsr$playClickSound();
                 if (minecraft != null) {
-                    minecraft.setScreen(new GSRResetModSettingsConfirmScreen(this));
+                    minecraft.gui.setScreen(new GSRResetModSettingsConfirmScreen(this));
                 }
                 model.lastClickHandledTimeMs = now;
                 return true;

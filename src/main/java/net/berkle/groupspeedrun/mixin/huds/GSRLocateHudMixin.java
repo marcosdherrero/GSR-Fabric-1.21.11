@@ -32,7 +32,7 @@ public class GSRLocateHudMixin {
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void groupspeedrun$renderLocateHud(GuiGraphicsExtractor context, DeltaTracker tickCounter, CallbackInfo ci) {
         Minecraft client = Minecraft.getInstance();
-        if (client.player == null || client.options.hideGui || client.level == null) return;
+        if (client.player == null || client.gui.hud.isHidden() || client.level == null) return;
 
         GSRConfigWorld config = GSRClient.clientWorldConfig;
         if (config == null || config.startTime <= 0) return;
@@ -68,7 +68,7 @@ public class GSRLocateHudMixin {
         int y = pConfig.locateHudOnTop ? GSRLocatorParameters.LOCATE_TOP_Y : context.guiHeight() - GSRLocatorParameters.LOCATE_BOTTOM_OFFSET;
 
         if (pConfig.locateHudOnTop) {
-            var bossBarHud = client.gui.getBossOverlay();
+            var bossBarHud = client.gui.hud.getBossOverlay();
             var activeBars = ((GSRBossBarHudAccessor) bossBarHud).getBossBars();
             if (!activeBars.isEmpty()) {
                 y += activeBars.size() * GSRLocatorParameters.BOSS_BAR_ROW_HEIGHT;

@@ -27,7 +27,7 @@ public abstract class GSRTitleScreenMixin extends Screen {
     private void gsr$onInit(CallbackInfo ci) {
         if (GSRClient.nextGsrWorldName != null && !GSRClient.nextGsrWorldName.isEmpty() && minecraft != null) {
             TitleScreen self = (TitleScreen) (Object) this;
-            minecraft.setScreen(new SelectWorldScreen(self));
+            minecraft.gui.setScreen(new SelectWorldScreen(self));
         } else {
             TitleScreen self = (TitleScreen) (Object) this;
             Button gsrControlsBtn = GSRClient.createControlsButton(minecraft, self, width, height);

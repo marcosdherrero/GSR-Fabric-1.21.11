@@ -28,7 +28,7 @@ public class GSRTimerHudMixin {
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void groupspeedrun$renderTimer(GuiGraphicsExtractor context, DeltaTracker tickCounter, CallbackInfo ci) {
         Minecraft client = Minecraft.getInstance();
-        if (client.player == null || client.options.hideGui || client.level == null) return;
+        if (client.player == null || client.gui.hud.isHidden() || client.level == null) return;
 
         GSRConfigWorld worldConfig = GSRClient.clientWorldConfig;
         GSRConfigPlayer playerConfig = GSRClient.PLAYER_CONFIG;

@@ -48,9 +48,9 @@ public class GSRNewWorldConfirmScreen extends Screen {
         GSRClient.nextGsrWorldName = suggestedWorldName;
         if (minecraft != null && minecraft.getSingleplayerServer() != null) {
             // Open pause menu, then simulate clicking "Save and Quit" on next tick (same code path as user click).
-            minecraft.setScreen(new PauseScreen(true));
+            minecraft.gui.setScreen(new PauseScreen(true));
             minecraft.execute(() -> {
-                if (minecraft.screen instanceof PauseScreen menu) {
+                if (minecraft.gui.screen() instanceof PauseScreen menu) {
                     Button exitBtn = ((GSRGameMenuScreenAccessor) menu).gsr$getExitButton();
                     if (exitBtn != null) {
                         ((GSRButtonWidgetAccessor) exitBtn).gsr$getOnPress().onPress(exitBtn);
@@ -64,7 +64,7 @@ public class GSRNewWorldConfirmScreen extends Screen {
 
     private void cancel() {
         if (minecraft != null) {
-            minecraft.setScreen(parent);
+            minecraft.gui.setScreen(parent);
         }
     }
 

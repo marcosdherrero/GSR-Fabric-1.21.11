@@ -57,7 +57,7 @@ public abstract class GSRCreateWorldScreenMixin extends Screen {
 
     private static boolean gsr$tryApplyName(Minecraft mc, String name) {
         try {
-            if (!(mc.screen instanceof CreateWorldScreen screen)) return false;
+            if (!(mc.gui.screen() instanceof CreateWorldScreen screen)) return false;
             if (GSRClient.nextGsrWorldName == null) return true; // already done
 
             EditBox field = gsr$findWorldNameField(screen);

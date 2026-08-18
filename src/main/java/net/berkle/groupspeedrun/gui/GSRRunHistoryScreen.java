@@ -117,7 +117,7 @@ public class GSRRunHistoryScreen extends Screen {
 
     private void openExportCsvPopup() {
         if (minecraft != null) {
-            minecraft.setScreen(new GSRExportCsvScreen(this, model));
+            minecraft.gui.setScreen(new GSRExportCsvScreen(this, model));
         }
     }
 
@@ -141,7 +141,7 @@ public class GSRRunHistoryScreen extends Screen {
                 };
             }
         }
-        minecraft.setScreen(new GSRDeleteRunConfirmScreen(this, onDeleteOne, onDeleteAll));
+        minecraft.gui.setScreen(new GSRDeleteRunConfirmScreen(this, onDeleteOne, onDeleteAll));
     }
 
     /** Reloads run history after delete; clears selection and re-derives. */
@@ -305,8 +305,8 @@ public class GSRRunHistoryScreen extends Screen {
 
     private void goBack() {
         if (minecraft != null) {
-            if (parent != null) minecraft.setScreen(parent);
-            else minecraft.setScreen(null);
+            if (parent != null) minecraft.gui.setScreen(parent);
+            else minecraft.gui.setScreen(null);
         }
     }
 

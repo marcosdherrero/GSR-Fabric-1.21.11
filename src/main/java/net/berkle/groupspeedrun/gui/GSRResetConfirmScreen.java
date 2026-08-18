@@ -42,13 +42,13 @@ public class GSRResetConfirmScreen extends Screen {
     private void confirm() {
         ClientPlayNetworking.send(new GSRRunActionPayload(GSRRunActionPayload.ACTION_RESET));
         if (minecraft != null) {
-            minecraft.setScreen(parent);
+            minecraft.gui.setScreen(parent);
         }
     }
 
     private void cancel() {
         if (minecraft != null) {
-            minecraft.setScreen(parent);
+            minecraft.gui.setScreen(parent);
         }
     }
 

@@ -29,9 +29,9 @@ public abstract class GSRBaseScreen extends Screen {
     protected void goBack() {
         if (minecraft != null) {
             if (parent != null) {
-                minecraft.setScreen(parent);
+                minecraft.gui.setScreen(parent);
             } else {
-                minecraft.setScreen(null);
+                minecraft.gui.setScreen(null);
             }
         }
     }

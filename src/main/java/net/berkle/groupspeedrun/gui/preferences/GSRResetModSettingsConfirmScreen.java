@@ -86,13 +86,13 @@ public class GSRResetModSettingsConfirmScreen extends Screen {
         }
 
         if (minecraft != null) {
-            minecraft.setScreen(parent);
+            minecraft.gui.setScreen(parent);
         }
     }
 
     private void cancel() {
         if (minecraft != null) {
-            minecraft.setScreen(parent);
+            minecraft.gui.setScreen(parent);
         }
     }
 

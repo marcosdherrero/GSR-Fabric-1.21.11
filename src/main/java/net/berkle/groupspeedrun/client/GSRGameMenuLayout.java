@@ -52,7 +52,7 @@ public final class GSRGameMenuLayout {
         return Button.builder(GSRButtonParameters.literal(GSRButtonParameters.TITLE_GSR_CONTROLS),
                         b -> {
                             if (client != null) {
-                                client.setScreen(new GSRControlsScreen(screen));
+                                client.gui.setScreen(new GSRControlsScreen(screen));
                             }
                         })
                 .bounds(rightX, rowY, halfW, btnH)

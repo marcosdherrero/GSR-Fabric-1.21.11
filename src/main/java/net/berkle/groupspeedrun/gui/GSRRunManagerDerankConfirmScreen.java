@@ -48,11 +48,11 @@ public class GSRRunManagerDerankConfirmScreen extends Screen {
 
     private void confirm() {
         if (onConfirm != null) onConfirm.run();
-        if (minecraft != null) minecraft.setScreen(parent);
+        if (minecraft != null) minecraft.gui.setScreen(parent);
     }
 
     private void cancel() {
-        if (minecraft != null) minecraft.setScreen(parent);
+        if (minecraft != null) minecraft.gui.setScreen(parent);
     }
 
     @Override

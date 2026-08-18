@@ -28,7 +28,7 @@ public final class GSRTitleScreenLayout {
         int w = aloneInRow ? layout.fullW : layout.halfW;
         return Button.builder(GSRButtonParameters.literal(GSRButtonParameters.TITLE_GSR_CONTROLS),
                         btn -> {
-                            if (client != null) client.setScreen(new net.berkle.groupspeedrun.gui.GSRControlsScreen(screen));
+                            if (client != null) client.gui.setScreen(new net.berkle.groupspeedrun.gui.GSRControlsScreen(screen));
                         })
                 .bounds(x, layout.row3Y, w, layout.btnH)
                 .build();

@@ -69,28 +69,28 @@ public class GSRControlsScreen extends GSRBaseScreen {
         addRenderableWidget(startPauseResumeBtn);
 
         Button resetBtn = Button.builder(GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_RESET), b -> {
-                    if (minecraft != null) minecraft.setScreen(new GSRResetConfirmScreen(this));
+                    if (minecraft != null) minecraft.gui.setScreen(new GSRResetConfirmScreen(this));
                 })
                 .bounds(rightX, row1Y, halfW, btnH).build();
         ((GSRClickableWidgetAccessor) resetBtn).gsr$setActive(inWorld && canUseAdmin);
         addRenderableWidget(resetBtn);
 
         Button runManagerBtn = Button.builder(GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_RUN_MANAGER), b -> {
-            if (minecraft != null) minecraft.setScreen(new GSRRunManagerScreen(this));
+            if (minecraft != null) minecraft.gui.setScreen(new GSRRunManagerScreen(this));
         }).bounds(leftX, row2Y, halfW, btnH).build();
         ((GSRClickableWidgetAccessor) runManagerBtn).gsr$setActive(inWorld);
         addRenderableWidget(runManagerBtn);
         Button locatorsBtn = Button.builder(GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_LOCATORS), b -> {
-            if (minecraft != null) minecraft.setScreen(new GSRLocatorsScreen(this));
+            if (minecraft != null) minecraft.gui.setScreen(new GSRLocatorsScreen(this));
         }).bounds(rightX, row2Y, halfW, btnH).build();
         ((GSRClickableWidgetAccessor) locatorsBtn).gsr$setActive(inWorld);
         addRenderableWidget(locatorsBtn);
 
         addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_RUN_HISTORY), b -> {
-            if (minecraft != null) minecraft.setScreen(new GSRRunHistoryScreen(this, true));
+            if (minecraft != null) minecraft.gui.setScreen(new GSRRunHistoryScreen(this, true));
         }).bounds(leftX, row3Y, halfW, btnH).build());
         addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_PREFERENCES), b -> {
-            if (minecraft != null) minecraft.setScreen(new net.berkle.groupspeedrun.gui.preferences.GSRPreferencesScreen(this));
+            if (minecraft != null) minecraft.gui.setScreen(new net.berkle.groupspeedrun.gui.preferences.GSRPreferencesScreen(this));
         }).bounds(rightX, row3Y, halfW, btnH).build());
 
         var footer = GSRMenuComponents.singleButtonFooterLayout(width, height);

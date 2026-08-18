@@ -26,7 +26,7 @@ public abstract class GSRSelectWorldScreenMixin extends Screen {
     private void gsr$openCreateWorldIfNeeded(CallbackInfo ci) {
         if (GSRClient.nextGsrWorldName != null && !GSRClient.nextGsrWorldName.isEmpty() && minecraft != null) {
             SelectWorldScreen self = (SelectWorldScreen) (Object) this;
-            CreateWorldScreen.openFresh(minecraft, () -> minecraft.setScreen(self));
+            CreateWorldScreen.openFresh(minecraft, () -> minecraft.gui.setScreen(self));
         }
     }
 }

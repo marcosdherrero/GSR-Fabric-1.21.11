@@ -85,8 +85,8 @@ public class GSRRunManagerScreen extends Screen {
 
     private void goBack() {
         if (minecraft == null) return;
-        if (parent != null) minecraft.setScreen(parent);
-        else minecraft.setScreen(null);
+        if (parent != null) minecraft.gui.setScreen(parent);
+        else minecraft.gui.setScreen(null);
     }
 
     /** True when changing participants would derank the run (active run + anti-cheat enabled, not already deranked). */
@@ -250,7 +250,7 @@ public class GSRRunManagerScreen extends Screen {
                     save();
                 };
                 if (minecraft != null) {
-                    minecraft.setScreen(new GSRRunManagerDerankConfirmScreen(this, onConfirm));
+                    minecraft.gui.setScreen(new GSRRunManagerDerankConfirmScreen(this, onConfirm));
                 }
             } else {
                 if (model.deathDropdownOpen) {

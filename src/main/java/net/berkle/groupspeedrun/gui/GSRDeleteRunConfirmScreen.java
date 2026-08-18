@@ -65,16 +65,16 @@ public class GSRDeleteRunConfirmScreen extends Screen {
 
     private void confirmOne() {
         if (onConfirmOne != null) onConfirmOne.run();
-        if (minecraft != null) minecraft.setScreen(parent);
+        if (minecraft != null) minecraft.gui.setScreen(parent);
     }
 
     private void confirmAll() {
         if (onConfirmAll != null) onConfirmAll.run();
-        if (minecraft != null) minecraft.setScreen(parent);
+        if (minecraft != null) minecraft.gui.setScreen(parent);
     }
 
     private void cancel() {
-        if (minecraft != null) minecraft.setScreen(parent);
+        if (minecraft != null) minecraft.gui.setScreen(parent);
     }
 
     @Override

@@ -666,7 +666,7 @@ public class GSRExportCsvScreen extends Screen {
         }
         if (minecraft == null || model.runs.isEmpty()) {
             if (minecraft != null) {
-                SystemToast.add(minecraft.getToastManager(), SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
+                SystemToast.add(minecraft.gui.toastManager(), SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
                         Component.literal("Export CSV"), Component.literal("No run data to export."));
             }
             return;
@@ -682,7 +682,7 @@ public class GSRExportCsvScreen extends Screen {
         }
         if (toExport.isEmpty()) {
             if (minecraft != null) {
-                SystemToast.add(minecraft.getToastManager(), SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
+                SystemToast.add(minecraft.gui.toastManager(), SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
                         Component.literal("Export CSV"), Component.literal("No runs selected."));
             }
             return;
@@ -690,17 +690,17 @@ public class GSRExportCsvScreen extends Screen {
         try {
             Path path = GSRRunHistoryCsvExport.exportToCsv(toExport);
             String msg = "Saved to " + path.getFileName();
-            SystemToast.add(minecraft.getToastManager(), SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
+            SystemToast.add(minecraft.gui.toastManager(), SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
                     Component.literal("Export CSV"), Component.literal(msg));
-            if (minecraft != null) minecraft.setScreen(parent);
+            if (minecraft != null) minecraft.gui.setScreen(parent);
         } catch (IOException e) {
-            SystemToast.add(minecraft.getToastManager(), SystemToast.SystemToastId.PACK_LOAD_FAILURE,
+            SystemToast.add(minecraft.gui.toastManager(), SystemToast.SystemToastId.PACK_LOAD_FAILURE,
                     Component.literal("Export CSV"), Component.literal("Failed: " + e.getMessage()));
         }
     }
 
     private void cancel() {
-        if (minecraft != null) minecraft.setScreen(parent);
+        if (minecraft != null) minecraft.gui.setScreen(parent);
     }
 
     @Override

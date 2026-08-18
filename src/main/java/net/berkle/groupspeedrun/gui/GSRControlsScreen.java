@@ -90,7 +90,7 @@ public class GSRControlsScreen extends GSRBaseScreen {
             if (client != null) client.setScreen(new GSRRunHistoryScreen(this, true));
         }).dimensions(leftX, row3Y, halfW, btnH).build());
         addDrawableChild(ButtonWidget.builder(GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_PREFERENCES), b -> {
-            if (client != null) client.setScreen(new net.berkle.groupspeedrun.gui.preferences.GSRPreferencesScreen(this));
+            net.berkle.groupspeedrun.client.GSRScreens.openConfig(this);
         }).dimensions(rightX, row3Y, halfW, btnH).build());
 
         var footer = GSRMenuComponents.singleButtonFooterLayout(width, height);

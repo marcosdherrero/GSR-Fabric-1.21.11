@@ -45,6 +45,9 @@ public final class GSRStorageParameters {
     /** CSV export output. */
     public static final String EXPORT_DIR = "export";
 
+    /** Title-screen seed-filter toggle (gsr_folder/seed_filter.json). */
+    public static final String SEED_FILTER_FILE = "seed_filter.json";
+
     /** Suffix for atomic write: write to file.tmp then rename. */
     public static final String ATOMIC_WRITE_SUFFIX = ".tmp";
 }

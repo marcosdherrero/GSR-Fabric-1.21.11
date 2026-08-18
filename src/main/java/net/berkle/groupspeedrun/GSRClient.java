@@ -16,15 +16,17 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 // GSR: client, config, data, gui, network, util
 import net.berkle.groupspeedrun.client.GSRCelebrationHandler;
 import net.berkle.groupspeedrun.client.GSRKeyBindings;
+import net.berkle.groupspeedrun.client.GSRScreens;
 import net.berkle.groupspeedrun.client.GSRSharedRunLoader;
 import net.berkle.groupspeedrun.client.GSRTitleScreenLayout;
 import net.berkle.groupspeedrun.config.GSRConfigPayload;
 import net.berkle.groupspeedrun.config.GSRConfigPlayer;
 import net.berkle.groupspeedrun.config.GSRConfigWorld;
+import net.berkle.groupspeedrun.config.GSRSeedFilterSettings;
 import net.berkle.groupspeedrun.data.GSRRunSaveStateNbt;
 import net.berkle.groupspeedrun.gui.preferences.GSRPreferencesScreen;
+import net.berkle.groupspeedrun.gui.GSRBaseScreen;
 import net.berkle.groupspeedrun.gui.GSRControlsScreen;
-import net.berkle.groupspeedrun.gui.GSRLocatorsScreen;
 import net.berkle.groupspeedrun.gui.GSRNewWorldConfirmScreen;
 import net.berkle.groupspeedrun.gui.GSRRunManagerScreen;
 import net.berkle.groupspeedrun.network.GSRRunActionPayload;
@@ -85,6 +87,8 @@ public class GSRClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        GSRSeedFilterSettings.load();
+        GSRClient.clientWorldConfig.seedFilterEnabled = GSRSeedFilterSettings.isEnabled();
         GSRKeyBindings.register();
         ClientPlayNetworking.registerGlobalReceiver(GSRConfigPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
@@ -102,27 +106,17 @@ public class GSRClient implements ClientModInitializer {
                     hudToggledVisible = true;
                 }
                 previousHudVisibility = newVisibility;
-                // Refresh controls screen so button labels and timer reflect new state
-                if (client.currentScreen instanceof GSRControlsScreen gsr) {
-                    client.setScreen(new GSRControlsScreen(gsr.getParent()));
-                }
-                // Refresh locators screen so toggles and preview reflect new state
-                if (client.currentScreen instanceof GSRLocatorsScreen loc) {
-                    client.setScreen(new GSRLocatorsScreen(loc.getParent()));
-                }
-                // Refresh preferences screen so dropdowns reflect new state; preserve scroll position
-                if (client.currentScreen instanceof net.berkle.groupspeedrun.gui.preferences.GSRPreferencesScreen prefs) {
-                    client.setScreen(new net.berkle.groupspeedrun.gui.preferences.GSRPreferencesScreen(prefs.getParent(), prefs.getContentScroll()));
-                }
+                // Controls.tick and Preferences dropdown suppliers read live config; do not
+                // recreate screens here — that raced with GSR Config opening.
             });
         });
         ClientPlayNetworking.registerGlobalReceiver(GSROpenScreenPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
                 var client = context.client();
                 if (payload.screenType() == GSROpenScreenPayload.TYPE_CONFIG) {
-                    client.setScreen(new GSRPreferencesScreen(client.currentScreen));
+                    GSRScreens.openConfig(client.currentScreen);
                 } else if (payload.screenType() == GSROpenScreenPayload.TYPE_CONTROLS) {
-                    client.setScreen(new GSRControlsScreen(client.currentScreen));
+                    GSRScreens.openControls(client.currentScreen);
                 }
             });
         });
@@ -233,9 +227,13 @@ public class GSRClient implements ClientModInitializer {
                 }
             }
             if (client.player != null) {
+                Screen current = client.currentScreen;
+                boolean gsrMenuOpen = current instanceof GSRPreferencesScreen
+                        || current instanceof GSRControlsScreen
+                        || current instanceof GSRBaseScreen;
                 boolean gPressed = GSRKeyBindings.openGsrOptionsKey != null && GSRKeyBindings.openGsrOptionsKey.isPressed();
-                if (GSRKeyBindings.openGsrConfigKey != null && GSRKeyBindings.openGsrConfigKey.wasPressed() && gPressed) {
-                    client.setScreen(new GSRPreferencesScreen(client.currentScreen));
+                if (!gsrMenuOpen && GSRKeyBindings.openGsrConfigKey != null && GSRKeyBindings.openGsrConfigKey.wasPressed() && gPressed) {
+                    GSRScreens.openConfig(current);
                     openedConfigDuringGHold = true;
                     gKeyHeldLastTick = true;
                     return;
@@ -243,7 +241,9 @@ public class GSRClient implements ClientModInitializer {
                 if (gPressed) {
                     gKeyHeldLastTick = true;
                 } else {
-                    if (gKeyHeldLastTick && !openedConfigDuringGHold) client.setScreen(new GSRControlsScreen(client.currentScreen));
+                    if (!gsrMenuOpen && gKeyHeldLastTick && !openedConfigDuringGHold) {
+                        GSRScreens.openControls(current);
+                    }
                     gKeyHeldLastTick = false;
                     openedConfigDuringGHold = false;
                 }

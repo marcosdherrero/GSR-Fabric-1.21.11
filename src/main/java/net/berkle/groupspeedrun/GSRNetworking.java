@@ -17,6 +17,7 @@ import net.minecraft.world.World;
 import net.berkle.groupspeedrun.config.GSRConfigPayload;
 import net.berkle.groupspeedrun.config.GSRConfigPlayer;
 import net.berkle.groupspeedrun.config.GSRConfigWorld;
+import net.berkle.groupspeedrun.config.GSRSeedFilterSettings;
 import net.berkle.groupspeedrun.managers.GSRLocateHelper;
 import net.berkle.groupspeedrun.managers.GSRLocatorGate;
 import net.berkle.groupspeedrun.managers.GSRProfileManager;
@@ -71,6 +72,10 @@ public final class GSRNetworking {
                 if (config == null) return;
                 payload.nbt().getBoolean(GSRWorldConfigPayload.KEY_ANTI_CHEAT_ENABLED).ifPresent(v -> config.antiCheatEnabled = v);
                 payload.nbt().getBoolean(GSRWorldConfigParameters.K_AUTO_START_ENABLED).ifPresent(v -> config.autoStartEnabled = v);
+                payload.nbt().getBoolean(GSRWorldConfigParameters.K_SEED_FILTER_ENABLED).ifPresent(v -> {
+                    config.seedFilterEnabled = v;
+                    GSRSeedFilterSettings.setEnabled(v);
+                });
                 payload.nbt().getInt(GSRWorldConfigParameters.K_LOCATOR_NON_ADMIN_MODE).ifPresent(v -> config.locatorNonAdminMode = Math.max(0, Math.min(2, v)));
                 config.save(context.server());
                 GSRConfigSync.syncConfigWithAll(context.server());

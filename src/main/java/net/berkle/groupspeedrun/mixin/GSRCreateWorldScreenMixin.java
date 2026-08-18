@@ -1,7 +1,10 @@
 package net.berkle.groupspeedrun.mixin;
 
 import net.berkle.groupspeedrun.GSRClient;
+import net.berkle.groupspeedrun.client.GSRSeedFilter;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.Click;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.ParentElement;
 import net.minecraft.client.gui.screen.Screen;
@@ -29,6 +32,35 @@ public abstract class GSRCreateWorldScreenMixin extends Screen {
 
     protected GSRCreateWorldScreenMixin() {
         super(null);
+    }
+
+    @Inject(method = "createLevel", at = @At("HEAD"), cancellable = true)
+    private void gsr$filterRandomSeed(CallbackInfo ci) {
+        if (GSRSeedFilter.isSearching()) {
+            ci.cancel();
+            return;
+        }
+        if (!GSRSeedFilter.shouldFilter(worldCreator)) return;
+        ci.cancel();
+        GSRSeedFilter.start((CreateWorldScreen) (Object) this, worldCreator);
+    }
+
+    @Override
+    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        super.render(context, mouseX, mouseY, delta);
+        GSRSeedFilter.renderOverlay((CreateWorldScreen) (Object) this, context, mouseX, mouseY);
+    }
+
+    @Override
+    public boolean mouseClicked(Click click, boolean captured) {
+        if (GSRSeedFilter.handleClick((CreateWorldScreen) (Object) this, click)) return true;
+        return super.mouseClicked(click, captured);
+    }
+
+    @Override
+    public boolean keyPressed(KeyInput keyInput) {
+        if (GSRSeedFilter.handleKey((CreateWorldScreen) (Object) this, keyInput)) return true;
+        return super.keyPressed(keyInput);
     }
 
     /** Injects at end of init to prefill world name from nextGsrWorldName when set. */

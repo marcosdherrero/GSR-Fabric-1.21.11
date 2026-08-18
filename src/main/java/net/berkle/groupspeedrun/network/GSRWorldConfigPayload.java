@@ -26,6 +26,7 @@ public record GSRWorldConfigPayload(NbtCompound nbt) implements CustomPayload {
         NbtCompound nbt = new NbtCompound();
         nbt.putBoolean(KEY_ANTI_CHEAT_ENABLED, GSRClient.clientWorldConfig.antiCheatEnabled);
         nbt.putBoolean(GSRWorldConfigParameters.K_AUTO_START_ENABLED, GSRClient.clientWorldConfig.autoStartEnabled);
+        nbt.putBoolean(GSRWorldConfigParameters.K_SEED_FILTER_ENABLED, GSRClient.clientWorldConfig.seedFilterEnabled);
         nbt.putInt(GSRWorldConfigParameters.K_LOCATOR_NON_ADMIN_MODE, GSRClient.clientWorldConfig.locatorNonAdminMode);
         return nbt;
     }

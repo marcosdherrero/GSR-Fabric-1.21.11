@@ -15,6 +15,8 @@ public final class GSRButtonParameters {
     public static final String TITLE_RUN_HISTORY = "GSR Run History";
     /** GSR Controls button on main menu. Opens GSR controls screen (Run Manager, Locators, etc.). */
     public static final String TITLE_GSR_CONTROLS = "GSR Controls";
+    /** Label drawn on the square pause/title icon-row button. */
+    public static final String TITLE_GSR_SQUARE = "GSR";
     /** New World button on main menu. Opens create world screen. */
     public static final String TITLE_NEW_WORLD = "New World";
     /** GSR Options button on main menu. Opens GSR controls screen. */
@@ -31,6 +33,8 @@ public final class GSRButtonParameters {
     public static final int TITLE_BUTTON_PADDING_V = 2;
     /** Text scale for title screen buttons to fit label with padding (0.82 = 82%). */
     public static final float TITLE_BUTTON_TEXT_SCALE = 0.82f;
+    /** Inner padding (px) on each side of the 20×20 square GSR glyph so letters do not touch the border. */
+    public static final int SQUARE_BUTTON_LABEL_PADDING = 4;
     /** Title button text color when active (ARGB). */
     public static final int TITLE_BUTTON_TEXT_ACTIVE = 0xFFFFFFFF;
     /** Title button text color when inactive (ARGB). */
@@ -136,7 +140,7 @@ public final class GSRButtonParameters {
     /** Reset Mod Settings confirm: cancel. */
     public static final String PREFERENCES_RESET_CANCEL = "Cancel";
     /** Reset Mod Settings confirm message. */
-    public static final String PREFERENCES_RESET_CONFIRM_MESSAGE = "Resets HUD Scale, Visibility, Anti-Cheat, Auto Start, Locator Non-Admin, and New World Before Run Ends to defaults.";
+    public static final String PREFERENCES_RESET_CONFIRM_MESSAGE = "Resets HUD Scale, Visibility, Anti-Cheat, Auto Start, Seed Filter, Locator Non-Admin, and New World Before Run Ends to defaults.";
 
     // --- Screen titles ---
     /** GSR Preferences screen title. */

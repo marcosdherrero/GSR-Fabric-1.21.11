@@ -293,6 +293,10 @@ public final class GSRUiParameters {
     public static final int PREFERENCES_TOGGLE_NEUTRAL_ON = 0xFF4CAF50;
     /** Toggle OFF color for neutral options (ARGB). Gray. */
     public static final int PREFERENCES_TOGGLE_NEUTRAL_OFF = 0xFF9E9E9E;
+    /** Seed Filter toggle ON text color (ARGB). Green. */
+    public static final int PREFERENCES_SEED_FILTER_ON = 0xFF4CAF50;
+    /** Seed Filter toggle OFF text color (ARGB). Red. */
+    public static final int PREFERENCES_SEED_FILTER_OFF = 0xFFF44336;
     /** Size of toggle button icon (pixels). */
     public static final int PREFERENCES_TOGGLE_ICON_SIZE = 16;
     /** Margin inside toggle bar around icon (pixels). */

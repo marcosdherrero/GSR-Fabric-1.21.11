@@ -48,6 +48,8 @@ public final class GSRWorldConfigParameters {
     public static final String K_ANTI_CHEAT_ENABLED = "antiCheatEnabled";
     /** When true, run auto-starts on first movement/block break. When false, admin must press Start. Default true. */
     public static final String K_AUTO_START_ENABLED = "autoStartEnabled";
+    /** When true, random-seed Create World retries until Overworld+Nether pass. Typed seeds are never filtered. */
+    public static final String K_SEED_FILTER_ENABLED = "seedFilterEnabled";
     /** When non-admins can use locators: 0=Never, 1=Always, 2=30 min post previous split. */
     public static final String K_LOCATOR_NON_ADMIN_MODE = "locatorNonAdminMode";
     /** Effective allowNewWorldBeforeRunEnd from designated admin; sync-only, not persisted. */

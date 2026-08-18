@@ -39,6 +39,7 @@ import net.berkle.groupspeedrun.config.GSRSplitGapOption;
 import net.berkle.groupspeedrun.config.GSRSplitShowTicksOption;
 import net.berkle.groupspeedrun.config.GSRStrongholdIconOption;
 import net.berkle.groupspeedrun.config.GSRConfigPayload;
+import net.berkle.groupspeedrun.config.GSRSeedFilterSettings;
 import net.berkle.groupspeedrun.network.GSRWorldConfigPayload;
 import net.berkle.groupspeedrun.gui.GSRTickerState;
 import net.berkle.groupspeedrun.gui.components.GSRMenuComponents;
@@ -87,6 +88,8 @@ public final class GSRPreferencesScreen extends Screen {
     private static final ItemStack TOGGLE_ICON_ON = new ItemStack(Items.LANTERN);
     /** Cached toggle icon for OFF state. */
     private static final ItemStack TOGGLE_ICON_OFF = new ItemStack(Items.IRON_CHAIN);
+    /** Seed-filter square button face. */
+    private static final ItemStack SEED_FILTER_ICON = new ItemStack(Items.MAP);
 
     private static final int ID_HUD_SCALE = 2;
     private static final int ID_HUD_LOOK = 1;
@@ -532,6 +535,7 @@ public final class GSRPreferencesScreen extends Screen {
                 case 1 -> Text.literal("When on, the structure compass bar is at the top of the screen; when off, at the bottom.");
                 case 2 -> Text.literal("When ON (host only): using locators invalidates the run for ranking. When OFF: locator use does not invalidate.");
                 case 3 -> Text.literal("When ON (host only): allows the New World key before run ends. When OFF: New World key only works after victory or fail.");
+                case 4 -> Text.literal("When ON (green, default): random-seed new worlds retry until Overworld+Nether pass. When OFF (red): vanilla random. Typed seeds are never filtered.");
                 default -> null;
             };
         }
@@ -603,6 +607,10 @@ public final class GSRPreferencesScreen extends Screen {
             gsr$syncPlayerConfig();
         }, TOGGLE_ICON_ON, TOGGLE_ICON_OFF, GSRUiParameters.PREFERENCES_TOGGLE_NEWWORLD_ON, GSRUiParameters.PREFERENCES_TOGGLE_NEWWORLD_OFF, "ON", "OFF (default)");
         y += ROW_HEIGHT;
+        gsr$drawToggleRow(context, "Seed Filter", gsr$isSeedFilterEnabled(), y, contentLeft, contentWidthForContent, mouseX, mouseY,
+                this::gsr$toggleSeedFilter, SEED_FILTER_ICON, SEED_FILTER_ICON,
+                GSRUiParameters.PREFERENCES_SEED_FILTER_ON, GSRUiParameters.PREFERENCES_SEED_FILTER_OFF, "ON (default)", "OFF", true);
+        y += ROW_HEIGHT;
         gsr$drawButtonRow(context, GSRButtonParameters.PREFERENCES_RESET_MOD_SETTINGS, y, centeredCol, colWidth, mouseX, mouseY);
         y += ROW_HEIGHT;
         y += CATEGORY_MARGIN;
@@ -669,7 +677,7 @@ public final class GSRPreferencesScreen extends Screen {
     }
 
     private int gsr$contentHeight() {
-        int rows = 4 + 4 + 6 + 3;
+        int rows = 5 + 4 + 6 + 3;
         int categories = 4;
         int categoryMargins = (categories - 1) * CATEGORY_MARGIN;
         int dividers = (categories - 1) * (GSRUiParameters.PREFERENCES_CATEGORY_DIVIDER_HEIGHT + GSRUiParameters.PREFERENCES_CATEGORY_DIVIDER_GAP);
@@ -710,6 +718,14 @@ public final class GSRPreferencesScreen extends Screen {
                                    int mouseX, int mouseY, Runnable onToggle,
                                    ItemStack iconOn, ItemStack iconOff, int colorOn, int colorOff,
                                    String displayOn, String displayOff) {
+        return gsr$drawToggleRow(context, label, value, y, colLeft, colWidth, mouseX, mouseY, onToggle,
+                iconOn, iconOff, colorOn, colorOff, displayOn, displayOff, false);
+    }
+
+    private int gsr$drawToggleRow(DrawContext context, String label, boolean value, int y, int colLeft, int colWidth,
+                                   int mouseX, int mouseY, Runnable onToggle,
+                                   ItemStack iconOn, ItemStack iconOff, int colorOn, int colorOff,
+                                   String displayOn, String displayOff, boolean overlayStatusOnIcon) {
         int sectionTop = y;
         int barTop = y + LABEL_AREA_HEIGHT;
         int labelX = colLeft + GSRRunHistoryParameters.LIST_TEXT_INSET;
@@ -734,12 +750,80 @@ public final class GSRPreferencesScreen extends Screen {
             int iconX = colLeft + GSRRunHistoryParameters.CONTAINER_INSET + iconMargin;
             int iconY = barTop + (BAR_HEIGHT - iconSize) / 2;
             gsr$drawToggleIcon(context, icon, iconX, iconY, iconSize, iconMargin);
+            if (overlayStatusOnIcon) {
+                gsr$drawStatusMark(context, iconX, iconY, iconSize, value);
+            }
             textLeft = iconX + iconSize + iconMargin + GSRRunHistoryParameters.DROPDOWN_ITEM_ICON_TEXT_GAP;
         }
         String display = value ? displayOn : displayOff;
         int textY = barTop + (BAR_HEIGHT - textRenderer.fontHeight) / 2;
         context.drawTextWithShadow(textRenderer, Text.literal(display), textLeft, textY, textColor);
         return y + ROW_HEIGHT;
+    }
+
+    private boolean gsr$isSeedFilterEnabled() {
+        if (client != null && client.world != null && GSRClient.clientWorldConfig != null) {
+            return GSRClient.clientWorldConfig.seedFilterEnabled;
+        }
+        return GSRSeedFilterSettings.isEnabled();
+    }
+
+    private void gsr$toggleSeedFilter() {
+        boolean next = !gsr$isSeedFilterEnabled();
+        GSRSeedFilterSettings.setEnabled(next);
+        if (GSRClient.clientWorldConfig != null) {
+            GSRClient.clientWorldConfig.seedFilterEnabled = next;
+            gsr$syncWorldConfig();
+        }
+    }
+
+    /** Green check or red X drawn over a toggle item icon. */
+    private void gsr$drawStatusMark(DrawContext context, int x, int y, int size, boolean on) {
+        int pad = 2;
+        int x0 = x + pad;
+        int y0 = y + pad;
+        int x1 = x + size - pad - 1;
+        int y1 = y + size - pad - 1;
+        int color = on ? GSRUiParameters.PREFERENCES_SEED_FILTER_ON : GSRUiParameters.PREFERENCES_SEED_FILTER_OFF;
+        int outline = 0xFF000000;
+        if (on) {
+            int midX = x0 + (x1 - x0) / 3;
+            int midY = y1;
+            int leftY = (y0 + y1) / 2;
+            gsr$drawThickLine(context, x0, leftY, midX, midY, outline, 3);
+            gsr$drawThickLine(context, midX, midY, x1, y0, outline, 3);
+            gsr$drawThickLine(context, x0, leftY, midX, midY, color, 2);
+            gsr$drawThickLine(context, midX, midY, x1, y0, color, 2);
+        } else {
+            gsr$drawThickLine(context, x0, y0, x1, y1, outline, 3);
+            gsr$drawThickLine(context, x1, y0, x0, y1, outline, 3);
+            gsr$drawThickLine(context, x0, y0, x1, y1, color, 2);
+            gsr$drawThickLine(context, x1, y0, x0, y1, color, 2);
+        }
+    }
+
+    private void gsr$drawThickLine(DrawContext context, int x0, int y0, int x1, int y1, int color, int thickness) {
+        int dx = Math.abs(x1 - x0);
+        int dy = Math.abs(y1 - y0);
+        int sx = x0 < x1 ? 1 : -1;
+        int sy = y0 < y1 ? 1 : -1;
+        int err = dx - dy;
+        int x = x0;
+        int y = y0;
+        int t = Math.max(1, thickness);
+        while (true) {
+            context.fill(x, y, x + t, y + t, color);
+            if (x == x1 && y == y1) break;
+            int e2 = 2 * err;
+            if (e2 > -dy) {
+                err -= dy;
+                x += sx;
+            }
+            if (e2 < dx) {
+                err += dx;
+                y += sy;
+            }
+        }
     }
 
     /** Draws a button in one column (e.g. Reset All to Default in right column). Uses same bar style as toggle/dropdown rows. */
@@ -843,6 +927,10 @@ public final class GSRPreferencesScreen extends Screen {
         }
         y += ROW_HEIGHT;
         if (my >= y + barTopOffset && my < y + barBottomOffset) {
+            if (mx >= contentLeft && mx < contentLeft + contentWidth) return new int[] { 2, 4 };
+        }
+        y += ROW_HEIGHT;
+        if (my >= y + barTopOffset && my < y + barBottomOffset) {
             if (inCenteredCol) return new int[] { 4, 0 };
         }
         y += ROW_HEIGHT;
@@ -911,6 +999,7 @@ public final class GSRPreferencesScreen extends Screen {
             case 1 -> { GSRClient.PLAYER_CONFIG.locateHudOnTop = !GSRClient.PLAYER_CONFIG.locateHudOnTop; gsr$syncPlayerConfig(); }
             case 2 -> { if (GSRClient.clientWorldConfig != null) { GSRClient.clientWorldConfig.antiCheatEnabled = !GSRClient.clientWorldConfig.antiCheatEnabled; gsr$syncWorldConfig(); } }
             case 3 -> { GSRClient.PLAYER_CONFIG.allowNewWorldBeforeRunEnd = !GSRClient.PLAYER_CONFIG.allowNewWorldBeforeRunEnd; gsr$syncPlayerConfig(); }
+            case 4 -> gsr$toggleSeedFilter();
             case 5 -> { if (GSRClient.clientWorldConfig != null) { GSRClient.clientWorldConfig.autoStartEnabled = !GSRClient.clientWorldConfig.autoStartEnabled; gsr$syncWorldConfig(); } }
         }
     }

@@ -1,6 +1,7 @@
 package net.berkle.groupspeedrun.gui.widget;
 
 import net.berkle.groupspeedrun.parameter.GSRButtonParameters;
+import net.berkle.groupspeedrun.util.GSRColorHelper;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -17,6 +18,7 @@ public class GSRTitleScreenButton extends ButtonWidget.Text {
 
     @Override
     protected void drawIcon(DrawContext context, int mouseX, int mouseY, float delta) {
+        if (getAlpha() <= 0.01f) return;
         drawLabelWithPaddingAndScale(context);
     }
 
@@ -38,7 +40,7 @@ public class GSRTitleScreenButton extends ButtonWidget.Text {
             getMessage(),
             centerX,
             centerY - 4,
-            color
+            GSRColorHelper.applyAlpha(color, getAlpha())
         );
         matrices.popMatrix();
     }

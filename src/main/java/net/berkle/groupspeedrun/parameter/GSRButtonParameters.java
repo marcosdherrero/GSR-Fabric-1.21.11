@@ -33,6 +33,8 @@ public final class GSRButtonParameters {
     public static final int TITLE_BUTTON_PADDING_V = 2;
     /** Component scale for title screen buttons to fit label with padding (0.82 = 82%). */
     public static final float TITLE_BUTTON_TEXT_SCALE = 0.82f;
+    /** Inner padding (px) on each side of the 20×20 square GSR glyph so letters do not touch the border. */
+    public static final int SQUARE_BUTTON_LABEL_PADDING = 4;
     /** Title button text color when active (ARGB). */
     public static final int TITLE_BUTTON_TEXT_ACTIVE = 0xFFFFFFFF;
     /** Title button text color when inactive (ARGB). */

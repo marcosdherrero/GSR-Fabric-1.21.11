@@ -45,7 +45,7 @@ public final class GSRMovementAutoStartListener {
         if (config == null || config.isVictorious || config.isFailed) return false;
 
         if (config.isRunNotStarted()) {
-            if (!config.autoStartEnabled) return true;
+            if (!config.shouldAllowAutoStart()) return true;
             if (config.isInGroupDeath(player.getUUID()) && server != null) {
                 double dx = x - prevX;
                 double dy = y - prevY;

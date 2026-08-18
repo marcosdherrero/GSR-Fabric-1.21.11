@@ -1,5 +1,6 @@
 package net.berkle.groupspeedrun.data;
 
+import net.berkle.groupspeedrun.util.GSRNbtUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.ListTag;
@@ -67,20 +68,20 @@ public final class GSRRunSaveStateNbt {
         return new GSRRunRecord(
             c.getString("runId").orElse(""),
             c.getString("worldName").orElse(""),
-            c.getLong("startMs").orElse(0L),
-            c.getLong("endMs").orElse(0L),
+            GSRNbtUtil.getLong(c, "startMs").orElse(0L),
+            GSRNbtUtil.getLong(c, "endMs").orElse(0L),
             c.getString("startDateIso").orElse(""),
             c.getString("endDateIso").orElse(""),
             c.getString("status").orElse(""),
             c.getString("failedByPlayerName").orElse(""),
             c.getString("failedByDeathMessage").orElse(""),
-            c.getInt("participantCount").orElse(0),
-            c.getLong("timeNether").orElse(0L),
-            c.getLong("timeBastion").orElse(0L),
-            c.getLong("timeFortress").orElse(0L),
-            c.getLong("timeEnd").orElse(0L),
-            c.getLong("timeDragon").orElse(0L),
-            c.getBoolean("deranked").orElse(false),
+            GSRNbtUtil.getInt(c, "participantCount").orElse(0),
+            GSRNbtUtil.getLong(c, "timeNether").orElse(0L),
+            GSRNbtUtil.getLong(c, "timeBastion").orElse(0L),
+            GSRNbtUtil.getLong(c, "timeFortress").orElse(0L),
+            GSRNbtUtil.getLong(c, "timeEnd").orElse(0L),
+            GSRNbtUtil.getLong(c, "timeDragon").orElse(0L),
+            GSRNbtUtil.getBoolean(c, "deranked").orElse(false),
             c.getString("runDifficulty").filter(s -> s != null && !s.isEmpty()).orElse("—")
         );
     }

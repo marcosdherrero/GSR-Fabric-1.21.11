@@ -30,8 +30,8 @@ public final class GSRBlockBreakAutoStartListener {
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null || config.isVictorious || config.isFailed) return false;
 
-        if (config.startTime <= 0) {
-            if (!config.autoStartEnabled) return false;
+        if (config.isRunNotStarted()) {
+            if (!config.shouldAllowAutoStart()) return false;
             if (config.isInGroupDeath(player.getUUID())) {
                 GSRMain.getTimer().start(server);
                 return true;

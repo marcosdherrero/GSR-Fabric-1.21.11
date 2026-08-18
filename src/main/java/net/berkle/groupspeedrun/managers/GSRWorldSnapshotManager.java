@@ -50,7 +50,7 @@ public final class GSRWorldSnapshotManager {
             Files.deleteIfExists(flagFile);
             // Ensure armed state (startTime = -1) is written so auto-start works after restore
             GSRConfigWorld config = GSRConfigWorld.load(server);
-            if (!config.isVictorious && !config.isFailed && config.startTime <= 0) {
+            if (config.isRunNotStarted()) {
                 config.startTime = -1;
                 config.save(server);
             }

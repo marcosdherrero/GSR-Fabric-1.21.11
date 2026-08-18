@@ -110,7 +110,7 @@ public final class GSRNetworking {
                 switch (action) {
                     case GSRRunActionPayload.ACTION_START -> {
                         if (!Commands.LEVEL_ADMINS.check(src.permissions())) return;
-                        if (config.startTime > 0 || config.isVictorious || config.isFailed) return;
+                        if (!config.isRunNotStarted()) return;
                         GSREvents.startTimerNow(context.server());
                         GSRConfigSync.syncConfigWithAll(context.server());
                     }

@@ -23,8 +23,9 @@ public class GSRSquareMenuButton extends Button {
         extractDefaultSprite(context);
         Font font = Minecraft.getInstance().font;
         String label = getMessage().getString();
-        int maxW = Math.max(1, getWidth() - 2);
-        int maxH = Math.max(1, getHeight() - 2);
+        int padding = GSRButtonParameters.SQUARE_BUTTON_LABEL_PADDING;
+        int maxW = Math.max(1, getWidth() - padding * 2);
+        int maxH = Math.max(1, getHeight() - padding * 2);
         float scale = Math.min(maxW / (float) Math.max(1, font.width(label)), maxH / (float) font.lineHeight);
         scale = Math.min(scale, 1.0f);
 

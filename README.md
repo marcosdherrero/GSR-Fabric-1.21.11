@@ -13,6 +13,7 @@
 ## Table of Contents
 
 - [Features](#features)
+- [Changelog](#changelog)
 - [Screenshots](#screenshots)
 - [Requirements](#requirements)
 - [Installation](#installation)
@@ -46,6 +47,12 @@
   - Personal + shared run merge
 - **Client sync** — Run history sync between players
 - **Quick world flow** — "New GSR World" after victory or failure
+
+---
+
+## Changelog
+
+What changed in each GSR version (player notes plus a short developer/API subsection), including the Minecraft 1.21.11 → 26.1.2 → 26.2 ports, is in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 

@@ -1,12 +1,13 @@
 package net.berkle.groupspeedrun.parameter;
 
 import net.minecraft.resources.Identifier;
+import net.minecraft.network.chat.Component;
 
 /**
  * Parameters for the Run History screen: layout, colors, and chart styling.
  * Used by {@link net.berkle.groupspeedrun.gui.GSRRunHistoryScreen}.
  *
- * <p><b>Text shadow standard:</b> Button-like text (on vanilla button texture) must use
+ * <p><b>Component shadow standard:</b> Button-like text (on vanilla button texture) must use
  * {@code drawTextWithShadow} or {@code centeredText} to match main menu styling.
  * Use {@link #TEXT_COLOR} for button text. Section labels and chart text may use
  * {@code drawText} without shadow.
@@ -157,7 +158,7 @@ public final class GSRRunHistoryParameters {
     public static final int DEFAULT_COLOR_ICON_TINT_ALPHA = 0x60;
     /** Vertical gap between container header and list (pixels). */
     public static final int LIST_VERTICAL_GAP = 2;
-    /** Text scale for left column section and trigger labels (0.85 = 85%) at full size. */
+    /** Component scale for left column section and trigger labels (0.85 = 85%) at full size. */
     public static final float LEFT_COLUMN_LABEL_SCALE = 0.85f;
     /** Minimum fit scale for left column when container is small (0.5 = 50%). */
     public static final float LEFT_COLUMN_MIN_FIT_SCALE = 0.5f;

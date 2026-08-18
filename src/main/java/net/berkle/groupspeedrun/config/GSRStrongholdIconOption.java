@@ -25,8 +25,8 @@ public enum GSRStrongholdIconOption {
         return registryId;
     }
 
-    public Text getDisplayName() {
-        return Text.literal(label);
+    public Component getDisplayName() {
+        return Component.literal(label);
     }
 
     public static GSRStrongholdIconOption from(String stored) {

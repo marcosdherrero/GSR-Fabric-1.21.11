@@ -46,7 +46,7 @@ public final class GSRMovementAutoStartListener {
 
         if (config.isRunNotStarted()) {
             if (!config.autoStartEnabled) return true;
-            if (config.isInGroupDeath(player.getUuid()) && server != null) {
+            if (config.isInGroupDeath(player.getUUID()) && server != null) {
                 double dx = x - prevX;
                 double dy = y - prevY;
                 double dz = z - prevZ;
@@ -74,7 +74,7 @@ public final class GSRMovementAutoStartListener {
 
         // Active run: track distance for stats by travel type
         String travelType = resolveTravelType(player);
-        GSRStats.addDistanceMoved(player.getUuid(), travelType, (float) dist);
+        GSRStats.addDistanceMoved(player.getUUID(), travelType, (float) dist);
         return false;
     }
 
@@ -89,7 +89,7 @@ public final class GSRMovementAutoStartListener {
         if (player.isSwimming()) return "swim";
         if (player.isClimbing()) return "climb";
         if (!player.isOnGround()) {
-            if (player.getEquippedStack(EquipmentSlot.CHEST).isOf(Items.ELYTRA)) return "fly";
+            if (player.getItemBySlot(EquipmentSlot.CHEST).is(Items.ELYTRA)) return "fly";
             if (player.getVelocity().y < -0.08) return "fall";
         }
         if (player.isSprinting()) return "sprint";

@@ -2,7 +2,7 @@ package net.berkle.groupspeedrun.gui;
 
 // Minecraft screen and drawing
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.gui.Click;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
@@ -72,7 +72,7 @@ public class GSRExportCsvScreen extends Screen {
      * @param initialFilters Optional; when provided, copies player and player-count filters from run history.
      */
     public GSRExportCsvScreen(Screen parent, GSRRunHistoryScreenModel initialFilters) {
-        super(Text.literal("Export CSV"));
+        super(Component.literal("Export CSV"));
         this.parent = parent;
         this.initialFilters = initialFilters;
         if (initialFilters != null) {
@@ -284,10 +284,10 @@ public class GSRExportCsvScreen extends Screen {
     public static final int RUNS_PRESET_COUNT = 3;
 
     @Override
-    public void render(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, width, height, GSRUiParameters.SCREEN_BG_DARK);
-        super.render(context, mouseX, mouseY, delta);
-        context.centeredText(textRenderer, getTitle(), width / 2, GSRRunHistoryParameters.RUN_HISTORY_TITLE_Y, GSRUiParameters.TITLE_COLOR);
+        super.extractRenderState(context, mouseX, mouseY, delta);
+        context.centeredText(font, getTitle(), width / 2, GSRRunHistoryParameters.RUN_HISTORY_TITLE_Y, GSRUiParameters.TITLE_COLOR);
 
         boolean dropdownOpen = model.runsDropdownOpen || model.playerCountDropdownOpen || model.filterDropdownOpen;
         if (dropdownOpen) {
@@ -318,21 +318,21 @@ public class GSRExportCsvScreen extends Screen {
             int delimiterTop = selectionListBottom + GSRRunHistoryParameters.SELECTION_SCROLL_BEHIND_HEIGHT;
             int listBottom = delimiterTop + GSRRunHistoryParameters.SELECTION_DELIMITER_BAR_HEIGHT;
             if (model.filterDropdownOpen && !model.allPlayerNames.isEmpty()) {
-                filterDropdown.renderOverlay(model, context, textRenderer, tickerState, overlayLeft, listTop, listBottom, overlayWidth,
+                filterDropdown.renderOverlay(model, context, font, tickerState, overlayLeft, listTop, listBottom, overlayWidth,
                         model.filterDropdownScroll, mouseX, mouseY);
                 context.fill(overlayLeft, delimiterTop, overlayLeft + overlayWidth,
                         delimiterTop + GSRRunHistoryParameters.SELECTION_DELIMITER_BAR_HEIGHT,
                         GSRRunHistoryParameters.SELECTION_DELIMITER_BAR_COLOR);
                 renderMakeSelectionButton(context, overlayLeft, overlayWidth, leftPanelBottom, mouseX, mouseY, hasFilterPendingChanges());
             } else if (model.playerCountDropdownOpen && !model.allPlayerCounts.isEmpty()) {
-                playerCountDropdown.renderOverlay(model, context, textRenderer, tickerState, overlayLeft, listTop, listBottom, overlayWidth,
+                playerCountDropdown.renderOverlay(model, context, font, tickerState, overlayLeft, listTop, listBottom, overlayWidth,
                         model.playerCountDropdownScroll, mouseX, mouseY);
                 context.fill(overlayLeft, delimiterTop, overlayLeft + overlayWidth,
                         delimiterTop + GSRRunHistoryParameters.SELECTION_DELIMITER_BAR_HEIGHT,
                         GSRRunHistoryParameters.SELECTION_DELIMITER_BAR_COLOR);
                 renderMakeSelectionButton(context, overlayLeft, overlayWidth, leftPanelBottom, mouseX, mouseY, hasPlayerCountPendingChanges());
             } else if (model.runsDropdownOpen && (model.runs.size() + RUNS_PRESET_COUNT > 0)) {
-                runsDropdown.renderOverlay(model, context, textRenderer, tickerState, overlayLeft, listTop, listBottom, overlayWidth,
+                runsDropdown.renderOverlay(model, context, font, tickerState, overlayLeft, listTop, listBottom, overlayWidth,
                         model.runsDropdownScroll, mouseX, mouseY);
                 context.fill(overlayLeft, delimiterTop, overlayLeft + overlayWidth,
                         delimiterTop + GSRRunHistoryParameters.SELECTION_DELIMITER_BAR_HEIGHT,
@@ -346,18 +346,18 @@ public class GSRExportCsvScreen extends Screen {
             int iconLeft = bounds.iconLeft();
             int iconWidth = bounds.iconWidth();
             if (iconHeight > 0 && iconWidth > 0) {
-                context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, GSRRunHistoryParameters.EXPORT_CSV_ICON_SPRITE, iconLeft, iconTop, iconWidth, iconHeight);
+                context.blitSprite(RenderPipelines.GUI_TEXTURED, GSRRunHistoryParameters.EXPORT_CSV_ICON_SPRITE, iconLeft, iconTop, iconWidth, iconHeight);
             }
             boolean filterBarHovered = filterDropdown.isBarHovered(barLeft, bt[0], barDrawWidth, barHeight, mouseX, mouseY);
             boolean playerCountBarHovered = !model.allPlayerCounts.isEmpty() && playerCountDropdown.isBarHovered(barLeft, bt[1], barDrawWidth, barHeight, mouseX, mouseY);
             boolean runsBarHovered = runsDropdown.isBarHovered(barLeft, bt[2], barDrawWidth, barHeight, mouseX, mouseY);
-            filterDropdown.renderTrigger(model, context, textRenderer, tickerState, leftPanelLeft, st[0], bt[0],
+            filterDropdown.renderTrigger(model, context, font, tickerState, leftPanelLeft, st[0], bt[0],
                     leftPanelWidth, barHeight, GSRRunHistoryParameters.LEFT_COLUMN_LABEL_SCALE, false, filterBarHovered);
             if (!model.allPlayerCounts.isEmpty()) {
-                playerCountDropdown.renderTrigger(model, context, textRenderer, tickerState, leftPanelLeft, st[1], bt[1],
+                playerCountDropdown.renderTrigger(model, context, font, tickerState, leftPanelLeft, st[1], bt[1],
                         leftPanelWidth, barHeight, GSRRunHistoryParameters.LEFT_COLUMN_LABEL_SCALE, false, playerCountBarHovered);
             }
-            runsDropdown.renderTrigger(model, context, textRenderer, tickerState, leftPanelLeft, st[2], bt[2],
+            runsDropdown.renderTrigger(model, context, font, tickerState, leftPanelLeft, st[2], bt[2],
                     leftPanelWidth, barHeight, GSRRunHistoryParameters.LEFT_COLUMN_LABEL_SCALE, false, runsBarHovered);
         }
 
@@ -369,9 +369,9 @@ public class GSRExportCsvScreen extends Screen {
         int contentHeight = contentBottom - contentTop;
         List<GSRRunSaveState> runsToShow = getRunsForExportPreview();
         if (runsToShow.isEmpty()) {
-            context.centeredText(textRenderer, "No runs to export",
+            context.centeredText(font, "No runs to export",
                     (contentLeft + contentRight) / 2,
-                    contentTop + contentHeight / 2 - textRenderer.lineHeight / 2,
+                    contentTop + contentHeight / 2 - font.lineHeight / 2,
                     GSRRunHistoryParameters.EMPTY_MESSAGE_COLOR);
         } else {
             String avgText = GSRStatusText.buildAverageRunInfo(runsToShow);
@@ -385,7 +385,7 @@ public class GSRExportCsvScreen extends Screen {
                         model.exportDetailScroll, maxDetailScroll, GSRRunHistoryParameters.SCROLLBAR_MIN_THUMB_HEIGHT);
                 textLeft = contentLeft + sbWidth + GSRRunHistoryParameters.LIST_TEXT_INSET;
             }
-            GSRRunHistoryDetailPanel.renderRunInfoFromText(context, textRenderer, avgText,
+            GSRRunHistoryDetailPanel.renderRunInfoFromText(context, font, avgText,
                     textLeft, contentTop, contentRight, contentBottom, model.exportDetailScroll);
         }
     }
@@ -410,7 +410,7 @@ public class GSRExportCsvScreen extends Screen {
         boolean confirmHover = mouseX >= listLeft && mouseX < listLeft + listWidth
                 && mouseY >= confirmButtonTop && mouseY < confirmButtonTop + GSRRunHistoryParameters.FILTER_MAKE_SELECTION_BUTTON_HEIGHT;
         var textures = GSRPressableWidgetAccessor.gsr$getTextures();
-        context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, textures.get(true, confirmHover), confirmLeft, confirmButtonTop, confirmWidth, GSRRunHistoryParameters.FILTER_MAKE_SELECTION_BUTTON_HEIGHT);
+        context.blitSprite(RenderPipelines.GUI_TEXTURED, textures.get(true, confirmHover), confirmLeft, confirmButtonTop, confirmWidth, GSRRunHistoryParameters.FILTER_MAKE_SELECTION_BUTTON_HEIGHT);
         if (hasPendingChanges) {
             float breath = (float) ((1 + Math.sin(System.currentTimeMillis() * Math.PI * 2 / GSRRunHistoryParameters.MAKE_SELECTION_BREATHE_PERIOD_MS)) / 2);
             float alpha = GSRRunHistoryParameters.MAKE_SELECTION_BREATHE_ALPHA_MIN
@@ -423,8 +423,8 @@ public class GSRExportCsvScreen extends Screen {
             context.fill(confirmLeft + confirmWidth, confirmButtonTop, confirmLeft + confirmWidth + border, confirmButtonTop + GSRRunHistoryParameters.FILTER_MAKE_SELECTION_BUTTON_HEIGHT, glowColor);
         }
         int confirmCenterX = listLeft + listWidth / 2;
-        int confirmTextY = confirmButtonTop + (GSRRunHistoryParameters.FILTER_MAKE_SELECTION_BUTTON_HEIGHT - textRenderer.lineHeight) / 2;
-        context.centeredText(textRenderer, GSRMultiSelectDropdown.CONFIRM_BUTTON_TEXT, confirmCenterX, confirmTextY, GSRRunHistoryParameters.TEXT_COLOR);
+        int confirmTextY = confirmButtonTop + (GSRRunHistoryParameters.FILTER_MAKE_SELECTION_BUTTON_HEIGHT - font.lineHeight) / 2;
+        context.centeredText(font, GSRMultiSelectDropdown.CONFIRM_BUTTON_TEXT, confirmCenterX, confirmTextY, GSRRunHistoryParameters.TEXT_COLOR);
     }
 
     /** True when pending player filter differs from confirmed. */
@@ -438,7 +438,7 @@ public class GSRExportCsvScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(net.minecraft.client.gui.Click click, boolean captured) {
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent click, boolean captured) {
         if (captured) return false;
         double mouseX = click.x();
         double mouseY = click.y();
@@ -469,7 +469,7 @@ public class GSRExportCsvScreen extends Screen {
             int trackX = overlayLeft + overlayWidth - sbWidth;
             if (GSRScrollbarHelper.isInScrollbarHitArea((int) mouseX, trackX, sbWidth) && click.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT && dropdownOpen) {
                 if (model.filterDropdownOpen && !model.allPlayerNames.isEmpty()) {
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, filterDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, filterDropdown.getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, filterDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, filterDropdown.getItemCount(model));
                     int listAreaBottom = geom.listBottom();
                     int overlayListTop = geom.listTop();
                     if (geom.maxScroll() > 0 && mouseY >= overlayListTop && mouseY < listAreaBottom) {
@@ -480,7 +480,7 @@ public class GSRExportCsvScreen extends Screen {
                     }
                 }
                 if (model.playerCountDropdownOpen && !model.allPlayerCounts.isEmpty()) {
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, playerCountDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, playerCountDropdown.getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, playerCountDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, playerCountDropdown.getItemCount(model));
                     int listAreaBottom = geom.listBottom();
                     int overlayListTop = geom.listTop();
                     if (geom.maxScroll() > 0 && mouseY >= overlayListTop && mouseY < listAreaBottom) {
@@ -491,7 +491,7 @@ public class GSRExportCsvScreen extends Screen {
                     }
                 }
                 if (model.runsDropdownOpen && (model.runs.size() + RUNS_PRESET_COUNT > 0)) {
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, runsDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, runsDropdown.getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, runsDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, runsDropdown.getItemCount(model));
                     int listAreaBottom = geom.listBottom();
                     int overlayListTop = geom.listTop();
                     if (geom.maxScroll() > 0 && mouseY >= overlayListTop && mouseY < listAreaBottom) {
@@ -503,7 +503,7 @@ public class GSRExportCsvScreen extends Screen {
                 }
             }
             if (model.filterDropdownOpen && !model.allPlayerNames.isEmpty()) {
-                var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, filterDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, filterDropdown.getItemCount(model));
+                var geom = GSRMultiSelectDropdown.computeGeometry(font, filterDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, filterDropdown.getItemCount(model));
                 if (geom.isConfirmButtonAt(overlayLeft, overlayWidth, (int) mouseX, (int) mouseY)) {
                     applyPlayerFilter();
                     model.filterDropdownOpen = false;
@@ -528,7 +528,7 @@ public class GSRExportCsvScreen extends Screen {
                 return true;
             }
             if (model.playerCountDropdownOpen && !model.allPlayerCounts.isEmpty()) {
-                var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, playerCountDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, playerCountDropdown.getItemCount(model));
+                var geom = GSRMultiSelectDropdown.computeGeometry(font, playerCountDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, playerCountDropdown.getItemCount(model));
                 if (geom.isConfirmButtonAt(overlayLeft, overlayWidth, (int) mouseX, (int) mouseY)) {
                     applyPlayerFilter();
                     model.playerCountDropdownOpen = false;
@@ -553,7 +553,7 @@ public class GSRExportCsvScreen extends Screen {
                 return true;
             }
             if (model.runsDropdownOpen && (model.runs.size() + RUNS_PRESET_COUNT > 0)) {
-                var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, runsDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, runsDropdown.getItemCount(model));
+                var geom = GSRMultiSelectDropdown.computeGeometry(font, runsDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, runsDropdown.getItemCount(model));
                 if (geom.isConfirmButtonAt(overlayLeft, overlayWidth, (int) mouseX, (int) mouseY)) {
                     model.runsDropdownOpen = false;
                     model.lastClickHandledTimeMs = now;
@@ -664,10 +664,10 @@ public class GSRExportCsvScreen extends Screen {
         if (hasFilterPendingChanges() || hasPlayerCountPendingChanges()) {
             applyPlayerFilter();
         }
-        if (client == null || model.runs.isEmpty()) {
-            if (client != null) {
-                SystemToast.add(client.getToastManager(), SystemToast.Type.PERIODIC_NOTIFICATION,
-                        Text.literal("Export CSV"), Text.literal("No run data to export."));
+        if (minecraft == null || model.runs.isEmpty()) {
+            if (minecraft != null) {
+                SystemToast.add(minecraft.getToastManager(), SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
+                        Component.literal("Export CSV"), Component.literal("No run data to export."));
             }
             return;
         }
@@ -681,30 +681,30 @@ public class GSRExportCsvScreen extends Screen {
             }
         }
         if (toExport.isEmpty()) {
-            if (client != null) {
-                SystemToast.add(client.getToastManager(), SystemToast.Type.PERIODIC_NOTIFICATION,
-                        Text.literal("Export CSV"), Text.literal("No runs selected."));
+            if (minecraft != null) {
+                SystemToast.add(minecraft.getToastManager(), SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
+                        Component.literal("Export CSV"), Component.literal("No runs selected."));
             }
             return;
         }
         try {
             Path path = GSRRunHistoryCsvExport.exportToCsv(toExport);
             String msg = "Saved to " + path.getFileName();
-            SystemToast.add(client.getToastManager(), SystemToast.Type.PERIODIC_NOTIFICATION,
-                    Text.literal("Export CSV"), Text.literal(msg));
-            if (client != null) client.setScreen(parent);
+            SystemToast.add(minecraft.getToastManager(), SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
+                    Component.literal("Export CSV"), Component.literal(msg));
+            if (minecraft != null) minecraft.setScreen(parent);
         } catch (IOException e) {
-            SystemToast.add(client.getToastManager(), SystemToast.Type.PACK_LOAD_FAILURE,
-                    Text.literal("Export CSV"), Text.literal("Failed: " + e.getMessage()));
+            SystemToast.add(minecraft.getToastManager(), SystemToast.SystemToastId.PACK_LOAD_FAILURE,
+                    Component.literal("Export CSV"), Component.literal("Failed: " + e.getMessage()));
         }
     }
 
     private void cancel() {
-        if (client != null) client.setScreen(parent);
+        if (minecraft != null) minecraft.setScreen(parent);
     }
 
     @Override
-    public boolean mouseDragged(Click click, double offsetX, double offsetY) {
+    public boolean mouseDragged(MouseButtonEvent click, double offsetX, double offsetY) {
         if (scrollbarDragging != null) {
             double mouseY = click.y();
             var bounds = GSRRunHistoryLayout.ExportCsvBounds.compute(width, height);
@@ -716,7 +716,7 @@ public class GSRExportCsvScreen extends Screen {
             switch (scrollbarDragging) {
                 case FILTER -> {
                     if (!model.allPlayerNames.isEmpty()) {
-                        var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, filterDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, filterDropdown.getItemCount(model));
+                        var geom = GSRMultiSelectDropdown.computeGeometry(font, filterDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, filterDropdown.getItemCount(model));
                         int listAreaBottom = geom.listBottom();
                         int overlayListTop = geom.listTop();
                         if (geom.maxScroll() > 0) {
@@ -728,7 +728,7 @@ public class GSRExportCsvScreen extends Screen {
                 }
                 case PLAYER_COUNT -> {
                     if (!model.allPlayerCounts.isEmpty()) {
-                        var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, playerCountDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, playerCountDropdown.getItemCount(model));
+                        var geom = GSRMultiSelectDropdown.computeGeometry(font, playerCountDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, playerCountDropdown.getItemCount(model));
                         int listAreaBottom = geom.listBottom();
                         int overlayListTop = geom.listTop();
                         if (geom.maxScroll() > 0) {
@@ -740,7 +740,7 @@ public class GSRExportCsvScreen extends Screen {
                 }
                 case RUNS -> {
                     if (model.runs.size() + RUNS_PRESET_COUNT > 0) {
-                        var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, runsDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, runsDropdown.getItemCount(model));
+                        var geom = GSRMultiSelectDropdown.computeGeometry(font, runsDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, runsDropdown.getItemCount(model));
                         int listAreaBottom = geom.listBottom();
                         int overlayListTop = geom.listTop();
                         if (geom.maxScroll() > 0) {
@@ -773,7 +773,7 @@ public class GSRExportCsvScreen extends Screen {
     }
 
     @Override
-    public boolean mouseReleased(Click click) {
+    public boolean mouseReleased(MouseButtonEvent click) {
         if (scrollbarDragging != null) {
             scrollbarDragging = null;
             return true;
@@ -799,7 +799,7 @@ public class GSRExportCsvScreen extends Screen {
             int listBottom = bounds.selectionListBottom() + GSRRunHistoryParameters.SELECTION_SCROLL_BEHIND_HEIGHT
                 + GSRRunHistoryParameters.SELECTION_DELIMITER_BAR_HEIGHT;
             if (model.filterDropdownOpen && !model.allPlayerNames.isEmpty()) {
-                var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, filterDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, filterDropdown.getItemCount(model));
+                var geom = GSRMultiSelectDropdown.computeGeometry(font, filterDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, filterDropdown.getItemCount(model));
                 int listAreaBottom = geom.listBottom();
                 if (mouseY >= geom.listTop() && mouseY < listAreaBottom) {
                     model.filterDropdownScroll = (int) Math.max(0, Math.min(model.filterDropdownScroll - verticalAmount * GSRRunHistoryParameters.FILTER_DROPDOWN_SCROLL_AMOUNT, geom.maxScroll()));
@@ -807,7 +807,7 @@ public class GSRExportCsvScreen extends Screen {
                 return true;
             }
             if (model.playerCountDropdownOpen && !model.allPlayerCounts.isEmpty()) {
-                var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, playerCountDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, playerCountDropdown.getItemCount(model));
+                var geom = GSRMultiSelectDropdown.computeGeometry(font, playerCountDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, playerCountDropdown.getItemCount(model));
                 int listAreaBottom = geom.listBottom();
                 if (mouseY >= geom.listTop() && mouseY < listAreaBottom) {
                     model.playerCountDropdownScroll = (int) Math.max(0, Math.min(model.playerCountDropdownScroll - verticalAmount * GSRRunHistoryParameters.FILTER_DROPDOWN_SCROLL_AMOUNT, geom.maxScroll()));
@@ -815,7 +815,7 @@ public class GSRExportCsvScreen extends Screen {
                 return true;
             }
             if (model.runsDropdownOpen && (model.runs.size() + RUNS_PRESET_COUNT > 0)) {
-                var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, runsDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, runsDropdown.getItemCount(model));
+                var geom = GSRMultiSelectDropdown.computeGeometry(font, runsDropdown.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, runsDropdown.getItemCount(model));
                 if (mouseY >= geom.listTop() && mouseY < geom.listBottom()) {
                     model.runsDropdownScroll = (int) Math.max(0, Math.min(model.runsDropdownScroll - verticalAmount * GSRRunHistoryParameters.ROW_HEIGHT, geom.maxScroll()));
                 }

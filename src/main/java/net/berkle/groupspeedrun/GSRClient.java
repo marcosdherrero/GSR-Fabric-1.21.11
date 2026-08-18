@@ -92,7 +92,7 @@ public class GSRClient implements ClientModInitializer {
                 clientWorldConfig.readNbt(payload.nbt());
                 PLAYER_CONFIG.readNbt(payload.nbt());
                 // When opening a world, config may arrive while paused; ensure paused time shows current run time
-                if (client.getServer() != null && (client.isPaused() || shouldFreezeTimerForScreen(client.currentScreen)) && client.level != null) {
+                if (client.getSingleplayerServer() != null && (client.isPaused() || shouldFreezeTimerForScreen(client.screen)) && client.level != null) {
                     clientPausedElapsedMs = clientWorldConfig.getElapsedTime();
                 }
                 int newVisibility = PLAYER_CONFIG.hudVisibility;
@@ -103,15 +103,15 @@ public class GSRClient implements ClientModInitializer {
                 }
                 previousHudVisibility = newVisibility;
                 // Refresh controls screen so button labels and timer reflect new state
-                if (client.currentScreen instanceof GSRControlsScreen gsr) {
+                if (client.screen instanceof GSRControlsScreen gsr) {
                     client.setScreen(new GSRControlsScreen(gsr.getParent()));
                 }
                 // Refresh locators screen so toggles and preview reflect new state
-                if (client.currentScreen instanceof GSRLocatorsScreen loc) {
+                if (client.screen instanceof GSRLocatorsScreen loc) {
                     client.setScreen(new GSRLocatorsScreen(loc.getParent()));
                 }
                 // Refresh preferences screen so dropdowns reflect new state; preserve scroll position
-                if (client.currentScreen instanceof net.berkle.groupspeedrun.gui.preferences.GSRPreferencesScreen prefs) {
+                if (client.screen instanceof net.berkle.groupspeedrun.gui.preferences.GSRPreferencesScreen prefs) {
                     client.setScreen(new net.berkle.groupspeedrun.gui.preferences.GSRPreferencesScreen(prefs.getParent(), prefs.getContentScroll()));
                 }
             });
@@ -120,9 +120,9 @@ public class GSRClient implements ClientModInitializer {
             context.client().execute(() -> {
                 var client = context.client();
                 if (payload.screenType() == GSROpenScreenPayload.TYPE_CONFIG) {
-                    client.setScreen(new GSRPreferencesScreen(client.currentScreen));
+                    client.setScreen(new GSRPreferencesScreen(client.screen));
                 } else if (payload.screenType() == GSROpenScreenPayload.TYPE_CONTROLS) {
-                    client.setScreen(new GSRControlsScreen(client.currentScreen));
+                    client.setScreen(new GSRControlsScreen(client.screen));
                 }
             });
         });
@@ -175,7 +175,7 @@ public class GSRClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(GSRPlayerListPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
                 var client = context.client();
-                if (client.currentScreen instanceof GSRRunManagerScreen runManager) {
+                if (client.screen instanceof GSRRunManagerScreen runManager) {
                     runManager.setRunManagerData(payload.nbt());
                 }
             });
@@ -201,7 +201,7 @@ public class GSRClient implements ClientModInitializer {
                 return;
             }
             GSRAlphaUtil.tick();
-            boolean singlePlayerPaused = client.getServer() != null && (client.isPaused() || shouldFreezeTimerForScreen(client.currentScreen));
+            boolean singlePlayerPaused = client.getSingleplayerServer() != null && (client.isPaused() || shouldFreezeTimerForScreen(client.screen));
             if (singlePlayerPaused != wasSinglePlayerPaused) {
                 wasSinglePlayerPaused = singlePlayerPaused;
                 if (singlePlayerPaused) {
@@ -225,7 +225,7 @@ public class GSRClient implements ClientModInitializer {
             if (client.player != null && ClientPlayNetworking.canSend(GSRScreenTimePayload.ID)
                     && clientWorldConfig.startTime > 0 && !clientWorldConfig.isTimerFrozen
                     && !clientWorldConfig.isVictorious && !clientWorldConfig.isFailed) {
-                Screen screen = client.currentScreen;
+                Screen screen = client.screen;
                 if (screen instanceof InventoryScreen) {
                     ClientPlayNetworking.send(new GSRScreenTimePayload(GSRScreenTimePayload.PLAYER_INVENTORY));
                 } else if (screen instanceof CreativeModeInventoryScreen) {
@@ -233,9 +233,9 @@ public class GSRClient implements ClientModInitializer {
                 }
             }
             if (client.player != null) {
-                boolean gPressed = GSRKeyBindings.openGsrOptionsKey != null && GSRKeyBindings.openGsrOptionsKey.isPressed();
-                if (GSRKeyBindings.openGsrConfigKey != null && GSRKeyBindings.openGsrConfigKey.wasPressed() && gPressed) {
-                    client.setScreen(new GSRPreferencesScreen(client.currentScreen));
+                boolean gPressed = GSRKeyBindings.openGsrOptionsKey != null && GSRKeyBindings.openGsrOptionsKey.isDown();
+                if (GSRKeyBindings.openGsrConfigKey != null && GSRKeyBindings.openGsrConfigKey.consumeClick() && gPressed) {
+                    client.setScreen(new GSRPreferencesScreen(client.screen));
                     openedConfigDuringGHold = true;
                     gKeyHeldLastTick = true;
                     return;
@@ -243,14 +243,14 @@ public class GSRClient implements ClientModInitializer {
                 if (gPressed) {
                     gKeyHeldLastTick = true;
                 } else {
-                    if (gKeyHeldLastTick && !openedConfigDuringGHold) client.setScreen(new GSRControlsScreen(client.currentScreen));
+                    if (gKeyHeldLastTick && !openedConfigDuringGHold) client.setScreen(new GSRControlsScreen(client.screen));
                     gKeyHeldLastTick = false;
                     openedConfigDuringGHold = false;
                 }
-                if (client.currentScreen == null && GSRKeyBindings.newGsrWorldKey.wasPressed() && client.getServer() != null
+                if (client.screen == null && GSRKeyBindings.newGsrWorldKey.consumeClick() && client.getSingleplayerServer() != null
                         && (clientWorldConfig.effectiveAllowNewWorldBeforeRunEnd || clientWorldConfig.isFailed || clientWorldConfig.isVictorious)) {
                     int runNum = GSRQuickNewWorld.getAndIncrementRunCount();
-                    String hostName = client.getSession() != null ? client.getSession().getUsername() : "Host";
+                    String hostName = client.getUser() != null ? client.getUser().getName() : "Host";
                     client.setScreen(new GSRNewWorldConfirmScreen(null, GSRQuickNewWorld.suggestedWorldName(runNum, hostName)));
                 }
             } else {
@@ -258,8 +258,8 @@ public class GSRClient implements ClientModInitializer {
                 openedConfigDuringGHold = false;
             }
 
-            if (client.currentScreen == null && PLAYER_CONFIG != null && PLAYER_CONFIG.hudVisibility == GSRConfigPlayer.VISIBILITY_TOGGLE
-                    && GSRKeyBindings.toggleGsrHudKey != null && GSRKeyBindings.toggleGsrHudKey.wasPressed()) {
+            if (client.screen == null && PLAYER_CONFIG != null && PLAYER_CONFIG.hudVisibility == GSRConfigPlayer.VISIBILITY_TOGGLE
+                    && GSRKeyBindings.toggleGsrHudKey != null && GSRKeyBindings.toggleGsrHudKey.consumeClick()) {
                 hudToggledVisible = !hudToggledVisible;
             }
         });
@@ -284,7 +284,7 @@ public class GSRClient implements ClientModInitializer {
 
     /** True when hold-to-show key (Tab) is pressed. */
     public static boolean isGsrHudPressActive() {
-        return GSRKeyBindings.pressToShowGsrHudKey != null && GSRKeyBindings.pressToShowGsrHudKey.isPressed();
+        return GSRKeyBindings.pressToShowGsrHudKey != null && GSRKeyBindings.pressToShowGsrHudKey.isDown();
     }
 
     /** True when HUD is toggled on (V key). */
@@ -318,12 +318,12 @@ public class GSRClient implements ClientModInitializer {
     public static long getClientElapsedMs() {
         if (clientWorldConfig == null || clientWorldConfig.startTime <= 0) return 0;
         var client = net.minecraft.client.Minecraft.getInstance();
-        if (client != null && client.getServer() != null) {
+        if (client != null && client.getSingleplayerServer() != null) {
             // Singleplayer: when timer is frozen by server/manual pause, use frozenTime so display stays frozen
             if (clientWorldConfig.isTimerFrozen && clientWorldConfig.frozenTime > 0) {
                 return clientWorldConfig.frozenTime;
             }
-            if (client.isPaused() || shouldFreezeTimerForScreen(client.currentScreen)) {
+            if (client.isPaused() || shouldFreezeTimerForScreen(client.screen)) {
                 if (clientPausedElapsedMs < 0) clientPausedElapsedMs = clientWorldConfig.getElapsedTime();
                 return clientPausedElapsedMs;
             }

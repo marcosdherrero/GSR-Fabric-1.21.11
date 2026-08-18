@@ -31,7 +31,7 @@ public class GSRDeleteRunConfirmScreen extends Screen {
      * @param onConfirmAll Optional runnable to delete all selected runs; null to hide "Delete All Selected" button.
      */
     public GSRDeleteRunConfirmScreen(Screen parent, Runnable onConfirmOne, Runnable onConfirmAll) {
-        super(Text.literal("Delete Run?"));
+        super(Component.literal("Delete Run?"));
         this.parent = parent;
         this.onConfirmOne = onConfirmOne;
         this.onConfirmAll = onConfirmAll;
@@ -50,43 +50,43 @@ public class GSRDeleteRunConfirmScreen extends Screen {
             int totalWidth = 3 * buttonWidth + 2 * gap;
             int leftX = centerX - totalWidth / 2;
             addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.RUN_HISTORY_DELETE_ONE), btn -> confirmOne())
-                    .dimensions(leftX, y, buttonWidth, buttonHeight).build());
+                    .bounds(leftX, y, buttonWidth, buttonHeight).build());
             addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.RUN_HISTORY_DELETE_ALL_SELECTED), btn -> confirmAll())
-                    .dimensions(leftX + buttonWidth + gap, y, buttonWidth, buttonHeight).build());
+                    .bounds(leftX + buttonWidth + gap, y, buttonWidth, buttonHeight).build());
             addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.NEW_WORLD_CANCEL), btn -> cancel())
-                    .dimensions(leftX + 2 * (buttonWidth + gap), y, buttonWidth, buttonHeight).build());
+                    .bounds(leftX + 2 * (buttonWidth + gap), y, buttonWidth, buttonHeight).build());
         } else {
             addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.RUN_HISTORY_DELETE_ONE), btn -> confirmOne())
-                    .dimensions(centerX - buttonWidth - gap / 2, y, buttonWidth, buttonHeight).build());
+                    .bounds(centerX - buttonWidth - gap / 2, y, buttonWidth, buttonHeight).build());
             addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.NEW_WORLD_CANCEL), btn -> cancel())
-                    .dimensions(centerX + gap / 2, y, buttonWidth, buttonHeight).build());
+                    .bounds(centerX + gap / 2, y, buttonWidth, buttonHeight).build());
         }
     }
 
     private void confirmOne() {
         if (onConfirmOne != null) onConfirmOne.run();
-        if (client != null) client.setScreen(parent);
+        if (minecraft != null) minecraft.setScreen(parent);
     }
 
     private void confirmAll() {
         if (onConfirmAll != null) onConfirmAll.run();
-        if (client != null) client.setScreen(parent);
+        if (minecraft != null) minecraft.setScreen(parent);
     }
 
     private void cancel() {
-        if (client != null) client.setScreen(parent);
+        if (minecraft != null) minecraft.setScreen(parent);
     }
 
     @Override
-    public void render(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, width, height, GSRUiParameters.STATUS_BG_COLOR);
-        super.render(context, mouseX, mouseY, delta);
+        super.extractRenderState(context, mouseX, mouseY, delta);
 
-        context.centeredText(textRenderer, getTitle(), width / 2, height / 2 - GSRUiParameters.LOCATOR_CONFIRM_TITLE_OFFSET, GSRUiParameters.NEW_WORLD_TITLE_COLOR);
+        context.centeredText(font, getTitle(), width / 2, height / 2 - GSRUiParameters.LOCATOR_CONFIRM_TITLE_OFFSET, GSRUiParameters.NEW_WORLD_TITLE_COLOR);
         String message = onConfirmAll != null
                 ? "Delete the displayed run, or delete all selected runs from your personal and shared lists."
                 : "This will remove the run from your personal and shared lists.";
-        context.centeredText(textRenderer, message, width / 2, height / 2 - GSRUiParameters.LOCATOR_CONFIRM_MESSAGE_OFFSET, GSRUiParameters.NEW_WORLD_LINE1_COLOR);
+        context.centeredText(font, message, width / 2, height / 2 - GSRUiParameters.LOCATOR_CONFIRM_MESSAGE_OFFSET, GSRUiParameters.NEW_WORLD_LINE1_COLOR);
     }
 
     @Override

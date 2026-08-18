@@ -17,8 +17,8 @@ public enum GSRScaleOption {
         return value;
     }
 
-    public Text getDisplayName() {
-        return Text.literal(String.format("%.2f", value));
+    public Component getDisplayName() {
+        return Component.literal(String.format("%.2f", value));
     }
 
     public static GSRScaleOption from(float value) {

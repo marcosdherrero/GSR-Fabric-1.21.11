@@ -26,7 +26,7 @@ public final class GSREvents {
         if (config.isTimerFrozen || config.isVictorious || config.isFailed) return;
         if (config.startTime <= 0) return;
 
-        var overworld = server.getOverworld();
+        var overworld = server.overworld();
         if (overworld != null) {
             Difficulty d = overworld.getDifficulty();
             if (d != null) {
@@ -35,7 +35,7 @@ public final class GSREvents {
             }
         }
 
-        if (server.getTicks() % GSRServerParameters.SPLIT_CHECK_INTERVAL == 0) {
+        if (server.getTickCount() % GSRServerParameters.SPLIT_CHECK_INTERVAL == 0) {
             GSRSplitManager.checkSplits(server);
         }
 

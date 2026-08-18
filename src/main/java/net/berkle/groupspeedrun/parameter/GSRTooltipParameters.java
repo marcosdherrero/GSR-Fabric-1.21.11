@@ -53,6 +53,6 @@ public final class GSRTooltipParameters {
     public static final int BG = 0xF0101010;
     /** Border color (ARGB). */
     public static final int BORDER = 0xFF505050;
-    /** Text color (ARGB). */
+    /** Component color (ARGB). */
     public static final int TEXT_COLOR = 0xFFFFFFFF;
 }

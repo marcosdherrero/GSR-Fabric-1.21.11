@@ -11,7 +11,7 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 
-// Fabric: client networking
+// Fabric: minecraft networking
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
 // GSR: config, network, parameters
@@ -34,7 +34,7 @@ public class GSRResetModSettingsConfirmScreen extends Screen {
     private final Screen parent;
 
     public GSRResetModSettingsConfirmScreen(Screen parent) {
-        super(Text.literal("Reset Mod Settings?"));
+        super(Component.literal("Reset Mod Settings?"));
         this.parent = parent;
     }
 
@@ -48,9 +48,9 @@ public class GSRResetModSettingsConfirmScreen extends Screen {
         int y = height / 2 + GSRUiParameters.CONTROLS_PADDING;
 
         addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.PREFERENCES_RESET_CONFIRM), btn -> confirm())
-                .dimensions(centerX - buttonWidth - gap / 2, y, buttonWidth, buttonHeight).build());
+                .bounds(centerX - buttonWidth - gap / 2, y, buttonWidth, buttonHeight).build());
         addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.PREFERENCES_RESET_CANCEL), btn -> cancel())
-                .dimensions(centerX + gap / 2, y, buttonWidth, buttonHeight).build());
+                .bounds(centerX + gap / 2, y, buttonWidth, buttonHeight).build());
     }
 
     private void confirm() {
@@ -70,7 +70,7 @@ public class GSRResetModSettingsConfirmScreen extends Screen {
         } else {
             CompoundTag nbt = new CompoundTag();
             pc.writeNbt(nbt);
-            if (client != null && client.player != null) {
+            if (minecraft != null && minecraft.player != null) {
                 ClientPlayNetworking.send(new GSRConfigPayload(nbt));
             }
             GSRClient.setPreviousHudVisibility(pc.hudVisibility);
@@ -80,40 +80,40 @@ public class GSRResetModSettingsConfirmScreen extends Screen {
             wc.antiCheatEnabled = true;
             wc.autoStartEnabled = true;
             wc.locatorNonAdminMode = GSRLocatorNonAdminMode.POST_SPLIT_30MIN.getValue();
-            if (client != null && client.player != null) {
+            if (minecraft != null && minecraft.player != null) {
                 ClientPlayNetworking.send(new GSRWorldConfigPayload(GSRWorldConfigPayload.fromConfig()));
             }
         }
 
-        if (client != null) {
-            client.setScreen(parent);
+        if (minecraft != null) {
+            minecraft.setScreen(parent);
         }
     }
 
     private void cancel() {
-        if (client != null) {
-            client.setScreen(parent);
+        if (minecraft != null) {
+            minecraft.setScreen(parent);
         }
     }
 
     @Override
-    public void render(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, width, height, GSRUiParameters.STATUS_BG_COLOR);
-        super.render(context, mouseX, mouseY, delta);
+        super.extractRenderState(context, mouseX, mouseY, delta);
 
         int centerX = width / 2;
         int msgMaxW = Math.min(GSRUiParameters.RESET_CONFIRM_MESSAGE_MAX_WIDTH, width - 80);
-        List<net.minecraft.util.FormattedCharSequence> lines = textRenderer.wrapLines(
-                Text.literal(GSRButtonParameters.PREFERENCES_RESET_CONFIRM_MESSAGE), msgMaxW);
+        List<net.minecraft.util.FormattedCharSequence> lines = font.split(
+                Component.literal(GSRButtonParameters.PREFERENCES_RESET_CONFIRM_MESSAGE), msgMaxW);
 
-        context.centeredText(textRenderer, getTitle(), centerX,
+        context.centeredText(font, getTitle(), centerX,
                 height / 2 - GSRUiParameters.RESET_CONFIRM_TITLE_OFFSET, GSRUiParameters.NEW_WORLD_TITLE_COLOR);
 
-        int lineHeight = textRenderer.lineHeight + 2;
+        int lineHeight = font.lineHeight + 2;
         int totalMsgHeight = lines.size() * lineHeight;
         int msgTop = height / 2 - GSRUiParameters.RESET_CONFIRM_MESSAGE_OFFSET - totalMsgHeight / 2;
         for (int i = 0; i < lines.size(); i++) {
-            context.centeredText(textRenderer, lines.get(i), centerX,
+            context.centeredText(font, lines.get(i), centerX,
                     msgTop + i * lineHeight, GSRUiParameters.NEW_WORLD_LINE1_COLOR);
         }
     }

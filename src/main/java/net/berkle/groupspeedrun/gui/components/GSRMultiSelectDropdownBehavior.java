@@ -4,6 +4,7 @@ import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
 import java.util.Set;
+import net.minecraft.network.chat.Component;
 
 /**
  * Supplies dropdown data and display from a screen model.
@@ -19,7 +20,7 @@ public interface GSRMultiSelectDropdownBehavior<M> {
     /** Indices of selected items (multi-select: any subset; single-select: at most one). */
     Set<Integer> getSelectedIndices(M model);
 
-    /** Text shown on the trigger button. */
+    /** Component shown on the trigger button. */
     String getDisplayLabel(M model);
 
     /** When selection was last confirmed (ms), for ticker "active after select" window. */

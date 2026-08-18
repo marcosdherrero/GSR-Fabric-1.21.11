@@ -3,9 +3,9 @@ package net.berkle.groupspeedrun.gui;
 import net.berkle.groupspeedrun.parameter.GSRTooltipParameters;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.PlayerFaceRenderer;
+import net.minecraft.client.gui.components.PlayerFaceExtractor;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
-import net.minecraft.client.resources.PlayerSkin;
+import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Component;
@@ -29,7 +29,7 @@ public final class GSRStandardTooltip {
      * Draws a standardized tooltip from FormattedCharSequence lines.
      *
      * @param context Draw context.
-     * @param textRenderer Text renderer.
+     * @param textRenderer Component renderer.
      * @param lines Tooltip lines (may be wrapped if they exceed max width).
      * @param positioner Positions the tooltip on screen.
      * @param mouseX Mouse X.
@@ -57,7 +57,7 @@ public final class GSRStandardTooltip {
 
         int maxLineWidth = 0;
         for (FormattedCharSequence ot : wrapped) {
-            maxLineWidth = Math.max(maxLineWidth, textRenderer.getWidth(ot));
+            maxLineWidth = Math.max(maxLineWidth, textRenderer.width(ot));
         }
 
         float scale = maxLineWidth > maxContentW ? (float) maxContentW / maxLineWidth : 1.0f;
@@ -70,7 +70,7 @@ public final class GSRStandardTooltip {
             tooltipH = maxBoxH;
         }
 
-        Vector2ic pos = positioner.getPosition(screenWidth, screenHeight, mouseX, mouseY, tooltipW, tooltipH);
+        Vector2ic pos = positioner.positionTooltip(screenWidth, screenHeight, mouseX, mouseY, tooltipW, tooltipH);
         int tooltipX = pos.x();
         int tooltipY = pos.y();
         int edge = GSRTooltipParameters.EDGE_MARGIN;
@@ -96,12 +96,12 @@ public final class GSRStandardTooltip {
 
         int y = 0;
         for (FormattedCharSequence ot : wrapped) {
-            context.drawText(textRenderer, ot, 0, y, GSRTooltipParameters.TEXT_COLOR, false);
+            context.text(textRenderer, ot, 0, y, GSRTooltipParameters.TEXT_COLOR, false);
             y += textRenderer.lineHeight;
         }
         if (scrollRange > 0) {
             for (FormattedCharSequence ot : wrapped) {
-                context.drawText(textRenderer, ot, 0, y, GSRTooltipParameters.TEXT_COLOR, false);
+                context.text(textRenderer, ot, 0, y, GSRTooltipParameters.TEXT_COLOR, false);
                 y += textRenderer.lineHeight;
             }
         }
@@ -147,7 +147,7 @@ public final class GSRStandardTooltip {
         List<FormattedCharSequence> ordered = new ArrayList<>();
         for (String line : lines) {
             if (line == null) continue;
-            for (FormattedCharSequence ot : textRenderer.wrapLines(Text.literal(line), maxContentW)) {
+            for (FormattedCharSequence ot : textRenderer.split(Component.literal(line), maxContentW)) {
                 ordered.add(ot);
             }
         }
@@ -208,11 +208,11 @@ public final class GSRStandardTooltip {
         int scoresRowH = (scoresRow != null && !scoresRow.isEmpty()) ? lineHeight + scoresGap : 0;
         int staticSectionH = headerHeight + highlightedH + statsRowH + scoresRowH;
 
-        int tooltipW = Math.max((int) (textRenderer.getWidth(playerName) + 2 * padding), maxContentW);
+        int tooltipW = Math.max((int) (textRenderer.width(playerName) + 2 * padding), maxContentW);
         tooltipW = Math.min(tooltipW, maxBoxW);
         int tooltipH = Math.min(maxBoxH, staticSectionH + 2 * padding);
 
-        Vector2ic pos = positioner.getPosition(screenWidth, screenHeight, mouseX, mouseY, tooltipW, tooltipH);
+        Vector2ic pos = positioner.positionTooltip(screenWidth, screenHeight, mouseX, mouseY, tooltipW, tooltipH);
         int tooltipX = pos.x();
         int tooltipY = pos.y();
         int edge = GSRTooltipParameters.EDGE_MARGIN;
@@ -233,17 +233,17 @@ public final class GSRStandardTooltip {
         if (skin != null) {
             int faceX = innerLeft + headerMargin;
             int faceY = headerTop + headerMargin;
-            PlayerFaceRenderer.draw(context, skin, faceX, faceY, faceSize);
+            PlayerFaceExtractor.extractRenderState(context, skin, faceX, faceY, faceSize);
             int nameX = faceX + faceSize + faceGap;
             int nameY = headerTop + headerMargin + (headerContentHeight - lineHeight) / 2;
-            context.drawText(textRenderer, playerName, nameX, nameY, GSRTooltipParameters.TEXT_COLOR, false);
+            context.text(textRenderer, playerName, nameX, nameY, GSRTooltipParameters.TEXT_COLOR, false);
         } else {
-            context.drawText(textRenderer, playerName, innerLeft, headerTop, GSRTooltipParameters.TEXT_COLOR, false);
+            context.text(textRenderer, playerName, innerLeft, headerTop, GSRTooltipParameters.TEXT_COLOR, false);
         }
         y += headerHeight;
 
         if (highlightedValueLine != null && !highlightedValueLine.isEmpty()) {
-            context.drawText(textRenderer, highlightedValueLine, innerLeft, y, GSRTooltipParameters.TEXT_COLOR, false);
+            context.text(textRenderer, highlightedValueLine, innerLeft, y, GSRTooltipParameters.TEXT_COLOR, false);
             y += lineHeight + statsRowGap;
         }
 
@@ -271,8 +271,8 @@ public final class GSRStandardTooltip {
                                                 String text, int innerLeft, int innerRight, int y, int lineHeight,
                                                 long elapsedMs) {
         int innerWidth = innerRight - innerLeft;
-        int contentWidth = textRenderer.getWidth(text);
-        int separatorWidth = textRenderer.getWidth(GSRTooltipParameters.TICKER_SEPARATOR);
+        int contentWidth = textRenderer.width(text);
+        int separatorWidth = textRenderer.width(GSRTooltipParameters.TICKER_SEPARATOR);
         int segmentWidth = contentWidth + separatorWidth;
         boolean overflow = contentWidth > innerWidth;
         int scrollOffset = 0;
@@ -289,15 +289,15 @@ public final class GSRStandardTooltip {
             int totalNeeded = scrollOffset + innerWidth;
             int x = 0;
             while (x < totalNeeded) {
-                context.drawText(textRenderer, text, x, 0, GSRTooltipParameters.TEXT_COLOR, false);
+                context.text(textRenderer, text, x, 0, GSRTooltipParameters.TEXT_COLOR, false);
                 x += contentWidth;
                 if (x < totalNeeded) {
-                    context.drawText(textRenderer, GSRTooltipParameters.TICKER_SEPARATOR, x, 0, GSRTooltipParameters.TEXT_COLOR, false);
+                    context.text(textRenderer, GSRTooltipParameters.TICKER_SEPARATOR, x, 0, GSRTooltipParameters.TEXT_COLOR, false);
                     x += separatorWidth;
                 }
             }
         } else {
-            context.drawText(textRenderer, text, 0, 0, GSRTooltipParameters.TEXT_COLOR, false);
+            context.text(textRenderer, text, 0, 0, GSRTooltipParameters.TEXT_COLOR, false);
         }
         matrices.popMatrix();
         context.disableScissor();
@@ -323,12 +323,12 @@ public final class GSRStandardTooltip {
         List<FormattedCharSequence> wrapped = new ArrayList<>();
         for (FormattedCharSequence ot : lines) {
             if (ot == null) continue;
-            int w = textRenderer.getWidth(ot);
+            int w = textRenderer.width(ot);
             if (w <= maxContentW) {
                 wrapped.add(ot);
             } else {
                 String plain = orderedTextToPlainString(ot);
-                for (FormattedCharSequence sub : textRenderer.wrapLines(FormattedText.plain(plain), maxContentW)) {
+                for (FormattedCharSequence sub : textRenderer.split(FormattedText.plain(plain), maxContentW)) {
                     wrapped.add(sub);
                 }
             }

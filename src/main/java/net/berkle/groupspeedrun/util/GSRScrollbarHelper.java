@@ -104,8 +104,8 @@ public final class GSRScrollbarHelper {
         }
         int thumbHeight = Math.max(minThumbHeight, (int) (trackHeight * (trackHeight / (double) (trackHeight + maxScroll))));
         int thumbY = trackTop + (int) ((trackHeight - thumbHeight) * (scroll / (double) maxScroll));
-        context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, trackTex, trackX, trackTop, width, trackHeight);
-        context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, thumbTex, trackX, thumbY, width, thumbHeight);
+        context.blitSprite(RenderPipelines.GUI_TEXTURED, trackTex, trackX, trackTop, width, trackHeight);
+        context.blitSprite(RenderPipelines.GUI_TEXTURED, thumbTex, trackX, thumbY, width, thumbHeight);
     }
 
     /**
@@ -134,8 +134,8 @@ public final class GSRScrollbarHelper {
         }
         int thumbWidth = Math.max(minThumbWidth, (int) (trackWidth * (trackWidth / (double) (trackWidth + maxScroll))));
         int thumbX = trackLeft + (int) ((trackWidth - thumbWidth) * (scroll / (double) maxScroll));
-        context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, trackTex, trackLeft, trackTop, trackWidth, height);
-        context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, thumbTex, thumbX, trackTop, thumbWidth, height);
+        context.blitSprite(RenderPipelines.GUI_TEXTURED, trackTex, trackLeft, trackTop, trackWidth, height);
+        context.blitSprite(RenderPipelines.GUI_TEXTURED, thumbTex, thumbX, trackTop, thumbWidth, height);
     }
 
     /**

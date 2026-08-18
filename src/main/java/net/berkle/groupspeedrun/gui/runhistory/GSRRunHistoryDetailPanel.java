@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.util.Set;
+import net.minecraft.network.chat.Component;
 
 /**
  * Renders the detail panel content: Run Info (scrollable text), Run Graphs (bar chart), or Player Graphs.
@@ -27,7 +28,7 @@ public final class GSRRunHistoryDetailPanel {
      * Renders the selected tab content.
      *
      * @param context             Draw context.
-     * @param textRenderer        Text renderer.
+     * @param textRenderer        Component renderer.
      * @param tickerState         Ticker for chart tooltips.
      * @param contentLeft         Left edge of content area.
      * @param contentTop          Top edge of content area.
@@ -156,7 +157,7 @@ public final class GSRRunHistoryDetailPanel {
         if (buttonTop + buttonHeight > top + scrollY && buttonTop < bottom + scrollY) {
             var textures = GSRPressableWidgetAccessor.gsr$getTextures();
             var tex = textures.get(true, false);
-            context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, tex, buttonLeft, buttonTop, buttonWidth, buttonHeight);
+            context.blitSprite(RenderPipelines.GUI_TEXTURED, tex, buttonLeft, buttonTop, buttonWidth, buttonHeight);
             int textY = buttonTop + (buttonHeight - textRenderer.lineHeight) / 2;
             context.centeredText(textRenderer, GSRButtonParameters.RUN_HISTORY_DELETE_RUN,
                     buttonLeft + buttonWidth / 2, textY, GSRRunHistoryParameters.TEXT_COLOR);

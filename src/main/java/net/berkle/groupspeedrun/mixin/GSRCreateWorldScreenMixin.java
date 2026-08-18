@@ -35,11 +35,11 @@ public abstract class GSRCreateWorldScreenMixin extends Screen {
     @Inject(method = "init", at = @At("TAIL"))
     private void gsr$prefillWorldName(CallbackInfo ci) {
         String name = GSRClient.nextGsrWorldName;
-        if (name == null || name.isEmpty() || worldCreator == null || client == null) return;
+        if (name == null || name.isEmpty() || worldCreator == null || minecraft == null) return;
 
-        worldCreator.setWorldName(name);
+        worldCreator.setName(name);
         // Defer to next tick; retry until we find the world name field (Game tab may load later)
-        Minecraft mc = client;
+        Minecraft mc = minecraft;
         gsr$scheduleApplyAttempt(mc, name, 0);
     }
 
@@ -57,13 +57,13 @@ public abstract class GSRCreateWorldScreenMixin extends Screen {
 
     private static boolean gsr$tryApplyName(Minecraft mc, String name) {
         try {
-            if (!(mc.currentScreen instanceof CreateWorldScreen screen)) return false;
+            if (!(mc.screen instanceof CreateWorldScreen screen)) return false;
             if (GSRClient.nextGsrWorldName == null) return true; // already done
 
             EditBox field = gsr$findWorldNameField(screen);
             if (field == null) return false;
 
-            mc.keyboard.setClipboard(name);
+            mc.keyboardHandler.setClipboard(name);
             screen.setFocused(field);
             // Simulate Ctrl+A (select all)
             KeyEvent ctrlA = new KeyEvent(GLFW.GLFW_KEY_A, 0, GLFW_MOD_CONTROL);
@@ -72,7 +72,7 @@ public abstract class GSRCreateWorldScreenMixin extends Screen {
             KeyEvent ctrlV = new KeyEvent(GLFW.GLFW_KEY_V, 0, GLFW_MOD_CONTROL);
             screen.keyPressed(ctrlV);
             // Direct setText as fallback (paste may be handled by Keyboard before Screen)
-            field.setText(name);
+            field.setValue(name);
             GSRClient.nextGsrWorldName = null;
             return true;
         } catch (Throwable t) {
@@ -86,12 +86,12 @@ public abstract class GSRCreateWorldScreenMixin extends Screen {
         return gsr$findWorldNameFieldRecurse(screen);
     }
 
-    private static EditBox gsr$findWorldNameFieldRecurse(Element e) {
+    private static EditBox gsr$findWorldNameFieldRecurse(GuiEventListener e) {
         if (e instanceof EditBox tf && gsr$getMaxLength(tf) == WORLD_NAME_MAX_LENGTH) {
             return tf;
         }
-        if (e instanceof ParentElement pe) {
-            for (Element child : pe.children()) {
+        if (e instanceof ContainerEventHandler pe) {
+            for (GuiEventListener child : pe.children()) {
                 EditBox found = gsr$findWorldNameFieldRecurse(child);
                 if (found != null) return found;
             }

@@ -1,6 +1,6 @@
 package net.berkle.groupspeedrun.gui;
 
-// Fabric: client networking
+// Fabric: minecraft networking
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
 // Minecraft: screen, GUI, input
@@ -11,7 +11,7 @@ import net.minecraft.client.input.KeyEvent;
 // LWJGL: key codes
 import org.lwjgl.glfw.GLFW;
 
-// GSR: client state, config, network, parameters, HUD renderer, key bindings
+// GSR: minecraft state, config, network, parameters, HUD renderer, key bindings
 import net.berkle.groupspeedrun.GSRClient;
 import net.berkle.groupspeedrun.client.GSRKeyBindings;
 import net.berkle.groupspeedrun.config.GSRConfigPlayer;
@@ -52,7 +52,7 @@ public class GSRControlsScreen extends GSRBaseScreen {
         int row2Y = row1Y + btnH + rowGap;
         int row3Y = row2Y + btnH + rowGap;
 
-        boolean inWorld = client != null && client.level != null;
+        boolean inWorld = minecraft != null && minecraft.level != null;
         GSRConfigPlayer pConfig = GSRClient.PLAYER_CONFIG;
         boolean canUseAdmin = pConfig != null && pConfig.canUseAdmin;
 
@@ -64,38 +64,38 @@ public class GSRControlsScreen extends GSRBaseScreen {
                     ClientPlayNetworking.send(new GSRRunActionPayload(action));
                     updateStartPauseResumeButton();
                 })
-                .dimensions(leftX, row1Y, halfW, btnH).build();
+                .bounds(leftX, row1Y, halfW, btnH).build();
         updateStartPauseResumeButton();
         addRenderableWidget(startPauseResumeBtn);
 
         Button resetBtn = Button.builder(GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_RESET), b -> {
-                    if (client != null) client.setScreen(new GSRResetConfirmScreen(this));
+                    if (minecraft != null) minecraft.setScreen(new GSRResetConfirmScreen(this));
                 })
-                .dimensions(rightX, row1Y, halfW, btnH).build();
+                .bounds(rightX, row1Y, halfW, btnH).build();
         ((GSRClickableWidgetAccessor) resetBtn).gsr$setActive(inWorld && canUseAdmin);
         addRenderableWidget(resetBtn);
 
         Button runManagerBtn = Button.builder(GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_RUN_MANAGER), b -> {
-            if (client != null) client.setScreen(new GSRRunManagerScreen(this));
-        }).dimensions(leftX, row2Y, halfW, btnH).build();
+            if (minecraft != null) minecraft.setScreen(new GSRRunManagerScreen(this));
+        }).bounds(leftX, row2Y, halfW, btnH).build();
         ((GSRClickableWidgetAccessor) runManagerBtn).gsr$setActive(inWorld);
         addRenderableWidget(runManagerBtn);
         Button locatorsBtn = Button.builder(GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_LOCATORS), b -> {
-            if (client != null) client.setScreen(new GSRLocatorsScreen(this));
-        }).dimensions(rightX, row2Y, halfW, btnH).build();
+            if (minecraft != null) minecraft.setScreen(new GSRLocatorsScreen(this));
+        }).bounds(rightX, row2Y, halfW, btnH).build();
         ((GSRClickableWidgetAccessor) locatorsBtn).gsr$setActive(inWorld);
         addRenderableWidget(locatorsBtn);
 
         addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_RUN_HISTORY), b -> {
-            if (client != null) client.setScreen(new GSRRunHistoryScreen(this, true));
-        }).dimensions(leftX, row3Y, halfW, btnH).build());
+            if (minecraft != null) minecraft.setScreen(new GSRRunHistoryScreen(this, true));
+        }).bounds(leftX, row3Y, halfW, btnH).build());
         addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_PREFERENCES), b -> {
-            if (client != null) client.setScreen(new net.berkle.groupspeedrun.gui.preferences.GSRPreferencesScreen(this));
-        }).dimensions(rightX, row3Y, halfW, btnH).build());
+            if (minecraft != null) minecraft.setScreen(new net.berkle.groupspeedrun.gui.preferences.GSRPreferencesScreen(this));
+        }).bounds(rightX, row3Y, halfW, btnH).build());
 
         var footer = GSRMenuComponents.singleButtonFooterLayout(width, height);
         addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.FOOTER_BACK), btn -> goBack())
-                .dimensions(footer.buttonX(), footer.footerY(), footer.buttonWidth(), footer.buttonHeight()).build());
+                .bounds(footer.buttonX(), footer.footerY(), footer.buttonWidth(), footer.buttonHeight()).build());
     }
 
     /** Returns the action byte for Start/Pause/Resume. Resume when manualPause; Pause when run active and not manualPause. */
@@ -107,7 +107,7 @@ public class GSRControlsScreen extends GSRBaseScreen {
                 : (wc != null && runActive && wc.manualPause ? GSRRunActionPayload.ACTION_RESUME : GSRRunActionPayload.ACTION_PAUSE);
     }
 
-    /** Applies expected run state to client config so button reflects change immediately before server sync. */
+    /** Applies expected run state to minecraft config so button reflects change immediately before server sync. */
     private void applyOptimisticRunState(byte action) {
         GSRConfigWorld wc = GSRClient.clientWorldConfig;
         if (wc == null) return;
@@ -131,7 +131,7 @@ public class GSRControlsScreen extends GSRBaseScreen {
      * In singleplayer when game is paused, Pause/Resume is grayed out (timer already frozen by game pause). */
     private void updateStartPauseResumeButton() {
         if (startPauseResumeBtn == null) return;
-        boolean inWorld = client != null && client.level != null;
+        boolean inWorld = minecraft != null && minecraft.level != null;
         GSRConfigWorld wc = GSRClient.clientWorldConfig;
         boolean runNotStarted = wc != null && wc.startTime <= 0 && !wc.isVictorious && !wc.isFailed;
         boolean runActive = wc != null && wc.startTime > 0 && !wc.isVictorious && !wc.isFailed;
@@ -139,7 +139,7 @@ public class GSRControlsScreen extends GSRBaseScreen {
                 : (wc != null && runActive && wc.manualPause ? GSRButtonParameters.CONTROLS_RESUME : GSRButtonParameters.CONTROLS_PAUSE);
         GSRConfigPlayer pConfig = GSRClient.PLAYER_CONFIG;
         boolean canUseAdmin = pConfig != null && pConfig.canUseAdmin;
-        boolean singlePlayerPaused = client != null && client.getServer() != null && client.isPaused();
+        boolean singlePlayerPaused = minecraft != null && minecraft.getSingleplayerServer() != null && minecraft.isPaused();
         boolean pauseResumeRedundant = singlePlayerPaused && runActive;
         boolean active = inWorld && canUseAdmin && (runNotStarted || runActive) && !pauseResumeRedundant;
         startPauseResumeBtn.setMessage(GSRButtonParameters.literal(label));
@@ -153,20 +153,20 @@ public class GSRControlsScreen extends GSRBaseScreen {
     }
 
     @Override
-    public void render(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, width, height, GSRUiParameters.SCREEN_BG_DARK);
         // Timer drawn first (behind buttons) with reduced alpha so options are the focus
         GSRConfigWorld wc = GSRClient.clientWorldConfig;
         GSRConfigPlayer pc = GSRClient.PLAYER_CONFIG;
-        if (wc != null && pc != null && client != null) {
-            int[] size = GSRTimerHudRenderer.getTimerBoxScaledSize(textRenderer, wc, pc, true);
+        if (wc != null && pc != null && minecraft != null) {
+            int[] size = GSRTimerHudRenderer.getTimerBoxScaledSize(font, wc, pc, true);
             int scaledH = size[1];
             int anchorX = pc.timerHudOnRight ? (width - GSRTimerHudRenderer.EDGE_MARGIN) : GSRTimerHudRenderer.EDGE_MARGIN;
             int anchorY = (int) ((height / 2f) - (scaledH / 2f) - (height * GSRTimerHudRenderer.VERTICAL_OFFSET_FACTOR));
-            GSRTimerHudRenderer.drawTimerBox(context, textRenderer, pc.timerHudOnRight, anchorX, anchorY, wc, pc, true, 1f, true, GSRUiParameters.CONTROLS_TIMER_ALPHA);
+            GSRTimerHudRenderer.drawTimerBox(context, font, pc.timerHudOnRight, anchorX, anchorY, wc, pc, true, 1f, true, GSRUiParameters.CONTROLS_TIMER_ALPHA);
         }
-        super.render(context, mouseX, mouseY, delta);
-        context.centeredText(textRenderer, getTitle(), width / 2, GSRUiParameters.TITLE_Y, GSRUiParameters.TITLE_COLOR);
+        super.extractRenderState(context, mouseX, mouseY, delta);
+        context.centeredText(font, getTitle(), width / 2, GSRUiParameters.TITLE_Y, GSRUiParameters.TITLE_COLOR);
     }
 
     @Override
@@ -175,7 +175,7 @@ public class GSRControlsScreen extends GSRBaseScreen {
             goBack();
             return true;
         }
-        if (GSRKeyBindings.openGsrOptionsKey != null && GSRKeyBindings.openGsrOptionsKey.matchesKey(keyInput)) {
+        if (GSRKeyBindings.openGsrOptionsKey != null && GSRKeyBindings.openGsrOptionsKey.matches(keyInput)) {
             goBack();
             return true;
         }

@@ -71,13 +71,13 @@ public final class GSRRunSyncManager {
 
     /** Handle C2S run IDs from client. */
     public static void handleRunIds(MinecraftServer server, ServerPlayer sender, List<String> runIds) {
-        playerRunIds.put(sender.getUuid(), new HashSet<>(runIds));
+        playerRunIds.put(sender.getUUID(), new HashSet<>(runIds));
 
         // Union of others' run IDs plus this world's run IDs from server storage.
         // Ensures joiners get runs from both other clients and world data (e.g. if all participants disconnected).
         Set<String> othersRunIds = new HashSet<>();
         for (Map.Entry<UUID, Set<String>> e : playerRunIds.entrySet()) {
-            if (!e.getKey().equals(sender.getUuid())) {
+            if (!e.getKey().equals(sender.getUUID())) {
                 othersRunIds.addAll(e.getValue());
             }
         }
@@ -91,12 +91,12 @@ public final class GSRRunSyncManager {
     /** Handle C2S run request from client. */
     public static void handleRunRequest(MinecraftServer server, ServerPlayer requester, List<String> runIds) {
         if (runIds.isEmpty()) return;
-        runRequestRequester = requester.getUuid();
+        runRequestRequester = requester.getUUID();
         runRequestIds = new HashSet<>(runIds);
 
-        CompoundTag nbt = GSRRunRequestBroadcastPayload.toNbt(requester.getUuid(), runIds);
+        CompoundTag nbt = GSRRunRequestBroadcastPayload.toNbt(requester.getUUID(), runIds);
         for (ServerPlayer p : PlayerLookup.all(server)) {
-            if (!p.getUuid().equals(requester.getUuid())) {
+            if (!p.getUUID().equals(requester.getUUID())) {
                 ServerPlayNetworking.send(p, new GSRRunRequestBroadcastPayload(nbt));
             }
         }
@@ -118,7 +118,7 @@ public final class GSRRunSyncManager {
         if (runId == null || runNbt == null || runRequestRequester == null || !runRequestIds.contains(runId)) {
             return;
         }
-        ServerPlayer requester = server.getPlayerManager().getPlayer(runRequestRequester);
+        ServerPlayer requester = server.getPlayerList().getPlayer(runRequestRequester);
         if (requester != null) {
             ServerPlayNetworking.send(requester, new GSRRunDataPayload(GSRRunDataPayload.toNbt(runId, runNbt)));
         }

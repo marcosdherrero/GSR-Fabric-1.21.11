@@ -15,7 +15,7 @@ public record GSRConfigPayload(CompoundTag nbt) implements CustomPacketPayload {
     public static final Type<GSRConfigPayload> ID = new Type<>(Identifier.fromNamespaceAndPath("gsr", "config_sync"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, GSRConfigPayload> CODEC = StreamCodec.composite(
-            ByteBufCodecs.COMPOUND_TAG_COMPOUND, GSRConfigPayload::nbt,
+            ByteBufCodecs.COMPOUND_TAG, GSRConfigPayload::nbt,
             GSRConfigPayload::new
     );
 

@@ -20,10 +20,10 @@ public abstract class GSRBlockItemTracker {
     @SuppressWarnings("deprecation")
     private void groupspeedrun$onPlace(BlockPlaceContext context, CallbackInfoReturnable<InteractionResult> cir) {
         var player = context.getPlayer();
-        if (player != null && cir.getReturnValue().isAccepted() && !context.getWorld().isClient()) {
+        if (player != null && cir.getReturnValue().consumesAction() && !context.getLevel().isClientSide()) {
             BlockItem self = (BlockItem) (Object) this;
-            String blockId = self.getBlock().getRegistryEntry().getKey().map(k -> k.getValue().toString()).orElse(null);
-            GSRStats.addBlockPlaced(player.getUuid(), blockId);
+            String blockId = self.getBlock().builtInRegistryHolder().unwrapKey().map(k -> k.identifier().toString()).orElse(null);
+            GSRStats.addBlockPlaced(player.getUUID(), blockId);
         }
     }
 }

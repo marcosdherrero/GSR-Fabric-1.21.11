@@ -46,21 +46,21 @@ public class GSRLocateHudMixin {
         float fadeAlpha = GSRAlphaUtil.getFadeAlpha(client, config, isFinished, ticksSinceSplit);
         if (fadeAlpha <= GSRHudParameters.ALPHA_CUTOFF) return;
 
-        ResourceKey<World> currentDim = client.level.dimension();
-        boolean showFortress = config.fortressLocated && pConfig.fortressLocatorOn && currentDim == World.NETHER;
-        boolean showBastion = config.bastionLocated && pConfig.bastionLocatorOn && currentDim == World.NETHER;
-        boolean showStronghold = config.strongholdLocated && pConfig.strongholdLocatorOn && currentDim == World.OVERWORLD;
-        boolean showShip = config.shipLocated && pConfig.shipLocatorOn && currentDim == World.END;
+        ResourceKey<Level> currentDim = client.level.dimension();
+        boolean showFortress = config.fortressLocated && pConfig.fortressLocatorOn && currentDim == Level.NETHER;
+        boolean showBastion = config.bastionLocated && pConfig.bastionLocatorOn && currentDim == Level.NETHER;
+        boolean showStronghold = config.strongholdLocated && pConfig.strongholdLocatorOn && currentDim == Level.OVERWORLD;
+        boolean showShip = config.shipLocated && pConfig.shipLocatorOn && currentDim == Level.END;
 
         boolean fading = config.locatorFadeStartTime > 0 && config.locatorFadeType != null && !config.locatorFadeType.isEmpty();
         long fadeElapsed = fading ? currentTime - config.locatorFadeStartTime : 0;
         boolean fadeInProgress = fading && fadeElapsed < GSRLocatorParameters.LOCATOR_FADE_TICKS;
         float fadeOutAlpha = fadeInProgress ? Math.max(0f, 1f - (float) fadeElapsed / GSRLocatorParameters.LOCATOR_FADE_TICKS) : 0f;
 
-        boolean showFadeFortress = fadeInProgress && "fortress".equals(config.locatorFadeType) && currentDim == World.NETHER;
-        boolean showFadeBastion = fadeInProgress && "bastion".equals(config.locatorFadeType) && currentDim == World.NETHER;
-        boolean showFadeStronghold = fadeInProgress && "stronghold".equals(config.locatorFadeType) && currentDim == World.OVERWORLD;
-        boolean showFadeShip = fadeInProgress && "ship".equals(config.locatorFadeType) && currentDim == World.END;
+        boolean showFadeFortress = fadeInProgress && "fortress".equals(config.locatorFadeType) && currentDim == Level.NETHER;
+        boolean showFadeBastion = fadeInProgress && "bastion".equals(config.locatorFadeType) && currentDim == Level.NETHER;
+        boolean showFadeStronghold = fadeInProgress && "stronghold".equals(config.locatorFadeType) && currentDim == Level.OVERWORLD;
+        boolean showFadeShip = fadeInProgress && "ship".equals(config.locatorFadeType) && currentDim == Level.END;
 
         if (!showFortress && !showBastion && !showStronghold && !showShip && !showFadeFortress && !showFadeBastion && !showFadeStronghold && !showFadeShip) return;
 
@@ -134,7 +134,7 @@ public class GSRLocateHudMixin {
         double distance = Math.sqrt(dX * dX + dZ * dZ);
 
         // Forward direction: yaw 0 = South (+Z), 90 = West (-X)
-        float yawRad = (float) Math.toRadians(client.player.getYaw());
+        float yawRad = (float) Math.toRadians(client.player.getYRot());
         double dirX = -Math.sin(yawRad);
         double dirZ = Math.cos(yawRad);
         double dot = dX * dirX + dZ * dirZ;
@@ -190,7 +190,7 @@ public class GSRLocateHudMixin {
 
         // Item centered in inner box
         context.pose().scale(dynamicIconScale / locateScale, dynamicIconScale / locateScale);
-        context.drawItem(stack, -inner, -inner);
+        context.item(stack, -inner, -inner);
         context.pose().popMatrix();
     }
 

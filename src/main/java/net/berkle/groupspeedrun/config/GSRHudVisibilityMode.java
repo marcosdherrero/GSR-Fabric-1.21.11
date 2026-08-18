@@ -21,8 +21,8 @@ public enum GSRHudVisibilityMode {
         return value;
     }
 
-    public Text getDisplayName() {
-        return Text.literal(label);
+    public Component getDisplayName() {
+        return Component.literal(label);
     }
 
     public static GSRHudVisibilityMode from(int value) {

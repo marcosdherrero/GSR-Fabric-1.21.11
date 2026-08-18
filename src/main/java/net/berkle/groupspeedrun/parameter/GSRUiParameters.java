@@ -165,7 +165,7 @@ public final class GSRUiParameters {
     public static final int PARTICIPANT_ROW_BUTTON_PAD = 2;
     /** Y offset above panel top for "Grouped" / "Excluded" labels (pixels). */
     public static final int PARTICIPANT_LABEL_OFFSET = 14;
-    /** Text color when row is selected (ARGB). */
+    /** Component color when row is selected (ARGB). */
     public static final int PARTICIPANT_SELECTED_TEXT_COLOR = 0xFF4080FF;
     /** Title and label text color (ARGB). */
     public static final int PARTICIPANT_TITLE_COLOR = 0xFFFFFFFF;
@@ -205,7 +205,7 @@ public final class GSRUiParameters {
     /** Default/unselected text color (ARGB). */
     public static final int KEYBIND_DEFAULT_COLOR = 0xFFFFFFFF;
 
-    // --- Click protection (anti-spam, prevents wrong-button activation) ---
+    // --- MouseButtonEvent protection (anti-spam, prevents wrong-button activation) ---
     /** Minimum ms between handled clicks on dropdowns/buttons. Ignores rapid repeated clicks. */
     public static final int CLICK_COOLDOWN_MS = 300;
     /** Minimum ms mouse must hover over element before click is accepted. Prevents accidental activation of recently hovered element. */

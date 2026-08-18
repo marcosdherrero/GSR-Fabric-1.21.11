@@ -23,7 +23,7 @@ public class GSRNewWorldConfirmScreen extends Screen {
     private final String suggestedWorldName;
 
     public GSRNewWorldConfirmScreen(Screen parent, String suggestedWorldName) {
-        super(Text.literal("New GSR World?"));
+        super(Component.literal("New GSR World?"));
         this.parent = parent;
         this.suggestedWorldName = suggestedWorldName != null ? suggestedWorldName : GSRUiParameters.NEW_WORLD_DEFAULT_NAME;
     }
@@ -39,18 +39,18 @@ public class GSRNewWorldConfirmScreen extends Screen {
 
         // Two buttons: Continue (saves world and opens Create World) and Cancel
         addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.NEW_WORLD_SAVE_CREATE), btn -> confirm())
-                .dimensions(centerX - buttonWidth - gap / 2, y, buttonWidth, buttonHeight).build());
+                .bounds(centerX - buttonWidth - gap / 2, y, buttonWidth, buttonHeight).build());
         addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.NEW_WORLD_CANCEL), btn -> cancel())
-                .dimensions(centerX + gap / 2, y, buttonWidth, buttonHeight).build());
+                .bounds(centerX + gap / 2, y, buttonWidth, buttonHeight).build());
     }
 
     private void confirm() {
         GSRClient.nextGsrWorldName = suggestedWorldName;
-        if (client != null && client.getServer() != null) {
+        if (minecraft != null && minecraft.getSingleplayerServer() != null) {
             // Open pause menu, then simulate clicking "Save and Quit" on next tick (same code path as user click).
-            client.setScreen(new PauseScreen(true));
-            client.execute(() -> {
-                if (client.currentScreen instanceof PauseScreen menu) {
+            minecraft.setScreen(new PauseScreen(true));
+            minecraft.execute(() -> {
+                if (minecraft.screen instanceof PauseScreen menu) {
                     Button exitBtn = ((GSRGameMenuScreenAccessor) menu).gsr$getExitButton();
                     if (exitBtn != null) {
                         ((GSRButtonWidgetAccessor) exitBtn).gsr$getOnPress().onPress(exitBtn);
@@ -63,21 +63,21 @@ public class GSRNewWorldConfirmScreen extends Screen {
     }
 
     private void cancel() {
-        if (client != null) {
-            client.setScreen(parent);
+        if (minecraft != null) {
+            minecraft.setScreen(parent);
         }
     }
 
     @Override
-    public void render(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, width, height, GSRUiParameters.STATUS_BG_COLOR);
-        super.render(context, mouseX, mouseY, delta);
+        super.extractRenderState(context, mouseX, mouseY, delta);
 
-        context.centeredText(textRenderer, getTitle(), width / 2, height / 2 - GSRUiParameters.NEW_WORLD_TITLE_OFFSET, GSRUiParameters.NEW_WORLD_TITLE_COLOR);
+        context.centeredText(font, getTitle(), width / 2, height / 2 - GSRUiParameters.NEW_WORLD_TITLE_OFFSET, GSRUiParameters.NEW_WORLD_TITLE_COLOR);
         String line1 = "Saves the world and opens Create World with:";
         String line2 = suggestedWorldName;
-        context.centeredText(textRenderer, line1, width / 2, height / 2 - GSRUiParameters.NEW_WORLD_LINE1_OFFSET, GSRUiParameters.NEW_WORLD_LINE1_COLOR);
-        context.centeredText(textRenderer, line2, width / 2, height / 2 - GSRUiParameters.NEW_WORLD_LINE2_OFFSET, GSRUiParameters.NEW_WORLD_LINE2_COLOR);
+        context.centeredText(font, line1, width / 2, height / 2 - GSRUiParameters.NEW_WORLD_LINE1_OFFSET, GSRUiParameters.NEW_WORLD_LINE1_COLOR);
+        context.centeredText(font, line2, width / 2, height / 2 - GSRUiParameters.NEW_WORLD_LINE2_OFFSET, GSRUiParameters.NEW_WORLD_LINE2_COLOR);
     }
 
     @Override

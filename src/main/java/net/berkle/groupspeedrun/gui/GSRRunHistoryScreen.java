@@ -1,13 +1,13 @@
 package net.berkle.groupspeedrun.gui;
 
 // Minecraft: screen, GUI, input, text
-import net.minecraft.client.gui.Click;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
 
-// GSR: client, config, data, gui components, parameters, util
+// GSR: minecraft, config, data, gui components, parameters, util
 import net.berkle.groupspeedrun.GSRClient;
 import net.berkle.groupspeedrun.client.GSRSharedRunLoader;
 import net.berkle.groupspeedrun.config.GSRConfigWorld;
@@ -94,10 +94,10 @@ public class GSRRunHistoryScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        setWidgetAlpha(1.0f);
+        setAlpha(1.0f);
         model.allRuns = GSRSharedRunLoader.loadAll();
         // Active run (from world config) only visible when in that world; buildCurrentRunState returns null otherwise
-        if (includeCurrentRun && client != null) {
+        if (includeCurrentRun && minecraft != null) {
             GSRRunSaveState current = buildCurrentRunState();
             if (current != null) {
                 model.allRuns.add(0, current);
@@ -117,14 +117,14 @@ public class GSRRunHistoryScreen extends Screen {
     }
 
     private void openExportCsvPopup() {
-        if (client != null) {
-            client.setScreen(new GSRExportCsvScreen(this, model));
+        if (minecraft != null) {
+            minecraft.setScreen(new GSRExportCsvScreen(this, model));
         }
     }
 
     /** Opens Delete Run confirmation screen; on confirm, deletes run(s) and reloads. */
     private void openDeleteRunConfirmScreen() {
-        if (client == null || model.selectedRun == null || "current".equals(model.selectedRun.record().runId())) return;
+        if (minecraft == null || model.selectedRun == null || "current".equals(model.selectedRun.record().runId())) return;
         String runId = model.selectedRun.record().runId();
         Runnable onDeleteOne = () -> {
             if (GSRSharedRunLoader.deleteRun(runId)) reloadAfterDelete();
@@ -142,13 +142,13 @@ public class GSRRunHistoryScreen extends Screen {
                 };
             }
         }
-        client.setScreen(new GSRDeleteRunConfirmScreen(this, onDeleteOne, onDeleteAll));
+        minecraft.setScreen(new GSRDeleteRunConfirmScreen(this, onDeleteOne, onDeleteAll));
     }
 
     /** Reloads run history after delete; clears selection and re-derives. */
     private void reloadAfterDelete() {
         model.allRuns = GSRSharedRunLoader.loadAll();
-        if (includeCurrentRun && client != null) {
+        if (includeCurrentRun && minecraft != null) {
             GSRRunSaveState current = buildCurrentRunState();
             if (current != null) model.allRuns.add(0, current);
         }
@@ -186,22 +186,22 @@ public class GSRRunHistoryScreen extends Screen {
 
     /**
      * Builds a GSRRunSaveState from the current run config when in world with an active run.
-     * Returns null if not in world, no active run, or client/config unavailable.
+     * Returns null if not in world, no active run, or minecraft/config unavailable.
      * Active runs are only shown in stat tracking while in the world with that run.
      */
     private GSRRunSaveState buildCurrentRunState() {
         GSRConfigWorld config = GSRClient.clientWorldConfig;
-        if (config == null || config.startTime <= 0 || client == null || client.level == null) return null;
+        if (config == null || config.startTime <= 0 || minecraft == null || minecraft.level == null) return null;
         long startMs = config.startTime;
         long endMs = config.isTimerFrozen ? startMs + config.frozenTime : System.currentTimeMillis();
         String startDateIso = DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(startMs));
         String endDateIso = DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(endMs));
         String status = config.isVictorious ? GSRRunRecord.STATUS_VICTORY
                 : (config.isFailed ? GSRRunRecord.STATUS_FAIL : GSRRunRecord.STATUS_ACTIVE);
-        var server = client.getServer();
+        var server = minecraft.getSingleplayerServer();
         String worldName = server != null
-                ? server.getSaveProperties().getLevelName()
-                : (client.level != null ? "World" : "Current");
+                ? server.getWorldData().getLevelName()
+                : (minecraft.level != null ? "World" : "Current");
         boolean deranked = config.antiCheatEnabled && config.locatorDeranked;
         int participantCount = Math.max(1, config.runParticipantCount);
         String runDifficulty = GSRRunRecord.computeRunDifficulty(participantCount, config.lowestDifficultyOrdinal);
@@ -226,10 +226,10 @@ public class GSRRunHistoryScreen extends Screen {
         );
         List<GSRRunParticipant> participants = new ArrayList<>();
         List<GSRRunPlayerSnapshot> snapshots = new ArrayList<>();
-        var player = client.player;
+        var player = minecraft.player;
         if (player != null) {
             String name = player.getName().getString();
-            String uuid = player.getUuidAsString();
+            String uuid = player.getStringUUID();
             participants.add(new GSRRunParticipant("current", uuid, name));
             snapshots.add(new GSRRunPlayerSnapshot("current", uuid, name, 0f, 0f, null, 0f, null, 0f, 0f, 0, 0, 0, 0, null, 0, null, 0, 0f, null, 0f, 0, null, 0, 0, null, 0, 0L, null, 0L, 0f));
         }
@@ -239,10 +239,10 @@ public class GSRRunHistoryScreen extends Screen {
     /** Returns live leaderboard lines for the active run when in-world with server; null otherwise. */
     private List<String> getActiveRunLeaderboardLines() {
         if (model.selectedRun == null || !"current".equals(model.selectedRun.record().runId())
-                || client == null || client.getServer() == null) {
+                || minecraft == null || minecraft.getSingleplayerServer() == null) {
             return null;
         }
-        return GSRStats.getLeaderboardLines(client.getServer());
+        return GSRStats.getLeaderboardLines(minecraft.getSingleplayerServer());
     }
 
     /** Returns freshly built active run state when selected run is current; null otherwise. Used for live Run Info updates. */
@@ -305,17 +305,17 @@ public class GSRRunHistoryScreen extends Screen {
     }
 
     private void goBack() {
-        if (client != null) {
-            if (parent != null) client.setScreen(parent);
-            else client.setScreen(null);
+        if (minecraft != null) {
+            if (parent != null) minecraft.setScreen(parent);
+            else minecraft.setScreen(null);
         }
     }
 
     @Override
-    public void render(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, width, height, GSRUiParameters.SCREEN_BG_DARK);
-        super.render(context, mouseX, mouseY, delta);
-        context.centeredText(textRenderer, getTitle(), width / 2, GSRRunHistoryParameters.RUN_HISTORY_TITLE_Y, GSRUiParameters.TITLE_COLOR);
+        super.extractRenderState(context, mouseX, mouseY, delta);
+        context.centeredText(font, getTitle(), width / 2, GSRRunHistoryParameters.RUN_HISTORY_TITLE_Y, GSRUiParameters.TITLE_COLOR);
 
         boolean dropdownOpen = model.filterDropdownOpen || model.playerCountDropdownOpen || model.runsDropdownOpen || model.compareDropdownOpen || model.chartViewDropdownOpen || model.typeDropdownOpen;
         if (dropdownOpen) {
@@ -324,7 +324,7 @@ public class GSRRunHistoryScreen extends Screen {
 
         var bounds = GSRRunHistoryLayout.TwoColumnBounds.compute(width, height);
 
-        leftColumn.render(model, context, textRenderer, tickerState, bounds, mouseX, mouseY);
+        leftColumn.render(model, context, font, tickerState, bounds, mouseX, mouseY);
 
         int detailLeft = bounds.rightPanelLeft();
         int detailRight = bounds.rightPanelLeft() + bounds.rightPanelWidth();
@@ -333,7 +333,7 @@ public class GSRRunHistoryScreen extends Screen {
 
         /* Right panel (detail, tabs, content) always drawn so screen stays visible when dropdown open; overlay provides blur. */
         context.fill(detailLeft, detailTop, detailRight, detailBottom, GSRUiParameters.CONTENT_BOX_BG);
-        tabBar.render(context, textRenderer, detailLeft, detailRight, detailTop, model.selectedTab, mouseX, mouseY);
+        tabBar.render(context, font, detailLeft, detailRight, detailTop, model.selectedTab, mouseX, mouseY);
 
         int contentTop = detailTop + GSRRunHistoryParameters.TAB_HEIGHT + GSRRunHistoryParameters.CONTENT_PADDING;
         int contentBottom = detailBottom - GSRRunHistoryParameters.DETAIL_PANEL_BOTTOM_PADDING;
@@ -374,7 +374,7 @@ public class GSRRunHistoryScreen extends Screen {
         } else {
             selectedRunsForCharts = List.of();
         }
-        detailPanel.render(context, textRenderer, tickerState,
+        detailPanel.render(context, font, tickerState,
                 contentLeft, contentTop, contentRight, contentBottom,
                 model.selectedTab, model.selectedRun, selectedRunsForCharts, runsForDetail, filteredRunsForCharts,
                 model.selectedPlayerFilter, model.selectedCategoryIndex, model.selectedChartViewIndex, model.selectedPlayerTypeIndex,
@@ -386,7 +386,7 @@ public class GSRRunHistoryScreen extends Screen {
 
     /** Returns height in pixels for wrapped dropdown header text. */
     private int getDropdownHeaderHeight(String text, int maxWidth) {
-        return textRenderer.wrapLines(Text.literal(text), Math.max(1, maxWidth)).size() * textRenderer.lineHeight;
+        return font.split(Component.literal(text), Math.max(1, maxWidth)).size() * font.lineHeight;
     }
 
     private static final int RUN_INFO_AUTO_IDLE = 0;
@@ -479,7 +479,7 @@ public class GSRRunHistoryScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(Click click, boolean captured) {
+    public boolean mouseClicked(MouseButtonEvent click, boolean captured) {
         if (captured) return false;
         double mouseX = click.x();
         double mouseY = click.y();
@@ -530,7 +530,7 @@ public class GSRRunHistoryScreen extends Screen {
             int trackX = overlayLeft + overlayWidth;
             if (GSRScrollbarHelper.isInScrollbarHitArea((int) mouseX, trackX, sbWidth) && click.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT && dropdownOpen) {
                 if (model.filterDropdownOpen && !model.allPlayerNames.isEmpty()) {
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, leftColumn.getFilterDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getFilterDropdown().getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, leftColumn.getFilterDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getFilterDropdown().getItemCount(model));
                     int listAreaBottom = geom.listBottom();
                     int filterListHeight = listAreaBottom - overlayListTop;
                     if (geom.maxScroll() > 0 && mouseY >= overlayListTop && mouseY < listAreaBottom) {
@@ -541,7 +541,7 @@ public class GSRRunHistoryScreen extends Screen {
                     }
                 }
                 if (model.playerCountDropdownOpen && !model.allPlayerCounts.isEmpty()) {
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, leftColumn.getPlayerCountDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getPlayerCountDropdown().getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, leftColumn.getPlayerCountDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getPlayerCountDropdown().getItemCount(model));
                     int listAreaBottom = geom.listBottom();
                     int filterListHeight = listAreaBottom - overlayListTop;
                     if (geom.maxScroll() > 0 && mouseY >= overlayListTop && mouseY < listAreaBottom) {
@@ -552,7 +552,7 @@ public class GSRRunHistoryScreen extends Screen {
                     }
                 }
                 if (model.runsDropdownOpen && !model.runs.isEmpty()) {
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, leftColumn.getRunsDropdown(model).getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getRunsDropdown(model).getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, leftColumn.getRunsDropdown(model).getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getRunsDropdown(model).getItemCount(model));
                     int listAreaBottom = geom.listBottom();
                     int listAreaHeight = listAreaBottom - overlayListTop;
                     if (geom.maxScroll() > 0 && mouseY >= overlayListTop && mouseY < listAreaBottom) {
@@ -563,7 +563,7 @@ public class GSRRunHistoryScreen extends Screen {
                     }
                 }
                 if (model.compareDropdownOpen) {
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, leftColumn.getCompareDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getCompareDropdown().getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, leftColumn.getCompareDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getCompareDropdown().getItemCount(model));
                     int listAreaBottom = geom.listBottom();
                     int listAreaHeight = listAreaBottom - overlayListTop;
                     if (geom.maxScroll() > 0 && mouseY >= overlayListTop && mouseY < listAreaBottom) {
@@ -575,7 +575,7 @@ public class GSRRunHistoryScreen extends Screen {
                 }
                 if (model.chartViewDropdownOpen) {
                     var dd = leftColumn.getViewDropdown();
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, dd.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, dd.getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, dd.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, dd.getItemCount(model));
                     int listAreaBottom = geom.listBottom();
                     int listAreaHeight = listAreaBottom - overlayListTop;
                     if (geom.maxScroll() > 0 && mouseY >= overlayListTop && mouseY < listAreaBottom) {
@@ -587,7 +587,7 @@ public class GSRRunHistoryScreen extends Screen {
                 }
                 if (model.typeDropdownOpen) {
                     var dd = leftColumn.getTypeDropdown();
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, dd.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, dd.getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, dd.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, dd.getItemCount(model));
                     int listAreaBottom = geom.listBottom();
                     int listAreaHeight = listAreaBottom - overlayListTop;
                     if (geom.maxScroll() > 0 && mouseY >= overlayListTop && mouseY < listAreaBottom) {
@@ -606,7 +606,7 @@ public class GSRRunHistoryScreen extends Screen {
                     return true;
                 }
                 if (model.filterDropdownOpen && !model.allPlayerNames.isEmpty()) {
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, leftColumn.getFilterDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getFilterDropdown().getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, leftColumn.getFilterDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getFilterDropdown().getItemCount(model));
                     if (geom.isConfirmButtonAt(overlayLeft, overlayWidth, (int) mouseX, (int) mouseY)) {
                         applyPendingFilter();
                         model.filterSelectionTimeMs = System.currentTimeMillis();
@@ -634,7 +634,7 @@ public class GSRRunHistoryScreen extends Screen {
                     return true;
                 }
                 if (model.playerCountDropdownOpen && !model.allPlayerCounts.isEmpty()) {
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, leftColumn.getPlayerCountDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getPlayerCountDropdown().getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, leftColumn.getPlayerCountDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getPlayerCountDropdown().getItemCount(model));
                     if (geom.isConfirmButtonAt(overlayLeft, overlayWidth, (int) mouseX, (int) mouseY)) {
                         applyPendingPlayerCountFilter();
                         model.playerCountSelectionTimeMs = System.currentTimeMillis();
@@ -662,7 +662,7 @@ public class GSRRunHistoryScreen extends Screen {
                     return true;
                 }
                 if (model.runsDropdownOpen && !model.runs.isEmpty()) {
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, leftColumn.getRunsDropdown(model).getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getRunsDropdown(model).getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, leftColumn.getRunsDropdown(model).getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getRunsDropdown(model).getItemCount(model));
                     if (geom.isConfirmButtonAt(overlayLeft, overlayWidth, (int) mouseX, (int) mouseY)) {
                         applyPendingRun();
                         model.runsSelectionTimeMs = System.currentTimeMillis();
@@ -698,7 +698,7 @@ public class GSRRunHistoryScreen extends Screen {
                     return true;
                 }
                 if (model.compareDropdownOpen) {
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, leftColumn.getCompareDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getCompareDropdown().getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, leftColumn.getCompareDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getCompareDropdown().getItemCount(model));
                     if (geom.isConfirmButtonAt(overlayLeft, overlayWidth, (int) mouseX, (int) mouseY)) {
                         model.selectedCategoryIndex = model.pendingCategoryIndex;
                         model.compareSelectionTimeMs = System.currentTimeMillis();
@@ -717,7 +717,7 @@ public class GSRRunHistoryScreen extends Screen {
                 }
                 if (model.chartViewDropdownOpen) {
                     var dd = leftColumn.getViewDropdown();
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, dd.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, dd.getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, dd.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, dd.getItemCount(model));
                     if (geom.isConfirmButtonAt(overlayLeft, overlayWidth, (int) mouseX, (int) mouseY)) {
                         model.selectedChartViewIndex = model.pendingViewIndex;
                         model.viewSelectionTimeMs = System.currentTimeMillis();
@@ -738,7 +738,7 @@ public class GSRRunHistoryScreen extends Screen {
                 }
                 if (model.typeDropdownOpen) {
                     var dd = leftColumn.getTypeDropdown();
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, dd.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, dd.getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, dd.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, dd.getItemCount(model));
                     if (geom.isConfirmButtonAt(overlayLeft, overlayWidth, (int) mouseX, (int) mouseY)) {
                         model.selectedPlayerTypeIndex = model.pendingViewIndex;
                         model.viewSelectionTimeMs = System.currentTimeMillis();
@@ -821,7 +821,7 @@ public class GSRRunHistoryScreen extends Screen {
             }
         }
 
-        // Click outside left panel (with scrollbar) and right panel closes dropdown without applying
+        // MouseButtonEvent outside left panel (with scrollbar) and right panel closes dropdown without applying
         if (model.filterDropdownOpen || model.playerCountDropdownOpen || model.runsDropdownOpen || model.compareDropdownOpen || model.chartViewDropdownOpen || model.typeDropdownOpen) {
             boolean inLeft = mouseX >= leftPanelLeft && mouseX < leftPanelRight + sbWidth && mouseY >= bounds.leftPanelTop() && mouseY < bounds.leftPanelBottom();
             boolean inRight = mouseX >= rightPanelLeft && mouseX < rightPanelRight + sbWidth && mouseY >= detailTop && mouseY < detailBottom;
@@ -935,7 +935,7 @@ public class GSRRunHistoryScreen extends Screen {
     }
 
     @Override
-    public boolean mouseDragged(Click click, double offsetX, double offsetY) {
+    public boolean mouseDragged(MouseButtonEvent click, double offsetX, double offsetY) {
         if (scrollbarDragging != null) {
             double mouseX = click.x();
             double mouseY = click.y();
@@ -949,7 +949,7 @@ public class GSRRunHistoryScreen extends Screen {
             switch (scrollbarDragging) {
                 case FILTER_DROPDOWN -> {
                     int overlayListTop = listTop + GSRRunHistoryParameters.LIST_VERTICAL_GAP + getDropdownHeaderHeight(leftColumn.getFilterDropdown().getHeader(), ddHeaderMaxWidth) + GSRRunHistoryParameters.LIST_VERTICAL_GAP;
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, leftColumn.getFilterDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getFilterDropdown().getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, leftColumn.getFilterDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getFilterDropdown().getItemCount(model));
                     int listAreaBottom = geom.listBottom();
                     int filterListHeight = listAreaBottom - overlayListTop;
                     if (geom.maxScroll() > 0) {
@@ -959,7 +959,7 @@ public class GSRRunHistoryScreen extends Screen {
                 }
                 case PLAYER_COUNT_DROPDOWN -> {
                     int overlayListTop = listTop + GSRRunHistoryParameters.LIST_VERTICAL_GAP + getDropdownHeaderHeight(leftColumn.getPlayerCountDropdown().getHeader(), ddHeaderMaxWidth) + GSRRunHistoryParameters.LIST_VERTICAL_GAP;
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, leftColumn.getPlayerCountDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getPlayerCountDropdown().getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, leftColumn.getPlayerCountDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getPlayerCountDropdown().getItemCount(model));
                     int listAreaBottom = geom.listBottom();
                     int listAreaHeight = listAreaBottom - overlayListTop;
                     if (geom.maxScroll() > 0) {
@@ -969,7 +969,7 @@ public class GSRRunHistoryScreen extends Screen {
                 }
                 case RUNS_DROPDOWN -> {
                     int overlayListTop = listTop + GSRRunHistoryParameters.LIST_VERTICAL_GAP + getDropdownHeaderHeight(leftColumn.getRunsDropdown(model).getHeader(), ddHeaderMaxWidth) + GSRRunHistoryParameters.LIST_VERTICAL_GAP;
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, leftColumn.getRunsDropdown(model).getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getRunsDropdown(model).getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, leftColumn.getRunsDropdown(model).getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getRunsDropdown(model).getItemCount(model));
                     int listAreaBottom = geom.listBottom();
                     int listAreaHeight = listAreaBottom - overlayListTop;
                     if (geom.maxScroll() > 0) {
@@ -979,7 +979,7 @@ public class GSRRunHistoryScreen extends Screen {
                 }
                 case COMPARE_DROPDOWN -> {
                     int overlayListTop = listTop + GSRRunHistoryParameters.LIST_VERTICAL_GAP + getDropdownHeaderHeight(leftColumn.getCompareDropdown().getHeader(), ddHeaderMaxWidth) + GSRRunHistoryParameters.LIST_VERTICAL_GAP;
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, leftColumn.getCompareDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getCompareDropdown().getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, leftColumn.getCompareDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getCompareDropdown().getItemCount(model));
                     int listAreaBottom = geom.listBottom();
                     int listAreaHeight = listAreaBottom - overlayListTop;
                     if (geom.maxScroll() > 0) {
@@ -990,7 +990,7 @@ public class GSRRunHistoryScreen extends Screen {
                 case VIEW_DROPDOWN -> {
                     var dd = leftColumn.getViewDropdown();
                     int overlayListTop = listTop + GSRRunHistoryParameters.LIST_VERTICAL_GAP + getDropdownHeaderHeight(dd.getHeader(), ddHeaderMaxWidth) + GSRRunHistoryParameters.LIST_VERTICAL_GAP;
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, dd.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, dd.getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, dd.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, dd.getItemCount(model));
                     int listAreaBottom = geom.listBottom();
                     int listAreaHeight = listAreaBottom - overlayListTop;
                     if (geom.maxScroll() > 0) {
@@ -1001,7 +1001,7 @@ public class GSRRunHistoryScreen extends Screen {
                 case TYPE_DROPDOWN -> {
                     var dd = leftColumn.getTypeDropdown();
                     int overlayListTop = listTop + GSRRunHistoryParameters.LIST_VERTICAL_GAP + getDropdownHeaderHeight(dd.getHeader(), ddHeaderMaxWidth) + GSRRunHistoryParameters.LIST_VERTICAL_GAP;
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, dd.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, dd.getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, dd.getHeader(), overlayLeft, listTop, listBottom, overlayWidth, dd.getItemCount(model));
                     int listAreaBottom = geom.listBottom();
                     int listAreaHeight = listAreaBottom - overlayListTop;
                     if (geom.maxScroll() > 0) {
@@ -1047,7 +1047,7 @@ public class GSRRunHistoryScreen extends Screen {
     }
 
     @Override
-    public boolean mouseReleased(Click click) {
+    public boolean mouseReleased(MouseButtonEvent click) {
         if (scrollbarDragging != null) {
             scrollbarDragging = null;
             return true;
@@ -1096,7 +1096,7 @@ public class GSRRunHistoryScreen extends Screen {
 
             if (mouseY >= overlayListTop && mouseY < leftPanelBottom) {
                 if (model.filterDropdownOpen && !model.allPlayerNames.isEmpty()) {
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, leftColumn.getFilterDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getFilterDropdown().getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, leftColumn.getFilterDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getFilterDropdown().getItemCount(model));
                     int listAreaBottom = geom.listBottom();
                     if (mouseY < listAreaBottom) {
                         model.filterDropdownScroll = (int) Math.max(0, Math.min(model.filterDropdownScroll - verticalAmount * GSRRunHistoryParameters.FILTER_DROPDOWN_SCROLL_AMOUNT, geom.maxScroll()));
@@ -1104,7 +1104,7 @@ public class GSRRunHistoryScreen extends Screen {
                     return true;
                 }
                 if (model.playerCountDropdownOpen && !model.allPlayerCounts.isEmpty()) {
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, leftColumn.getPlayerCountDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getPlayerCountDropdown().getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, leftColumn.getPlayerCountDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getPlayerCountDropdown().getItemCount(model));
                     int listAreaBottom = geom.listBottom();
                     if (mouseY < listAreaBottom) {
                         model.playerCountDropdownScroll = (int) Math.max(0, Math.min(model.playerCountDropdownScroll - verticalAmount * GSRRunHistoryParameters.FILTER_DROPDOWN_SCROLL_AMOUNT, geom.maxScroll()));
@@ -1112,22 +1112,22 @@ public class GSRRunHistoryScreen extends Screen {
                     return true;
                 }
                 if (model.runsDropdownOpen && !model.runs.isEmpty()) {
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, leftColumn.getRunsDropdown(model).getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getRunsDropdown(model).getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, leftColumn.getRunsDropdown(model).getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getRunsDropdown(model).getItemCount(model));
                     model.runsDropdownScroll = (int) Math.max(0, Math.min(model.runsDropdownScroll - verticalAmount * GSRRunHistoryParameters.ROW_HEIGHT, geom.maxScroll()));
                     return true;
                 }
                 if (model.compareDropdownOpen) {
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, leftColumn.getCompareDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getCompareDropdown().getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, leftColumn.getCompareDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getCompareDropdown().getItemCount(model));
                     model.compareDropdownScroll = (int) Math.max(0, Math.min(model.compareDropdownScroll - verticalAmount * GSRRunHistoryParameters.ROW_HEIGHT, geom.maxScroll()));
                     return true;
                 }
                 if (model.chartViewDropdownOpen) {
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, leftColumn.getViewDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getViewDropdown().getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, leftColumn.getViewDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getViewDropdown().getItemCount(model));
                     model.viewDropdownScroll = (int) Math.max(0, Math.min(model.viewDropdownScroll - verticalAmount * GSRRunHistoryParameters.ROW_HEIGHT, geom.maxScroll()));
                     return true;
                 }
                 if (model.typeDropdownOpen) {
-                    var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, leftColumn.getTypeDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getTypeDropdown().getItemCount(model));
+                    var geom = GSRMultiSelectDropdown.computeGeometry(font, leftColumn.getTypeDropdown().getHeader(), overlayLeft, listTop, listBottom, overlayWidth, leftColumn.getTypeDropdown().getItemCount(model));
                     model.viewDropdownScroll = (int) Math.max(0, Math.min(model.viewDropdownScroll - verticalAmount * GSRRunHistoryParameters.ROW_HEIGHT, geom.maxScroll()));
                     return true;
                 }

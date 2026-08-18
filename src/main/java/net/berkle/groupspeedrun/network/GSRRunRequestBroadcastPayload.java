@@ -20,7 +20,7 @@ public record GSRRunRequestBroadcastPayload(net.minecraft.nbt.CompoundTag nbt) i
     public static final Type<GSRRunRequestBroadcastPayload> ID = new Type<>(Identifier.fromNamespaceAndPath("gsr", "run_request_broadcast"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, GSRRunRequestBroadcastPayload> CODEC = StreamCodec.composite(
-            ByteBufCodecs.COMPOUND_TAG_COMPOUND, GSRRunRequestBroadcastPayload::nbt,
+            ByteBufCodecs.COMPOUND_TAG, GSRRunRequestBroadcastPayload::nbt,
             GSRRunRequestBroadcastPayload::new
     );
 
@@ -31,7 +31,7 @@ public record GSRRunRequestBroadcastPayload(net.minecraft.nbt.CompoundTag nbt) i
         CompoundTag nbt = new CompoundTag();
         nbt.putString(KEY_REQUESTER_UUID, requesterUuid.toString());
         ListTag list = new ListTag();
-        for (String id : runIds) list.add(StringTag.of(id));
+        for (String id : runIds) list.add(StringTag.valueOf(id));
         nbt.put(KEY_RUN_IDS, list);
         return nbt;
     }

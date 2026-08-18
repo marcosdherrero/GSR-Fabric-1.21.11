@@ -24,7 +24,7 @@ public final class GSRStoragePaths {
      * World-colocated GSR data dir (world_root/data/gsr/). Guarantees save and load use the same path.
      */
     public static Path getWorldDataDir(MinecraftServer server) {
-        return server.getSavePath(LevelResource.ROOT).resolve("data").resolve("gsr");
+        return server.getWorldPath(LevelResource.ROOT).resolve("data").resolve("gsr");
     }
 
     /**
@@ -43,13 +43,13 @@ public final class GSRStoragePaths {
     /** Canonical world name for storage paths. Prefers level name; falls back to save path folder name. */
     private static String getWorldName(MinecraftServer server) {
         try {
-            String levelName = server.getSaveProperties().getLevelName();
+            String levelName = server.getWorldData().getLevelName();
             if (levelName != null && !levelName.isEmpty()) {
                 return sanitizeForPath(levelName);
             }
         } catch (Exception ignored) {}
         try {
-            return sanitizeForPath(server.getSavePath(net.minecraft.world.level.storage.LevelResource.ROOT).getFileName().toString());
+            return sanitizeForPath(server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).getFileName().toString());
         } catch (Exception e) {
             return "world";
         }
@@ -67,8 +67,8 @@ public final class GSRStoragePaths {
     public static Path[] getLegacyWorldDirCandidates(MinecraftServer server) {
         java.util.List<Path> candidates = new java.util.ArrayList<>();
         try {
-            String levelName = server.getSaveProperties().getLevelName();
-            String folderName = server.getSavePath(LevelResource.ROOT).getFileName().toString();
+            String levelName = server.getWorldData().getLevelName();
+            String folderName = server.getWorldPath(LevelResource.ROOT).getFileName().toString();
             Path worldsBase = getGsrRoot().resolve("worlds");
             if (levelName != null && !levelName.isEmpty()) {
                 Path byLevel = worldsBase.resolve(levelName);

@@ -9,14 +9,15 @@ import net.minecraft.client.gui.components.Button;
  * Button for title screen with internal padding and scaled text so labels fit without clipping.
  * Used for GSR Run History and aligned with the shrunk Realms button.
  */
-public class GSRTitleScreenButton extends Button.Text {
+public class GSRTitleScreenButton extends Button {
 
-    public GSRTitleScreenButton(int x, int y, int width, int height, net.minecraft.network.chat.Component message, PressAction onPress) {
-        super(x, y, width, height, message, onPress, DEFAULT_NARRATION_SUPPLIER);
+    public GSRTitleScreenButton(int x, int y, int width, int height, net.minecraft.network.chat.Component message, Button.OnPress onPress) {
+        super(x, y, width, height, message, onPress, DEFAULT_NARRATION);
     }
 
     @Override
-    protected void drawIcon(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+    protected void extractContents(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        extractDefaultSprite(context);
         drawLabelWithPaddingAndScale(context);
     }
 

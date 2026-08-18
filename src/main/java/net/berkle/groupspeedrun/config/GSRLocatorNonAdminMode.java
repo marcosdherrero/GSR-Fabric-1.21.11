@@ -22,8 +22,8 @@ public enum GSRLocatorNonAdminMode {
         return value;
     }
 
-    public Text getDisplayName() {
-        return Text.literal(label);
+    public Component getDisplayName() {
+        return Component.literal(label);
     }
 
     public static GSRLocatorNonAdminMode from(int value) {

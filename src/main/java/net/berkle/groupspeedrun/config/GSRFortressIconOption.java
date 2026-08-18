@@ -27,8 +27,8 @@ public enum GSRFortressIconOption {
         return registryId;
     }
 
-    public Text getDisplayName() {
-        return Text.literal(label);
+    public Component getDisplayName() {
+        return Component.literal(label);
     }
 
     public static GSRFortressIconOption from(String stored) {

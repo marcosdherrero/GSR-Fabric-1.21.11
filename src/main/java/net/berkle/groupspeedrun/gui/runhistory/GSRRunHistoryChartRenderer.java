@@ -164,7 +164,7 @@ public final class GSRRunHistoryChartRenderer {
             } else {
                 lbl = (isSelected ? "Sel" : ("#" + (i + 1))) + " " + formatValue(row, acc.applyAsDouble(r));
             }
-            int w = textRenderer.getWidth(lbl);
+            int w = textRenderer.width(lbl);
             if (w > maxLabelWidth) uniformScale = Math.min(uniformScale, (float) maxLabelWidth / w);
         }
         x = left - scrollX;
@@ -377,7 +377,7 @@ public final class GSRRunHistoryChartRenderer {
             } else {
                 lbl = slotLabels[i] + " " + formatValue(row, values[i]);
             }
-            int w = textRenderer.getWidth(lbl);
+            int w = textRenderer.width(lbl);
             if (w > maxLabelWidth) uniformScale = Math.min(uniformScale, (float) maxLabelWidth / w);
         }
 
@@ -480,7 +480,7 @@ public final class GSRRunHistoryChartRenderer {
     /**
      * Draws bar label beneath a bar, with optional pass/fail icon on a second row.
      * Uses uniformScale so all labels match the smallest size.
-     * Text is drawn inset by margin so it is not clipped by the scissor.
+     * Component is drawn inset by margin so it is not clipped by the scissor.
      *
      * @param statusIcon Optional status icon (e.g. dragon/skull) to draw centered on second row; null or empty to skip.
      */
@@ -502,20 +502,20 @@ public final class GSRRunHistoryChartRenderer {
             context.enableScissor(scissorLeft, scissorTop, scissorRight, scissorBottom);
         }
         if (uniformScale >= 1f) {
-            context.drawText(textRenderer, label, textX, y, color, false);
+            context.text(textRenderer, label, textX, y, color, false);
         } else {
             var matrices = context.pose();
             matrices.pushMatrix();
             matrices.translate(textX, y);
             matrices.scale(uniformScale, uniformScale);
-            context.drawText(textRenderer, label, 0, 0, color, false);
+            context.text(textRenderer, label, 0, 0, color, false);
             matrices.popMatrix();
         }
         if (statusIcon != null && !statusIcon.isEmpty()) {
-            int iconW = textRenderer.getWidth(statusIcon);
+            int iconW = textRenderer.width(statusIcon);
             int iconX = x + (slotWidth - iconW) / 2;
             int iconY = y + rowHeight;
-            context.drawText(textRenderer, statusIcon, iconX, iconY, GSRRunHistoryParameters.STATUS_ICON_ON_BAR_COLOR, false);
+            context.text(textRenderer, statusIcon, iconX, iconY, GSRRunHistoryParameters.STATUS_ICON_ON_BAR_COLOR, false);
         }
         if (scissorValid) {
             context.disableScissor();
@@ -549,10 +549,10 @@ public final class GSRRunHistoryChartRenderer {
             int color = GSRRunHistoryParameters.SPLIT_SEGMENT_COLORS[s];
             context.fill(segX, keyTop, segX + segW, keyTop + keyH, color);
             String abbrev = SPLIT_KEY_ABBREV[s];
-            int textW = textRenderer.getWidth(abbrev);
+            int textW = textRenderer.width(abbrev);
             int textX = segX + (segW - textW) / 2;
             int textY = keyTop + (keyH - textRenderer.lineHeight) / 2;
-            context.drawText(textRenderer, abbrev, textX, textY, GSRRunHistoryParameters.SPLIT_KEY_TEXT_COLOR, false);
+            context.text(textRenderer, abbrev, textX, textY, GSRRunHistoryParameters.SPLIT_KEY_TEXT_COLOR, false);
         }
     }
 
@@ -562,10 +562,10 @@ public final class GSRRunHistoryChartRenderer {
     static int drawWrappedText(GuiGraphicsExtractor context, Font textRenderer, String text,
                               int left, int y, int maxWidth, int color) {
         if (text == null || text.isEmpty()) return 0;
-        List<FormattedCharSequence> lines = textRenderer.wrapLines(Text.literal(text), Math.max(1, maxWidth));
+        List<FormattedCharSequence> lines = textRenderer.split(Component.literal(text), Math.max(1, maxWidth));
         int lineHeight = textRenderer.lineHeight;
         for (int i = 0; i < lines.size(); i++) {
-            context.drawText(textRenderer, lines.get(i), left, y + i * lineHeight, color, false);
+            context.text(textRenderer, lines.get(i), left, y + i * lineHeight, color, false);
         }
         return lines.size() * lineHeight;
     }

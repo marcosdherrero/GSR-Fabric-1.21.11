@@ -46,7 +46,7 @@ public final class GSRGameMenuLayout {
 
         exitBtn.setMessage(GSRButtonParameters.literal(GSRButtonParameters.GAME_MENU_SAVE_QUIT));
         exitBtn.setPosition(leftX, rowY);
-        exitBtn.setDimensions(halfW, btnH);
+        exitBtn.setSize(halfW, btnH);
 
         Minecraft client = Minecraft.getInstance();
         return Button.builder(GSRButtonParameters.literal(GSRButtonParameters.TITLE_GSR_CONTROLS),
@@ -55,7 +55,7 @@ public final class GSRGameMenuLayout {
                                 client.setScreen(new GSRControlsScreen(screen));
                             }
                         })
-                .dimensions(rightX, rowY, halfW, btnH)
+                .bounds(rightX, rowY, halfW, btnH)
                 .build();
     }
 
@@ -79,9 +79,9 @@ public final class GSRGameMenuLayout {
         int rightX = leftX + halfW + gap;
 
         exitBtn.setPosition(leftX, rowY);
-        exitBtn.setDimensions(halfW, btnH);
+        exitBtn.setSize(halfW, btnH);
         gsrBtn.setPosition(rightX, rowY);
-        gsrBtn.setDimensions(halfW, btnH);
+        gsrBtn.setSize(halfW, btnH);
     }
 
     private static Button findGsrControlsButton(net.minecraft.client.gui.screens.Screen screen) {
@@ -119,16 +119,16 @@ public final class GSRGameMenuLayout {
         return ((GSRGameMenuScreenAccessor) screen).gsr$getGridMargin();
     }
 
-    private static List<AbstractWidget> collectClickableWidgets(Element parent) {
+    private static List<AbstractWidget> collectClickableWidgets(GuiEventListener parent) {
         List<AbstractWidget> out = new ArrayList<>();
         collectClickableWidgetsRecursive(parent, out);
         return out;
     }
 
-    private static void collectClickableWidgetsRecursive(Element e, List<AbstractWidget> out) {
+    private static void collectClickableWidgetsRecursive(GuiEventListener e, List<AbstractWidget> out) {
         if (e instanceof AbstractWidget cw) out.add(cw);
-        if (e instanceof ParentElement pe) {
-            for (Element child : pe.children()) {
+        if (e instanceof ContainerEventHandler pe) {
+            for (GuiEventListener child : pe.children()) {
                 collectClickableWidgetsRecursive(child, out);
             }
         }

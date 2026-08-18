@@ -19,7 +19,7 @@ public record GSRRunIdsPayload(net.minecraft.nbt.CompoundTag nbt) implements Cus
     public static final Type<GSRRunIdsPayload> ID = new Type<>(Identifier.fromNamespaceAndPath("gsr", "run_ids"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, GSRRunIdsPayload> CODEC = StreamCodec.composite(
-            ByteBufCodecs.COMPOUND_TAG_COMPOUND, GSRRunIdsPayload::nbt,
+            ByteBufCodecs.COMPOUND_TAG, GSRRunIdsPayload::nbt,
             GSRRunIdsPayload::new
     );
 
@@ -28,7 +28,7 @@ public record GSRRunIdsPayload(net.minecraft.nbt.CompoundTag nbt) implements Cus
     public static CompoundTag toNbt(List<String> runIds) {
         CompoundTag nbt = new CompoundTag();
         ListTag list = new ListTag();
-        for (String id : runIds) list.add(StringTag.of(id));
+        for (String id : runIds) list.add(StringTag.valueOf(id));
         nbt.put(KEY_RUN_IDS, list);
         return nbt;
     }

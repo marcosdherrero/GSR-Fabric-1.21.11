@@ -40,12 +40,12 @@ public final class GSRBroadcastManager {
      * @param server Minecraft server
      * @param message Chat message (supports § color codes)
      */
-    public static void broadcastToRunParticipants(MinecraftServer server, Text message) {
+    public static void broadcastToRunParticipants(MinecraftServer server, Component message) {
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null) return;
-        for (ServerPlayer p : server.getPlayerManager().getPlayerList()) {
-            if (!config.excludedFromRun.contains(p.getUuid())) {
-                p.sendMessage(message, false);
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+            if (!config.excludedFromRun.contains(p.getUUID())) {
+                p.sendSystemMessage(message, false);
             }
         }
     }
@@ -73,23 +73,23 @@ public final class GSRBroadcastManager {
         String timeStr = GSRFormatUtil.formatTime(elapsedMs);
 
         if (victorious) {
-            server.getPlayerManager().broadcast(Text.literal(sepSuccess), false);
-            server.getPlayerManager().broadcast(Text.literal(timerLabel + " §f" + timeStr), false);
+            server.getPlayerList().broadcastSystemMessage(Component.literal(sepSuccess), false);
+            server.getPlayerList().broadcastSystemMessage(Component.literal(timerLabel + " §f" + timeStr), false);
         } else {
-            server.getPlayerManager().broadcast(Text.literal(sepFail), false);
-            server.getPlayerManager().broadcast(Text.literal(GSRBroadcastParameters.FAIL_QUIP), false);
-            server.getPlayerManager().broadcast(Text.literal(timerLabel + " §f" + timeStr), false);
+            server.getPlayerList().broadcastSystemMessage(Component.literal(sepFail), false);
+            server.getPlayerList().broadcastSystemMessage(Component.literal(GSRBroadcastParameters.FAIL_QUIP), false);
+            server.getPlayerList().broadcastSystemMessage(Component.literal(timerLabel + " §f" + timeStr), false);
             if (r.failedByPlayerName() != null && !r.failedByPlayerName().isEmpty()) {
-                server.getPlayerManager().broadcast(Text.literal("§c" + r.failedByPlayerName() + " §7- §f" + (r.failedByDeathMessage() != null ? r.failedByDeathMessage() : "died")), false);
+                server.getPlayerList().broadcastSystemMessage(Component.literal("§c" + r.failedByPlayerName() + " §7- §f" + (r.failedByDeathMessage() != null ? r.failedByDeathMessage() : "died")), false);
             }
         }
 
-        server.getPlayerManager().broadcast(Text.literal("§7Party of §f" + GSRFormatUtil.formatNumber(partySize)), false);
+        server.getPlayerList().broadcastSystemMessage(Component.literal("§7Party of §f" + GSRFormatUtil.formatNumber(partySize)), false);
 
         if (victorious) {
             GSRRunPlayerSnapshot dragon = bestSnapshot(snapshots, GSRRunPlayerSnapshot::dragonDamage);
             if (dragon != null && dragon.dragonDamage() > GSRBroadcastParameters.STAT_EPSILON) {
-                server.getPlayerManager().broadcast(Text.literal(GSRStatTrackerParameters.broadcastLabel(GSRStatTrackerParameters.DRAGON_WARRIOR_COLOR, GSRStatTrackerParameters.DRAGON_WARRIOR_ICON, GSRStatTrackerParameters.DRAGON_WARRIOR_NAME) + ": §b" + dragon.playerName() + " §7(" + GSRFormatUtil.formatNumber(dragon.dragonDamage()) + GSRStatTrackerParameters.DRAGON_WARRIOR_UNIT + ")"), false);
+                server.getPlayerList().broadcastSystemMessage(Component.literal(GSRStatTrackerParameters.broadcastLabel(GSRStatTrackerParameters.DRAGON_WARRIOR_COLOR, GSRStatTrackerParameters.DRAGON_WARRIOR_ICON, GSRStatTrackerParameters.DRAGON_WARRIOR_NAME) + ": §b" + dragon.playerName() + " §7(" + GSRFormatUtil.formatNumber(dragon.dragonDamage()) + GSRStatTrackerParameters.DRAGON_WARRIOR_UNIT + ")"), false);
             }
         }
 
@@ -99,7 +99,7 @@ public final class GSRBroadcastManager {
         if (r.timeFortress() > 0) splits.append("§bFortress §f").append(GSRFormatUtil.formatTime(r.timeFortress())).append(" §7");
         if (r.timeEnd() > 0) splits.append("§bEnd §f").append(GSRFormatUtil.formatTime(r.timeEnd())).append(" §7");
         if (r.timeDragon() > 0) splits.append("§bDragon §f").append(GSRFormatUtil.formatTime(r.timeDragon()));
-        if (splits.length() > 9) server.getPlayerManager().broadcast(Text.literal(splits.toString().trim()), false);
+        if (splits.length() > 9) server.getPlayerList().broadcastSystemMessage(Component.literal(splits.toString().trim()), false);
 
         addStatLineInt(snapshots, server, GSRStatTrackerParameters.broadcastLabel(GSRStatTrackerParameters.PEARL_JAM_COLOR, GSRStatTrackerParameters.PEARL_JAM_ICON, GSRStatTrackerParameters.PEARL_JAM_NAME), GSRRunPlayerSnapshot::enderPearls, GSRStatTrackerParameters.PEARL_JAM_UNIT);
         addStatLineInt(snapshots, server, GSRStatTrackerParameters.broadcastLabel(GSRStatTrackerParameters.POG_CHAMP_COLOR, GSRStatTrackerParameters.POG_CHAMP_ICON, GSRStatTrackerParameters.POG_CHAMP_NAME), GSRRunPlayerSnapshot::blazeRods, GSRStatTrackerParameters.POG_CHAMP_UNIT);
@@ -113,7 +113,7 @@ public final class GSRBroadcastManager {
         addStatLineLongWithMost(snapshots, server, GSRStatTrackerParameters.broadcastLabel(GSRStatTrackerParameters.SCREEN_ADDICT_COLOR, GSRStatTrackerParameters.SCREEN_ADDICT_ICON, GSRStatTrackerParameters.SCREEN_ADDICT_NAME), GSRRunPlayerSnapshot::screenTimeTicks, GSRStatTrackerParameters.SCREEN_ADDICT_UNIT, GSRRunPlayerSnapshot::mostUsedScreenId, GSRRunPlayerSnapshot::mostUsedScreenTicks);
         addStatLineFloat(snapshots, server, GSRStatTrackerParameters.broadcastLabel(GSRStatTrackerParameters.FALL_DAMAGE_COLOR, GSRStatTrackerParameters.FALL_DAMAGE_ICON, GSRStatTrackerParameters.FALL_DAMAGE_NAME), GSRRunPlayerSnapshot::fallDamageTaken, GSRStatTrackerParameters.FALL_DAMAGE_UNIT);
 
-        server.getPlayerManager().broadcast(Text.literal(victorious ? sepSuccess : sepFail), false);
+        server.getPlayerList().broadcastSystemMessage(Component.literal(victorious ? sepSuccess : sepFail), false);
 
         // Send run data to all clients for shared run history
         var payload = new GSRRunCompletePayload(GSRRunSaveStateNbt.toNbt(state));
@@ -155,7 +155,7 @@ public final class GSRBroadcastManager {
             String mamtStr = asHearts ? GSRFormatUtil.formatNumber(mamt / 2.0) + " " : GSRFormatUtil.formatNumber(mamt) + " ";
             suffix = suffix + " §8(" + (showMostAmountInParens ? mamtStr : "") + typeDisplay + ")";
         }
-        server.getPlayerManager().broadcast(Text.literal(label + ": §b" + best.playerName() + " §7(" + suffix + ")"), false);
+        server.getPlayerList().broadcastSystemMessage(Component.literal(label + ": §b" + best.playerName() + " §7(" + suffix + ")"), false);
     }
 
     private static void addStatLineInt(List<GSRRunPlayerSnapshot> snapshots, MinecraftServer server, String label, ToIntFunction<GSRRunPlayerSnapshot> value, String unit) {
@@ -176,7 +176,7 @@ public final class GSRBroadcastManager {
             String blockDisplay = GSRFormatUtil.formatDamageTypeForDisplay(mid);
             suffix = GSRFormatUtil.formatNumber(v) + unit + " §8(" + GSRFormatUtil.formatNumber(mcount) + " " + blockDisplay + ")";
         }
-        server.getPlayerManager().broadcast(Text.literal(label + ": §b" + best.playerName() + " §7(" + suffix + ")"), false);
+        server.getPlayerList().broadcastSystemMessage(Component.literal(label + ": §b" + best.playerName() + " §7(" + suffix + ")"), false);
     }
 
     private static void addStatLineLongWithMost(List<GSRRunPlayerSnapshot> snapshots, MinecraftServer server, String label, ToLongFunction<GSRRunPlayerSnapshot> value, String unit, java.util.function.Function<GSRRunPlayerSnapshot, String> mostId, ToLongFunction<GSRRunPlayerSnapshot> mostTicks) {
@@ -193,6 +193,6 @@ public final class GSRBroadcastManager {
             String screenDisplay = GSRFormatUtil.formatDamageTypeForDisplay(mid);
             suffix = GSRFormatUtil.formatNumber(v) + unit + " §8(" + GSRFormatUtil.formatNumber(mticks) + " " + screenDisplay + ")";
         }
-        server.getPlayerManager().broadcast(Text.literal(label + ": §b" + best.playerName() + " §7(" + suffix + ")"), false);
+        server.getPlayerList().broadcastSystemMessage(Component.literal(label + ": §b" + best.playerName() + " §7(" + suffix + ")"), false);
     }
 }

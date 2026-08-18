@@ -12,7 +12,7 @@ public record GSRPlayerListPayload(net.minecraft.nbt.CompoundTag nbt) implements
     public static final Type<GSRPlayerListPayload> ID = new Type<>(Identifier.fromNamespaceAndPath("gsr", "player_list"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, GSRPlayerListPayload> CODEC = StreamCodec.composite(
-            ByteBufCodecs.COMPOUND_TAG_COMPOUND, GSRPlayerListPayload::nbt,
+            ByteBufCodecs.COMPOUND_TAG, GSRPlayerListPayload::nbt,
             GSRPlayerListPayload::new
     );
 

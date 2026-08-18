@@ -12,7 +12,7 @@ public record GSRRunCompletePayload(net.minecraft.nbt.CompoundTag nbt) implement
     public static final Type<GSRRunCompletePayload> ID = new Type<>(Identifier.fromNamespaceAndPath("gsr", "run_complete"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, GSRRunCompletePayload> CODEC = StreamCodec.composite(
-            ByteBufCodecs.COMPOUND_TAG_COMPOUND, GSRRunCompletePayload::nbt,
+            ByteBufCodecs.COMPOUND_TAG, GSRRunCompletePayload::nbt,
             GSRRunCompletePayload::new
     );
 

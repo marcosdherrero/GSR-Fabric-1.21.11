@@ -20,8 +20,8 @@ public class GSREnderEyeItemMixin {
 
     /** Injects at head of use to record first ender eye throw time for stronghold locator gate. */
     @Inject(method = "use(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/InteractionHand;)Lnet/minecraft/world/InteractionResult;", at = @At("HEAD"))
-    private void groupspeedrun$recordFirstEnderEye(World world, Player user, Hand hand, CallbackInfoReturnable<InteractionResult> cir) {
-        if (world.isClient()) return;
+    private void groupspeedrun$recordFirstEnderEye(Level world, Player user, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir) {
+        if (world.isClientSide()) return;
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null || config.startTime <= 0 || config.isVictorious || config.isFailed) return;
         if (config.timeFirstEnderEye > 0) return;

@@ -81,7 +81,7 @@ public final class GSRJsonUtil {
 
     private static JsonObject nbtCompoundToJson(CompoundTag c) {
         JsonObject out = new JsonObject();
-        for (String key : c.getKeys()) {
+        for (String key : c.keySet()) {
             Tag el = c.get(key);
             if (el != null) out.add(key, nbtToJson(el));
         }
@@ -144,7 +144,7 @@ public final class GSRJsonUtil {
             if (n instanceof Double || n instanceof Float) return DoubleTag.of(n.doubleValue());
             return IntTag.of(n.intValue());
         }
-        if (p.isString()) return StringTag.of(p.getAsString());
+        if (p.isString()) return StringTag.valueOf(p.getAsString());
         return new CompoundTag();
     }
 }

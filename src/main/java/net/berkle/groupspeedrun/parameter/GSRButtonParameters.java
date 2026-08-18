@@ -29,7 +29,7 @@ public final class GSRButtonParameters {
     public static final int TITLE_BUTTON_PADDING_H = 4;
     /** Vertical padding inside title screen buttons (pixels). */
     public static final int TITLE_BUTTON_PADDING_V = 2;
-    /** Text scale for title screen buttons to fit label with padding (0.82 = 82%). */
+    /** Component scale for title screen buttons to fit label with padding (0.82 = 82%). */
     public static final float TITLE_BUTTON_TEXT_SCALE = 0.82f;
     /** Title button text color when active (ARGB). */
     public static final int TITLE_BUTTON_TEXT_ACTIVE = 0xFFFFFFFF;
@@ -151,13 +151,13 @@ public final class GSRButtonParameters {
     public static final String SCREEN_LOCATORS = "GSR Locators";
 
     // --- Helpers ---
-    /** Returns Text.literal(s) for button labels. */
-    public static Text literal(String label) {
-        return Text.literal(label);
+    /** Returns Component.literal(s) for button labels. */
+    public static Component literal(String label) {
+        return Component.literal(label);
     }
 
-    /** Returns Text for locator toggle button: "name: ON" or "name: OFF". */
-    public static Text locatorToggle(String name, boolean active) {
-        return Text.literal(name + ": " + (active ? "ON" : "OFF"));
+    /** Returns Component for locator toggle button: "name: ON" or "name: OFF". */
+    public static Component locatorToggle(String name, boolean active) {
+        return Component.literal(name + ": " + (active ? "ON" : "OFF"));
     }
 }

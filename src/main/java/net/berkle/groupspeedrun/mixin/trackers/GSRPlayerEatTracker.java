@@ -31,7 +31,7 @@ public abstract class GSRPlayerEatTracker {
         LivingEntity self = (LivingEntity) (Object) this;
         if (!(self instanceof ServerPlayer player)) return;
 
-        ItemStack active = self.getActiveItem();
+        ItemStack active = self.getUseItem();
         if (active.isEmpty()) return;
 
         FoodProperties food = active.get(DataComponents.FOOD);
@@ -41,7 +41,7 @@ public abstract class GSRPlayerEatTracker {
         gsr$consumedNutrition.set(nutrition);
 
         if (player.level() instanceof ServerLevel sw) {
-            long tick = sw.getServer() != null ? sw.getServer().getTicks() : 0;
+            long tick = sw.getServer() != null ? sw.getServer().getTickCount() : 0;
             if (!GSRSharedHealthEatAllowance.canEat(player, nutrition, tick)) {
                 gsr$consumedNutrition.remove();
                 GSRSharedHealthEatAllowance.sendNeedActivityMessage(player);
@@ -52,8 +52,8 @@ public abstract class GSRPlayerEatTracker {
 
         GSRSharedHealthBroadcast.onSharedHealthPlayerAte(player, active, food);
         if (GSRMain.CONFIG != null && GSRMain.CONFIG.startTime > 0 && !GSRMain.CONFIG.isTimerFrozen) {
-            String itemId = active.getRegistryEntry().getKey().map(k -> k.getValue().toString()).orElse(null);
-            if (itemId != null) GSRStats.addFoodEaten(player.getUuid(), itemId);
+            String itemId = active.getItem().builtInRegistryHolder().unwrapKey().map(k -> k.identifier().toString()).orElse(null);
+            if (itemId != null) GSRStats.addFoodEaten(player.getUUID(), itemId);
         }
     }
 

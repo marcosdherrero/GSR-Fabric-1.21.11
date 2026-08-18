@@ -17,27 +17,27 @@ public final class GSRCommands {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(literal("gsr")
-                .requires(source -> Commands.ALWAYS_PASS_CHECK.allows(source.getPermissions()))
+                .requires(source -> Commands.LEVEL_ALL.check(source.permissions()))
                 .then(literal("config")
                         .executes(context -> {
                             ServerPlayer p = context.getSource().getPlayer();
                             if (p == null) {
-                                context.getSource().sendFeedback(() -> Text.literal(GSRUiParameters.MSG_PREFIX + "Only players can open the config screen."), false);
+                                context.getSource().sendSuccess(() -> Component.literal(GSRUiParameters.MSG_PREFIX + "Only players can open the config screen."), false);
                                 return 0;
                             }
                             GSRNetworking.sendOpenScreen(p, GSROpenScreenPayload.TYPE_CONFIG);
-                            context.getSource().sendFeedback(() -> Text.literal(GSRUiParameters.MSG_PREFIX + "Opening GSR config..."), false);
+                            context.getSource().sendSuccess(() -> Component.literal(GSRUiParameters.MSG_PREFIX + "Opening GSR config..."), false);
                             return 1;
                         }))
                 .then(literal("controls")
                         .executes(context -> {
                             ServerPlayer p = context.getSource().getPlayer();
                             if (p == null) {
-                                context.getSource().sendFeedback(() -> Text.literal(GSRUiParameters.MSG_PREFIX + "Only players can open the controls screen."), false);
+                                context.getSource().sendSuccess(() -> Component.literal(GSRUiParameters.MSG_PREFIX + "Only players can open the controls screen."), false);
                                 return 0;
                             }
                             GSRNetworking.sendOpenScreen(p, GSROpenScreenPayload.TYPE_CONTROLS);
-                            context.getSource().sendFeedback(() -> Text.literal(GSRUiParameters.MSG_PREFIX + "Opening GSR controls..."), false);
+                            context.getSource().sendSuccess(() -> Component.literal(GSRUiParameters.MSG_PREFIX + "Opening GSR controls..."), false);
                             return 1;
                         })));
     }

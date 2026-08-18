@@ -52,7 +52,7 @@ public final class GSRLocateHelper {
             if ("ship".equalsIgnoreCase(structureType)) {
                 return locateNearestEndShip(world, from, tag);
             }
-            BlockPos found = world.locateStructure(tag, from, GSRLocatorParameters.LOCATE_RADIUS_CHUNKS, false);
+            BlockPos found = world.findNearestMapStructure(tag, from, GSRLocatorParameters.LOCATE_RADIUS_CHUNKS, false);
             if (found == null) return null;
             if ("stronghold".equalsIgnoreCase(structureType)) {
                 BlockPos portal = locateStrongholdPortal(world, found);
@@ -73,7 +73,7 @@ public final class GSRLocateHelper {
      */
     private static BlockPos locateNearestEndShip(ServerLevel world, BlockPos from, TagKey<Structure> endCityTag) {
         try {
-            StructureManager accessor = world.getStructureAccessor();
+            StructureManager accessor = world.structureManager();
             int radiusChunks = Math.min(GSRLocatorParameters.LOCATE_RADIUS_CHUNKS, GSRLocatorParameters.SHIP_LOCATE_SEARCH_RADIUS_CHUNKS);
             int maxChunks = GSRLocatorParameters.SHIP_LOCATE_MAX_CHUNKS;
             int fromChunkX = from.getX() >> 4;
@@ -83,29 +83,29 @@ public final class GSRLocateHelper {
             Set<Long> dudStructures = new HashSet<>();
             int chunksChecked = 0;
 
-            Structure endCityStructure = world.getRegistryManager().getOrThrow(Registries.STRUCTURE).get(Identifier.fromNamespaceAndPath("minecraft", "end_city"));
+            Structure endCityStructure = world.registryAccess().lookupOrThrow(Registries.STRUCTURE).get(Identifier.fromNamespaceAndPath("minecraft", "end_city"));
             if (endCityStructure == null) return null;
 
             // 1. Player position first – if within view of a city with ship, they may be inside it
-            StructureStart atPlayer = accessor.getStructureContaining(from, endCityTag);
+            StructureStart atPlayer = accessor.getStructureWithPieceAt(from, endCityTag);
             if (atPlayer != null) {
                 BlockPos shipPos = extractShipPosition(atPlayer);
                 if (shipPos != null) return shipPos;
                 BoundingBox box = atPlayer.getBoundingBox();
-                long key = ((long) box.getMinX() << 32) | (box.getMinZ() & 0xFFFFFFFFL);
+                long key = ((long) box.minX() << 32) | (box.minZ() & 0xFFFFFFFFL);
                 dudStructures.add(key);
             }
 
             // 2. locateStructure nearest end city
-            BlockPos firstCity = world.locateStructure(endCityTag, from, radiusChunks, false);
+            BlockPos firstCity = world.findNearestMapStructure(endCityTag, from, radiusChunks, false);
             if (firstCity != null) {
                 world.getChunk(firstCity.getX() >> 4, firstCity.getZ() >> 4);
-                StructureStart start = accessor.getStructureContaining(firstCity, endCityTag);
+                StructureStart start = accessor.getStructureWithPieceAt(firstCity, endCityTag);
                 if (start != null) {
                     BlockPos shipPos = extractShipPosition(start);
                     if (shipPos != null) return shipPos;
                     BoundingBox box = start.getBoundingBox();
-                    long key = ((long) box.getMinX() << 32) | (box.getMinZ() & 0xFFFFFFFFL);
+                    long key = ((long) box.minX() << 32) | (box.minZ() & 0xFFFFFFFFL);
                     dudStructures.add(key);
                 }
             }
@@ -122,18 +122,18 @@ public final class GSRLocateHelper {
                         world.getChunk(cx, cz);
                         ChunkPos chunkPos = new ChunkPos(cx, cz);
                         for (int sectionY : sectionYs) {
-                            SectionPos sectionPos = SectionPos.from(chunkPos, sectionY);
-                            List<StructureStart> starts = accessor.getStructureStarts(sectionPos, endCityStructure);
+                            SectionPos sectionPos = SectionPos.of(chunkPos, sectionY);
+                            List<StructureStart> starts = accessor.startsForStructure(sectionPos, endCityStructure);
                         for (StructureStart start : starts) {
                             BoundingBox box = start.getBoundingBox();
-                            long key = ((long) box.getMinX() << 32) | (box.getMinZ() & 0xFFFFFFFFL);
+                            long key = ((long) box.minX() << 32) | (box.minZ() & 0xFFFFFFFFL);
                             if (dudStructures.contains(key)) continue;
                             BlockPos shipPos = extractShipPosition(start);
                             if (shipPos == null) {
                                 dudStructures.add(key);
                                 continue;
                             }
-                            double distSq = from.getSquaredDistance(shipPos);
+                            double distSq = from.distSqr(shipPos);
                             if (distSq < bestDistSq) {
                                 bestDistSq = distSq;
                                 bestShip = shipPos;
@@ -152,34 +152,34 @@ public final class GSRLocateHelper {
 
     /** Extracts ship piece center from an end city StructureStart, or null if no ship. Uses template path (end_city/ship) and bounding box size (ship ~29x13x24). */
     private static BlockPos extractShipPosition(StructureStart start) {
-        for (StructurePiece piece : start.getChildren()) {
+        for (StructurePiece piece : start.getPieces()) {
             BoundingBox box = piece.getBoundingBox();
             if (piece instanceof TemplateStructurePiece simple) {
                 String templateId = ((GSRSimpleStructurePieceAccessor) simple).gsr$getTemplateIdString();
                 if (templateId != null && templateId.toLowerCase().contains("ship")) {
-                    int cx = (box.getMinX() + box.getMaxX()) / 2;
-                    int cy = (box.getMinY() + box.getMaxY()) / 2;
-                    int cz = (box.getMinZ() + box.getMaxZ()) / 2;
+                    int cx = (box.minX() + box.maxX()) / 2;
+                    int cy = (box.minY() + box.maxY()) / 2;
+                    int cz = (box.minZ() + box.maxZ()) / 2;
                     return new BlockPos(cx, cy, cz);
                 }
             }
             String className = piece.getClass().getSimpleName().toLowerCase();
             String fullName = piece.getClass().getName().toLowerCase();
             if (className.contains("ship") || fullName.contains("ship")) {
-                int cx = (box.getMinX() + box.getMaxX()) / 2;
-                int cy = (box.getMinY() + box.getMaxY()) / 2;
-                int cz = (box.getMinZ() + box.getMaxZ()) / 2;
+                int cx = (box.minX() + box.maxX()) / 2;
+                int cy = (box.minY() + box.maxY()) / 2;
+                int cz = (box.minZ() + box.maxZ()) / 2;
                 return new BlockPos(cx, cy, cz);
             }
-            int spanX = box.getBlockCountX();
-            int spanY = box.getBlockCountY();
-            int spanZ = box.getBlockCountZ();
+            int spanX = box.getXSpan();
+            int spanY = box.getYSpan();
+            int spanZ = box.getZSpan();
             int maxHz = Math.max(spanX, spanZ);
             int minHz = Math.min(spanX, spanZ);
             if (maxHz >= 25 && minHz >= 8 && spanY >= 18 && spanY <= 30) {
-                int cx = (box.getMinX() + box.getMaxX()) / 2;
-                int cy = (box.getMinY() + box.getMaxY()) / 2;
-                int cz = (box.getMinZ() + box.getMaxZ()) / 2;
+                int cx = (box.minX() + box.maxX()) / 2;
+                int cy = (box.minY() + box.maxY()) / 2;
+                int cz = (box.minZ() + box.maxZ()) / 2;
                 return new BlockPos(cx, cy, cz);
             }
         }
@@ -202,15 +202,15 @@ public final class GSRLocateHelper {
      */
     private static BlockPos locateStrongholdPortal(ServerLevel world, BlockPos strongholdPos) {
         try {
-            StructureManager accessor = world.getStructureAccessor();
-            StructureStart start = accessor.getStructureContaining(strongholdPos, StructureTags.EYE_OF_ENDER_LOCATED);
+            StructureManager accessor = world.structureManager();
+            StructureStart start = accessor.getStructureWithPieceAt(strongholdPos, StructureTags.EYE_OF_ENDER_LOCATED);
             if (start == null) return null;
-            for (StructurePiece piece : start.getChildren()) {
+            for (StructurePiece piece : start.getPieces()) {
                 if (piece instanceof StrongholdPieces.PortalRoom portalRoom) {
                     BoundingBox box = portalRoom.getBoundingBox();
-                    int cx = (box.getMinX() + box.getMaxX()) / 2;
-                    int cy = (box.getMinY() + box.getMaxY()) / 2;
-                    int cz = (box.getMinZ() + box.getMaxZ()) / 2;
+                    int cx = (box.minX() + box.maxX()) / 2;
+                    int cy = (box.minY() + box.maxY()) / 2;
+                    int cz = (box.minZ() + box.maxZ()) / 2;
                     return new BlockPos(cx, cy, cz);
                 }
             }
@@ -236,7 +236,7 @@ public final class GSRLocateHelper {
         TagKey<Structure> tag = tagFor(structureType);
         if (tag == null) return false;
         try {
-            StructureStart start = world.getStructureAccessor().getStructureContaining(pos, tag);
+            StructureStart start = world.structureManager().getStructureWithPieceAt(pos, tag);
             if (start == null) return false;
             return isPosInsideStructurePiece(pos, start);
         } catch (Exception e) {
@@ -255,11 +255,11 @@ public final class GSRLocateHelper {
         int x = pos.getX();
         int y = pos.getY();
         int z = pos.getZ();
-        for (StructurePiece piece : start.getChildren()) {
+        for (StructurePiece piece : start.getPieces()) {
             BoundingBox box = piece.getBoundingBox();
-            if (box.getMinX() - margin <= x && x <= box.getMaxX() + margin
-                    && box.getMinY() - margin <= y && y <= box.getMaxY() + margin
-                    && box.getMinZ() - margin <= z && z <= box.getMaxZ() + margin) {
+            if (box.minX() - margin <= x && x <= box.maxX() + margin
+                    && box.minY() - margin <= y && y <= box.maxY() + margin
+                    && box.minZ() - margin <= z && z <= box.maxZ() + margin) {
                 return true;
             }
         }
@@ -284,12 +284,12 @@ public final class GSRLocateHelper {
         TagKey<Structure> tag = tagFor(structureType);
         if (tag == null) return false;
         try {
-            var accessor = world.getStructureAccessor();
-            StructureStart start = accessor.getStructureContaining(playerPos, tag);
+            var accessor = world.structureManager();
+            StructureStart start = accessor.getStructureWithPieceAt(playerPos, tag);
             if (start == null) return false;
             BoundingBox structureBox = start.getBoundingBox();
-            return structureBox.getMinX() <= storedX && storedX <= structureBox.getMaxX()
-                && structureBox.getMinZ() <= storedZ && storedZ <= structureBox.getMaxZ();
+            return structureBox.minX() <= storedX && storedX <= structureBox.maxX()
+                && structureBox.minZ() <= storedZ && storedZ <= structureBox.maxZ();
         } catch (Exception e) {
             return false;
         }

@@ -61,14 +61,14 @@ public enum GSRLocatorColorOption {
     /** Returns ARGB color. For DEFAULT, use the provided defaultColor. */
     public int getValue(int defaultColor) {
         if (this == DEFAULT || dye == null) return defaultColor;
-        int rgb = dye.getSignColor();
+        int rgb = dye.getTextColor();
         return 0xFF000000 | rgb;
     }
 
     /** Returns display name. DEFAULT shows hex code; others show dye name. */
-    public Text getDisplayName(int defaultColor) {
-        if (this == DEFAULT) return Text.literal("#" + String.format("%06X", defaultColor & 0x00FFFFFF));
-        return Text.literal(dye.name().toLowerCase().replace("_", " "));
+    public Component getDisplayName(int defaultColor) {
+        if (this == DEFAULT) return Component.literal("#" + String.format("%06X", defaultColor & 0x00FFFFFF));
+        return Component.literal(dye.name().toLowerCase().replace("_", " "));
     }
 
     /** Resolves stored color to closest option for the given location default. */
@@ -79,7 +79,7 @@ public enum GSRLocatorColorOption {
         int closestDist = Integer.MAX_VALUE;
         for (GSRLocatorColorOption opt : values()) {
             if (opt == DEFAULT) continue;
-            int optRgb = opt.dye.getSignColor();
+            int optRgb = opt.dye.getTextColor();
             int dr = ((storedRgb >> 16) & 0xFF) - ((optRgb >> 16) & 0xFF);
             int dg = ((storedRgb >> 8) & 0xFF) - ((optRgb >> 8) & 0xFF);
             int db = (storedRgb & 0xFF) - (optRgb & 0xFF);

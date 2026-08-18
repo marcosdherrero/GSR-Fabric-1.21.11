@@ -29,12 +29,12 @@ public final class GSRSharedHealthBroadcast {
      * @param server Minecraft server
      * @param message Chat message (supports § color codes)
      */
-    public static void broadcastToSharedHealthParticipants(MinecraftServer server, Text message) {
+    public static void broadcastToSharedHealthParticipants(MinecraftServer server, Component message) {
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null || !config.sharedHealthEnabled) return;
-        for (ServerPlayer p : server.getPlayerManager().getPlayerList()) {
-            if (config.isInSharedHealth(p.getUuid())) {
-                p.sendMessage(message, false);
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+            if (config.isInSharedHealth(p.getUUID())) {
+                p.sendSystemMessage(message, false);
             }
         }
     }
@@ -49,17 +49,17 @@ public final class GSRSharedHealthBroadcast {
     public static void onSharedHealthPlayerDamaged(ServerPlayer player, DamageSource source, float damageTaken) {
         if (damageTaken <= 0) return;
         GSRConfigWorld config = GSRMain.CONFIG;
-        if (config == null || !config.sharedHealthEnabled || !config.isInSharedHealth(player.getUuid())) return;
+        if (config == null || !config.sharedHealthEnabled || !config.isInSharedHealth(player.getUUID())) return;
         MinecraftServer server = player.level() instanceof ServerLevel sw ? sw.getServer() : null;
         if (server == null) return;
 
-        GSRSharedHealthEatAllowance.recordDamage(player, server.getTicks());
+        GSRSharedHealthEatAllowance.recordDamage(player, server.getTickCount());
 
         String playerName = player.getDisplayName().getString();
         String sourceName = getDamageSourceDisplayName(source);
         String msg = GSRUiParameters.MSG_PREFIX + "§c" + playerName + " §7took §f" + formatDamage(damageTaken)
                 + " §7damage from §f" + sourceName;
-        broadcastToSharedHealthParticipants(server, Text.literal(msg));
+        broadcastToSharedHealthParticipants(server, Component.literal(msg));
     }
 
     /**
@@ -71,7 +71,7 @@ public final class GSRSharedHealthBroadcast {
      */
     public static void onSharedHealthPlayerAte(ServerPlayer player, ItemStack stack, FoodProperties foodComponent) {
         GSRConfigWorld config = GSRMain.CONFIG;
-        if (config == null || !config.sharedHealthEnabled || !config.isInSharedHealth(player.getUuid())) return;
+        if (config == null || !config.sharedHealthEnabled || !config.isInSharedHealth(player.getUUID())) return;
         MinecraftServer server = player.level() instanceof ServerLevel sw ? sw.getServer() : null;
         if (server == null) return;
 
@@ -81,15 +81,15 @@ public final class GSRSharedHealthBroadcast {
         int haunches = (nutrition + 1) / 2;
         String msg = GSRUiParameters.MSG_PREFIX + "§a" + playerName + " §7filled §f" + haunches
                 + " §7haunch" + (haunches != 1 ? "es" : "") + " §7with §f" + itemName;
-        broadcastToSharedHealthParticipants(server, Text.literal(msg));
+        broadcastToSharedHealthParticipants(server, Component.literal(msg));
     }
 
     private static String getDamageSourceDisplayName(DamageSource source) {
-        Entity attacker = source.getAttacker();
+        Entity attacker = source.getEntity();
         if (attacker != null) {
             return attacker.getDisplayName().getString();
         }
-        String name = source.getName();
+        String name = source.getMsgId();
         if (name != null && name.contains(".")) {
             name = name.substring(name.lastIndexOf('.') + 1);
         }

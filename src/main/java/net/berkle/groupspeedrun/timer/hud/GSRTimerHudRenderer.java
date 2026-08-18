@@ -35,8 +35,8 @@ public final class GSRTimerHudRenderer {
         boolean isFreeze = showPaused && (worldConfig.frozenByServerStop || menuPaused);
         String titleLabel = buildTitleLabel(worldConfig, showPaused, isFreeze);
         String titleTime = GSRFormatUtil.formatTime(displayElapsed);
-        int nameColWidth = tr.getWidth(titleLabel);
-        int timeColWidth = tr.getWidth(titleTime);
+        int nameColWidth = tr.width(titleLabel);
+        int timeColWidth = tr.width(titleTime);
         if (showSplits) {
             long latest = Math.max(worldConfig.timeNether, Math.max(worldConfig.timeBastion,
                     Math.max(worldConfig.timeFortress, Math.max(worldConfig.timeEnd, worldConfig.timeDragon))));
@@ -48,8 +48,8 @@ public final class GSRTimerHudRenderer {
                     prepareLine(GSRTimerConfig.SPLIT_DRAGON, worldConfig.timeDragon, latest, worldConfig.isVictorious, true)
             };
             for (String[] split : splitData) {
-                nameColWidth = Math.max(nameColWidth, tr.getWidth(split[0]));
-                timeColWidth = Math.max(timeColWidth, tr.getWidth(split[1]));
+                nameColWidth = Math.max(nameColWidth, tr.width(split[0]));
+                timeColWidth = Math.max(timeColWidth, tr.width(split[1]));
             }
         }
         int padding = playerConfig.hudPadding;
@@ -118,12 +118,12 @@ public final class GSRTimerHudRenderer {
                 prepareLine(GSRTimerConfig.SPLIT_DRAGON, worldConfig.timeDragon, latestTime, worldConfig.isVictorious, true)
         };
 
-        int nameColWidth = tr.getWidth(titleLabel);
-        int timeColWidth = tr.getWidth(titleTime);
+        int nameColWidth = tr.width(titleLabel);
+        int timeColWidth = tr.width(titleTime);
         if (showSplits) {
             for (String[] split : splitData) {
-                nameColWidth = Math.max(nameColWidth, tr.getWidth(split[0]));
-                timeColWidth = Math.max(timeColWidth, tr.getWidth(split[1]));
+                nameColWidth = Math.max(nameColWidth, tr.width(split[0]));
+                timeColWidth = Math.max(timeColWidth, tr.width(split[1]));
             }
         }
 
@@ -147,16 +147,16 @@ public final class GSRTimerHudRenderer {
         int bgOpacity = isPaused ? GSRHudParameters.BG_OPACITY_PAUSED : GSRHudParameters.BG_OPACITY_RUNNING;
         context.fill(0, 0, totalBoxWidth, boxHeight, GSRColorHelper.getBackgroundWithAlpha(bgOpacity, alpha));
         int mainTextColor = GSRColorHelper.applyAlpha(stateColor, alpha);
-        context.drawTextWithShadow(tr, titleLabel, padding, padding, mainTextColor);
-        context.drawTextWithShadow(tr, titleTime, totalBoxWidth - padding - tr.getWidth(titleTime), padding, mainTextColor);
+        context.text(tr, titleLabel, padding, padding, mainTextColor, true);
+        context.text(tr, titleTime, totalBoxWidth - padding - tr.width(titleTime), padding, mainTextColor, true);
 
         if (showSplits) {
             int sepCol = GSRColorHelper.applyAlpha(stateColor, playerConfig.hudSeparatorAlpha * alpha);
             context.fill(GSRHudParameters.SEPARATOR_INSET, padding + rowHeight + GSRHudParameters.SEPARATOR_INSET, totalBoxWidth - GSRHudParameters.SEPARATOR_INSET, padding + rowHeight + GSRHudParameters.SEPARATOR_INSET + GSRHudParameters.SEPARATOR_THICKNESS, sepCol);
             int currentY = padding + rowHeight + GSRHudParameters.SEPARATOR_INSET + GSRHudParameters.SEPARATOR_THICKNESS + GSRHudParameters.SEPARATOR_SPLIT_GAP;
             for (String[] split : splitData) {
-                context.drawTextWithShadow(tr, split[0], padding, currentY, mainTextColor);
-                context.drawTextWithShadow(tr, split[1], totalBoxWidth - padding - tr.getWidth(split[1]), currentY, mainTextColor);
+                context.text(tr, split[0], padding, currentY, mainTextColor, true);
+                context.text(tr, split[1], totalBoxWidth - padding - tr.width(split[1]), currentY, mainTextColor, true);
                 currentY += rowHeight;
             }
         }

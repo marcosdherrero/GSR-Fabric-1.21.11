@@ -31,28 +31,28 @@ public final class GSRSplitManager {
         if (config == null || config.startTime <= 0 || config.isTimerFrozen) return;
         if (config.isVictorious || config.isFailed) return;
 
-        for (ServerPlayer player : server.getPlayerManager().getPlayerList()) {
-            if (config.excludedFromRun.contains(player.getUuid())) continue;
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            if (config.excludedFromRun.contains(player.getUUID())) continue;
             ServerLevel world = (ServerLevel) player.level();
-            if (world.dimension() == World.NETHER) {
+            if (world.dimension() == Level.NETHER) {
                 if (config.timeNether <= 0) {
                     setNetherSplit(server);
                     return;
                 }
-                if (config.timeBastion <= 0 && GSRLocateHelper.isInStructure(world, player.getBlockPos(), "bastion")) {
+                if (config.timeBastion <= 0 && GSRLocateHelper.isInStructure(world, player.blockPosition(), "bastion")) {
                     setBastionSplit(server);
                     return;
                 }
-                if (config.timeFortress <= 0 && GSRLocateHelper.isInStructure(world, player.getBlockPos(), "fortress")) {
+                if (config.timeFortress <= 0 && GSRLocateHelper.isInStructure(world, player.blockPosition(), "fortress")) {
                     setFortressSplit(server);
                     return;
                 }
             }
-            if (world.dimension() == World.END && config.timeEnd <= 0) {
+            if (world.dimension() == Level.END && config.timeEnd <= 0) {
                 setEndSplit(server);
                 return;
             }
-            if (world.dimension() == World.OVERWORLD && config.timeFirstOverworldReturnAfterNether <= 0
+            if (world.dimension() == Level.OVERWORLD && config.timeFirstOverworldReturnAfterNether <= 0
                     && config.timeFortress > 0 && config.timeBastion > 0) {
                 setOverworldReturnAfterNether(server);
                 return;
@@ -68,12 +68,12 @@ public final class GSRSplitManager {
     }
 
     private static void onSplitAchieved(MinecraftServer server, String splitName, long timeMs) {
-        GSRBroadcastManager.broadcastToRunParticipants(server, Text.literal("§b" + splitName + " §7split achieved! §f" + GSRFormatUtil.formatTime(timeMs)));
+        GSRBroadcastManager.broadcastToRunParticipants(server, Component.literal("§b" + splitName + " §7split achieved! §f" + GSRFormatUtil.formatTime(timeMs)));
         var payload = new GSRSplitAchievedPayload(splitName, timeMs);
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config != null) {
-            for (ServerPlayer p : server.getPlayerManager().getPlayerList()) {
-                if (!config.excludedFromRun.contains(p.getUuid())) {
+            for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+                if (!config.excludedFromRun.contains(p.getUUID())) {
                     ServerPlayNetworking.send(p, payload);
                 }
             }
@@ -85,7 +85,7 @@ public final class GSRSplitManager {
         if (config == null || config.timeNether > 0) return;
         long elapsed = config.getElapsedTime();
         config.timeNether = elapsed;
-        config.lastSplitTime = server.getOverworld().getGameTime();
+        config.lastSplitTime = server.overworld().getGameTime();
         GSRMain.CONFIG.save(server);
         onSplitAchieved(server, "Nether", elapsed);
     }
@@ -95,7 +95,7 @@ public final class GSRSplitManager {
         if (config == null || config.timeEnd > 0) return;
         long elapsed = config.getElapsedTime();
         config.timeEnd = elapsed;
-        config.lastSplitTime = server.getOverworld().getGameTime();
+        config.lastSplitTime = server.overworld().getGameTime();
         GSRMain.CONFIG.save(server);
         onSplitAchieved(server, "End", elapsed);
     }
@@ -105,7 +105,7 @@ public final class GSRSplitManager {
         if (config == null || config.timeBastion > 0) return;
         long elapsed = config.getElapsedTime();
         config.timeBastion = elapsed;
-        config.lastSplitTime = server.getOverworld().getGameTime();
+        config.lastSplitTime = server.overworld().getGameTime();
         GSRMain.CONFIG.save(server);
         onSplitAchieved(server, "Bastion", elapsed);
     }
@@ -115,7 +115,7 @@ public final class GSRSplitManager {
         if (config == null || config.timeFortress > 0) return;
         long elapsed = config.getElapsedTime();
         config.timeFortress = elapsed;
-        config.lastSplitTime = server.getOverworld().getGameTime();
+        config.lastSplitTime = server.overworld().getGameTime();
         GSRMain.CONFIG.save(server);
         onSplitAchieved(server, "Fortress", elapsed);
     }
@@ -133,9 +133,9 @@ public final class GSRSplitManager {
         config.isVictorious = true;
         config.isTimerFrozen = true;
         config.frozenTime = elapsed;
-        config.runParticipantCount = (int) server.getPlayerManager().getPlayerList().stream()
-                .filter(p -> !config.excludedFromRun.contains(p.getUuid())).count();
-        config.lastSplitTime = server.getOverworld().getGameTime();
+        config.runParticipantCount = (int) server.getPlayerList().getPlayers().stream()
+                .filter(p -> !config.excludedFromRun.contains(p.getUUID())).count();
+        config.lastSplitTime = server.overworld().getGameTime();
         GSRMain.CONFIG.save(server);
         onSplitAchieved(server, "Dragon", elapsed);
         var state = GSRDataStore.recordCurrentRun(server);
@@ -149,8 +149,8 @@ public final class GSRSplitManager {
             }
             GSRBroadcastManager.broadcastRunEnd(server, state);
             var victoryPayload = new GSRVictoryCelebrationPayload();
-            for (ServerPlayer p : server.getPlayerManager().getPlayerList()) {
-                if (!config.excludedFromRun.contains(p.getUuid())) {
+            for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+                if (!config.excludedFromRun.contains(p.getUUID())) {
                     ServerPlayNetworking.send(p, victoryPayload);
                 }
             }

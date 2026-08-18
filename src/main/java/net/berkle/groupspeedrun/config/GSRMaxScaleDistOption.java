@@ -17,8 +17,8 @@ public enum GSRMaxScaleDistOption {
         return value;
     }
 
-    public Text getDisplayName() {
-        return Text.literal(String.valueOf((int) value));
+    public Component getDisplayName() {
+        return Component.literal(String.valueOf((int) value));
     }
 
     public static GSRMaxScaleDistOption from(float value) {

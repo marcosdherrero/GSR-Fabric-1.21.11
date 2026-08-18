@@ -21,7 +21,7 @@ public final class GSRRunHistoryTabBar {
      * Renders the tab row.
      *
      * @param context      Draw context.
-     * @param textRenderer Text renderer.
+     * @param textRenderer Component renderer.
      * @param detailLeft   Left edge of detail panel.
      * @param detailRight  Right edge of detail panel.
      * @param detailTop    Top edge of detail panel.
@@ -46,10 +46,10 @@ public final class GSRRunHistoryTabBar {
             boolean hovered = mouseX >= x && mouseX < x + tabWidth && mouseY >= tabY && mouseY < tabY + tabHeight;
             boolean focused = selectedTab == i || hovered;
             var texture = textures.get(true, focused);
-            context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, texture, x, tabY, tabWidth, tabHeight);
+            context.blitSprite(RenderPipelines.GUI_TEXTURED, texture, x, tabY, tabWidth, tabHeight);
             int textInset = GSRRunHistoryParameters.CONTAINER_INSET + GSRRunHistoryParameters.LIST_TEXT_INSET;
-            context.drawTextWithShadow(textRenderer, Text.literal(TAB_LABELS[i]), x + textInset,
-                    tabY + (tabHeight - textRenderer.lineHeight) / 2, GSRRunHistoryParameters.TEXT_COLOR);
+            context.text(textRenderer, Component.literal(TAB_LABELS[i]), x + textInset,
+                    tabY + (tabHeight - textRenderer.lineHeight) / 2, GSRRunHistoryParameters.TEXT_COLOR, true);
         }
     }
 

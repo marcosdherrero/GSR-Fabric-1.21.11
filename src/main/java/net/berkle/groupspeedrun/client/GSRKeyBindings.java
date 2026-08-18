@@ -4,7 +4,6 @@ import net.berkle.groupspeedrun.parameter.GSRKeyBindingParameters;
 import net.minecraft.client.KeyMapping;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.resources.Identifier;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 
 /**
  * GSR key bindings (client). Translation keys and default keys in {@link GSRKeyBindingParameters}.
@@ -19,7 +18,7 @@ public final class GSRKeyBindings {
     public static final String PRESS_TO_SHOW_HUD_KEY = GSRKeyBindingParameters.PRESS_TO_SHOW_HUD_KEY;
 
     /** Category for Options → Controls so GSR keybinds appear in a "GSR" section. */
-    private static final KeyMapping.Category GSR_CATEGORY = KeyMapping.Category.create(Identifier.fromNamespaceAndPath("gsr", "category"));
+    private static final KeyMapping.Category GSR_CATEGORY = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("gsr", "category"));
 
     public static KeyMapping newGsrWorldKey;
     public static KeyMapping openGsrOptionsKey;
@@ -31,35 +30,35 @@ public final class GSRKeyBindings {
     public static KeyMapping pressToShowGsrHudKey;
 
     public static void register() {
-        newGsrWorldKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        newGsrWorldKey = new KeyMapping(
                 NEW_WORLD_KEY,
                 InputConstants.Type.KEYSYM,
                 GSRKeyBindingParameters.DEFAULT_NEW_WORLD,
                 GSR_CATEGORY
-        ));
-        openGsrOptionsKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        );
+        openGsrOptionsKey = new KeyMapping(
                 OPEN_OPTIONS_KEY,
                 InputConstants.Type.KEYSYM,
                 GSRKeyBindingParameters.DEFAULT_OPEN_OPTIONS,
                 GSR_CATEGORY
-        ));
-        openGsrConfigKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        );
+        openGsrConfigKey = new KeyMapping(
                 OPEN_CONFIG_KEY,
                 InputConstants.Type.KEYSYM,
                 GSRKeyBindingParameters.DEFAULT_OPEN_CONFIG,
                 GSR_CATEGORY
-        ));
-        toggleGsrHudKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        );
+        toggleGsrHudKey = new KeyMapping(
                 TOGGLE_HUD_KEY,
                 InputConstants.Type.KEYSYM,
                 GSRKeyBindingParameters.DEFAULT_TOGGLE_HUD,
                 GSR_CATEGORY
-        ));
-        pressToShowGsrHudKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        );
+        pressToShowGsrHudKey = new KeyMapping(
                 PRESS_TO_SHOW_HUD_KEY,
                 InputConstants.Type.KEYSYM,
                 GSRKeyBindingParameters.DEFAULT_PRESS_TO_SHOW_HUD,
                 GSR_CATEGORY
-        ));
+        );
     }
 }

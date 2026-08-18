@@ -25,18 +25,18 @@ public abstract class GSRTitleScreenMixin extends Screen {
     /** Injects at end of init to open SelectWorld if nextGsrWorldName set, else add GSR buttons. */
     @Inject(method = "init", at = @At("TAIL"))
     private void gsr$onInit(CallbackInfo ci) {
-        if (GSRClient.nextGsrWorldName != null && !GSRClient.nextGsrWorldName.isEmpty() && client != null) {
+        if (GSRClient.nextGsrWorldName != null && !GSRClient.nextGsrWorldName.isEmpty() && minecraft != null) {
             TitleScreen self = (TitleScreen) (Object) this;
-            client.setScreen(new SelectWorldScreen(self));
+            minecraft.setScreen(new SelectWorldScreen(self));
         } else {
             TitleScreen self = (TitleScreen) (Object) this;
-            Button gsrControlsBtn = GSRClient.createControlsButton(client, self, width, height);
+            Button gsrControlsBtn = GSRClient.createControlsButton(minecraft, self, width, height);
             addRenderableWidget(gsrControlsBtn);
             GSRClient.applyRunHistoryLayout(this);
-            if (client != null) {
-                client.execute(() -> {
+            if (minecraft != null) {
+                minecraft.execute(() -> {
                     GSRClient.applyRunHistoryLayout(this);
-                    client.execute(() -> GSRClient.applyRunHistoryLayout(this));
+                    minecraft.execute(() -> GSRClient.applyRunHistoryLayout(this));
                 });
             }
         }

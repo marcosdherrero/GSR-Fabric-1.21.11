@@ -2,15 +2,12 @@ package net.berkle.groupspeedrun.server;
 
 import net.berkle.groupspeedrun.config.GSRConfigPlayer;
 import net.berkle.groupspeedrun.managers.GSRProfileManager;
-import net.minecraft.server.permissions.PermissionCheck;
-import net.minecraft.server.permissions.Permissions;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.OperatorEntry;
-import net.minecraft.server.PlayerConfigEntry;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.players.ServerOpListEntry;
 
 /**
  * Determines the designated config source for world-level settings that depend on a player.
@@ -29,10 +26,10 @@ public final class GSRDesignatedConfigSource {
         if (server == null) return null;
         ServerPlayer best = null;
         int bestLevel = -1;
-        for (ServerPlayer player : server.getPlayerManager().getPlayerList()) {
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             if (player.level() instanceof ServerLevel sw) {
-                CommandSourceStack src = server.getCommandSource().withEntity(player).withWorld(sw);
-                if (!Commands.LEVEL_ADMINS.allows(src.getPermissions())) continue;
+                CommandSourceStack src = server.createCommandSourceStack().withEntity(player).withLevel(sw);
+                if (!Commands.LEVEL_ADMINS.check(src.permissions())) continue;
                 int level = getPermissionLevel(server, player);
                 if (level > bestLevel) {
                     bestLevel = level;
@@ -59,12 +56,8 @@ public final class GSRDesignatedConfigSource {
 
     /** Returns numeric op level (2–4) from op list, or 0 if not op. */
     private static int getPermissionLevel(MinecraftServer server, ServerPlayer player) {
-        PlayerConfigEntry entry = player.getPlayerConfigEntry();
-        OperatorEntry op = server.getPlayerManager().getOpList().get(entry);
+        ServerOpListEntry op = server.getPlayerList().getOps().get(player.nameAndId());
         if (op == null) return 0;
-        LeveledPermissionPredicate levelPred = op.getLevel();
-        if (levelPred == null) return 0;
-        PermissionLevel pl = levelPred.getLevel();
-        return pl != null ? pl.getLevel() : 0;
+        return op.permissions().level().id();
     }
 }

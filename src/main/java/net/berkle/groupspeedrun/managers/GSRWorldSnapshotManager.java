@@ -32,7 +32,7 @@ public final class GSRWorldSnapshotManager {
      * Call at the very start of SERVER_STARTING: if restore flag exists, copy snapshot over world root and clear flag.
      */
     public static void checkAndRestoreIfNeeded(MinecraftServer server) {
-        Path worldRoot = server.getSavePath(LevelResource.ROOT);
+        Path worldRoot = server.getWorldPath(LevelResource.ROOT);
         Path worldDir = GSRStoragePaths.getWorldDir(server);
         Path flagFile = worldDir.resolve(GSRStorageParameters.RESTORE_FLAG_FILE);
         if (!Files.exists(flagFile)) return;
@@ -98,7 +98,7 @@ public final class GSRWorldSnapshotManager {
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null || config.startTime > 0 || config.isVictorious || config.isFailed) return;
 
-        Path worldRoot = server.getSavePath(LevelResource.ROOT);
+        Path worldRoot = server.getWorldPath(LevelResource.ROOT);
         Path snapshotDir = GSRStoragePaths.getSnapshotDir(server);
         if (Files.exists(snapshotDir)) return;
 

@@ -12,7 +12,7 @@ public record GSRRunManagerUpdatePayload(net.minecraft.nbt.CompoundTag nbt) impl
     public static final Type<GSRRunManagerUpdatePayload> ID = new Type<>(Identifier.fromNamespaceAndPath("gsr", "run_manager_update"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, GSRRunManagerUpdatePayload> CODEC = StreamCodec.composite(
-            ByteBufCodecs.COMPOUND_TAG_COMPOUND, GSRRunManagerUpdatePayload::nbt,
+            ByteBufCodecs.COMPOUND_TAG, GSRRunManagerUpdatePayload::nbt,
             GSRRunManagerUpdatePayload::new
     );
 

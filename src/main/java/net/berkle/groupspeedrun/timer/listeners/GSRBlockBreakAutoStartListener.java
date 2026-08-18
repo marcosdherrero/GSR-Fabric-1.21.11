@@ -32,7 +32,7 @@ public final class GSRBlockBreakAutoStartListener {
 
         if (config.startTime <= 0) {
             if (!config.autoStartEnabled) return false;
-            if (config.isInGroupDeath(player.getUuid())) {
+            if (config.isInGroupDeath(player.getUUID())) {
                 GSRMain.getTimer().start(server);
                 return true;
             }
@@ -44,8 +44,8 @@ public final class GSRBlockBreakAutoStartListener {
             return true;
         }
 
-        String blockId = block != null ? block.getRegistryEntry().getKey().map(k -> k.getValue().toString()).orElse(null) : null;
-        GSRStats.addBlockBroken(player.getUuid(), blockId);
+        String blockId = block != null ? block.builtInRegistryHolder().unwrapKey().map(k -> k.identifier().toString()).orElse(null) : null;
+        GSRStats.addBlockBroken(player.getUUID(), blockId);
         return false;
     }
 }

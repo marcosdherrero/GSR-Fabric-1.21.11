@@ -17,8 +17,8 @@ public enum GSRRowHeightOption {
         return value;
     }
 
-    public Text getDisplayName() {
-        return Text.literal(String.valueOf(value));
+    public Component getDisplayName() {
+        return Component.literal(String.valueOf(value));
     }
 
     public static GSRRowHeightOption from(int value) {

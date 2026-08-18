@@ -19,9 +19,9 @@ import net.minecraft.client.gui.Font;
 // Minecraft screen drawing
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 // Player head drawing from skin textures
-import net.minecraft.client.gui.components.PlayerFaceRenderer;
+import net.minecraft.client.gui.components.PlayerFaceExtractor;
 // Skin textures for player head
-import net.minecraft.client.resources.PlayerSkin;
+import net.minecraft.world.entity.player.PlayerSkin;
 
 // Mojang authlib for GameProfile (skin fetch)
 import com.mojang.authlib.GameProfile;
@@ -279,7 +279,7 @@ public final class GSRRunHistoryPlayerChartRenderer {
             int valueY = barBottom - lineHeight - valueInset;
             String valueStr = formatValue(row, values[i]);
             int maxValueWidth = Math.max(1, slotWidth - 2 * valueInset);
-            float valueScale = Math.min(1f, (float) maxValueWidth / textRenderer.getWidth(valueStr));
+            float valueScale = Math.min(1f, (float) maxValueWidth / textRenderer.width(valueStr));
             drawScaledText(context, textRenderer, valueStr, x + valueInset, valueY, valueScale, GSRRunHistoryParameters.BAR_VALUE_COLOR);
 
             String playerName = players.get(i);
@@ -290,12 +290,12 @@ public final class GSRRunHistoryPlayerChartRenderer {
             int nameX = x;
             if (skin != null && slotWidth >= faceSize + faceGap) {
                 int faceY = nameY + (lineHeight - faceSize) / 2;
-                PlayerFaceRenderer.draw(context, skin, x, faceY, faceSize);
+                PlayerFaceExtractor.extractRenderState(context, skin, x, faceY, faceSize);
                 nameX = x + faceSize + faceGap;
             }
             int nameMaxWidth = slotWidth - (nameX - x);
             String namePart = truncatePlayerLabel(labels.get(i), Math.max(1, nameMaxWidth), textRenderer);
-            context.drawText(textRenderer, namePart, nameX, nameY, GSRRunHistoryParameters.BAR_VALUE_COLOR, false);
+            context.text(textRenderer, namePart, nameX, nameY, GSRRunHistoryParameters.BAR_VALUE_COLOR, false);
 
             if (mouseX >= x && mouseX < x + slotWidth && mouseY >= barTop && mouseY < nameY + lineHeight) {
                 hoveredIndex = i;
@@ -458,10 +458,10 @@ public final class GSRRunHistoryPlayerChartRenderer {
             }
         }
         var client = Minecraft.getInstance();
-        if (client != null && client.getSession() != null) {
-            UUID sessionUuid = client.getSession().getUuidOrNull();
+        if (client != null && client.getUser() != null) {
+            UUID sessionUuid = client.getUser().getProfileId();
             if (sessionUuid != null) {
-                String sessionName = client.getSession().getUsername();
+                String sessionName = client.getUser().getName();
                 if (sessionName != null && !sessionName.isBlank()) out.put(sessionName, sessionUuid);
                 if (client.player != null) {
                     String inGameName = client.player.getName().getString();
@@ -545,12 +545,12 @@ public final class GSRRunHistoryPlayerChartRenderer {
         if (SKIN_CACHE.containsKey(uuid)) return;
         if (!FETCH_PENDING.add(uuid)) return;
         var client = Minecraft.getInstance();
-        if (client == null || client.getSkinProvider() == null) {
+        if (client == null || client.getSkinManager() == null) {
             FETCH_PENDING.remove(uuid);
             return;
         }
         GameProfile profile = new GameProfile(uuid, name != null ? name : uuid.toString());
-        client.getSkinProvider().fetchSkinTextures(profile).thenAccept(opt -> {
+        client.getSkinManager().get(profile).thenAccept(opt -> {
             opt.ifPresent(textures -> SKIN_CACHE.put(uuid, textures));
             FETCH_PENDING.remove(uuid);
         }).exceptionally(throwable -> {
@@ -620,13 +620,13 @@ public final class GSRRunHistoryPlayerChartRenderer {
     private static void drawScaledText(GuiGraphicsExtractor context, Font textRenderer,
                                        String text, int x, int y, float scale, int color) {
         if (scale >= 1f) {
-            context.drawText(textRenderer, text, x, y, color, false);
+            context.text(textRenderer, text, x, y, color, false);
         } else {
             var matrices = context.pose();
             matrices.pushMatrix();
             matrices.translate(x, y);
             matrices.scale(scale, scale);
-            context.drawText(textRenderer, text, 0, 0, color, false);
+            context.text(textRenderer, text, 0, 0, color, false);
             matrices.popMatrix();
         }
     }
@@ -634,11 +634,11 @@ public final class GSRRunHistoryPlayerChartRenderer {
     /** Truncates player name with ellipsis if it exceeds maxWidth. */
     private static String truncatePlayerLabel(String name, int maxWidth, Font tr) {
         if (name == null) return "?";
-        int w = tr.getWidth(name);
+        int w = tr.width(name);
         if (w <= maxWidth) return name;
         for (int len = name.length() - 1; len > 0; len--) {
             String s = name.substring(0, len) + "…";
-            if (tr.getWidth(s) <= maxWidth) return s;
+            if (tr.width(s) <= maxWidth) return s;
         }
         return "…";
     }

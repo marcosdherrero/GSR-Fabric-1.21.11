@@ -20,13 +20,13 @@ public class GSRPlayerDropTagger {
     @Inject(method = "dropStack(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/item/ItemStack;)Lnet/minecraft/world/entity/item/ItemEntity;", at = @At("RETURN"))
     private void groupspeedrun$tagDroppedItem2(ServerLevel world, ItemStack stack, CallbackInfoReturnable<ItemEntity> cir) {
         ItemEntity entity = cir.getReturnValue();
-        if (entity != null) entity.addCommandTag("GSR_PLAYER_DROPPED");
+        if (entity != null) entity.addTag("GSR_PLAYER_DROPPED");
     }
 
     /** Tags dropped items (yOffset overload) so pickup tracker ignores player-dropped pearls/rods. */
     @Inject(method = "dropStack(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/item/ItemStack;F)Lnet/minecraft/world/entity/item/ItemEntity;", at = @At("RETURN"))
     private void groupspeedrun$tagDroppedItem3(ServerLevel world, ItemStack stack, float yOffset, CallbackInfoReturnable<ItemEntity> cir) {
         ItemEntity entity = cir.getReturnValue();
-        if (entity != null) entity.addCommandTag("GSR_PLAYER_DROPPED");
+        if (entity != null) entity.addTag("GSR_PLAYER_DROPPED");
     }
 }

@@ -148,7 +148,7 @@ public final class GSRRunManagerContent {
             var confirmTexture = textures.get(true, confirmHover);
             int confirmLeft = listLeft + GSRRunHistoryParameters.CONTAINER_INSET;
             int confirmWidth = listWidth - 2 * GSRRunHistoryParameters.CONTAINER_INSET;
-            context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, confirmTexture, confirmLeft, confirmButtonTop, confirmWidth,
+            context.blitSprite(RenderPipelines.GUI_TEXTURED, confirmTexture, confirmLeft, confirmButtonTop, confirmWidth,
                     GSRRunHistoryParameters.FILTER_MAKE_SELECTION_BUTTON_HEIGHT);
             if (hasPending) {
                 float breath = (float) ((1 + Math.sin(System.currentTimeMillis() * Math.PI * 2 / GSRRunHistoryParameters.MAKE_SELECTION_BREATHE_PERIOD_MS)) / 2);

@@ -22,8 +22,8 @@ public enum GSRHudLookMode {
         return value;
     }
 
-    public Text getDisplayName() {
-        return Text.literal(label);
+    public Component getDisplayName() {
+        return Component.literal(label);
     }
 
     public static GSRHudLookMode from(int value) {

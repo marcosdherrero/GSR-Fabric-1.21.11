@@ -21,12 +21,12 @@ public abstract class GSRItemEntityTracker {
     /** Injects at insertStack to record pearl/rod pickups for stats; ignores GSR_PLAYER_DROPPED items. */
     @Inject(method = "playerTouch", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/player/PlayerInventory;insertStack(Lnet/minecraft/world/item/ItemStack;)Z"))
     private void groupspeedrun$onPickup(Player player, CallbackInfo ci) {
-        if (player.level().isClient() || GSRMain.CONFIG == null || GSRMain.CONFIG.startTime <= 0 || GSRMain.CONFIG.isTimerFrozen) return;
+        if (player.level().isClientSide() || GSRMain.CONFIG == null || GSRMain.CONFIG.startTime <= 0 || GSRMain.CONFIG.isTimerFrozen) return;
         ItemEntity self = (ItemEntity) (Object) this;
-        if (self.getCommandTags().contains("GSR_PLAYER_DROPPED")) return;
+        if (self.entityTags().contains("GSR_PLAYER_DROPPED")) return;
         ItemStack stack = getStack();
         if (stack.isEmpty() || self.isRemoved()) return;
-        if (stack.isOf(Items.ENDER_PEARL)) GSRStats.addInt(GSRStats.ENDER_PEARLS_COLLECTED, player.getUuid(), stack.getCount());
-        if (stack.isOf(Items.BLAZE_ROD)) GSRStats.addInt(GSRStats.BLAZE_RODS_COLLECTED, player.getUuid(), stack.getCount());
+        if (stack.is(Items.ENDER_PEARL)) GSRStats.addInt(GSRStats.ENDER_PEARLS_COLLECTED, player.getUUID(), stack.getCount());
+        if (stack.is(Items.BLAZE_ROD)) GSRStats.addInt(GSRStats.BLAZE_RODS_COLLECTED, player.getUUID(), stack.getCount());
     }
 }

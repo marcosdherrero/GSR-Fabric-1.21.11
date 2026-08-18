@@ -60,11 +60,11 @@ public abstract class GSRServerPlayerEntityTracker {
         updateCacheInServerWorld(x, y, z);
 
         if (config.startTime > 0 && !config.isVictorious && !config.isFailed && !config.isTimerFrozen) {
-            AbstractContainerMenu sh = player.currentScreenHandler;
-            if (sh != player.playerScreenHandler && sh != null) {
+            AbstractContainerMenu sh = player.containerMenu;
+            if (sh != player.inventoryMenu && sh != null) {
                 try {
-                    var id = sw.getRegistryManager().getOrThrow(Registries.SCREEN_HANDLER).getId(sh.getType());
-                    if (id != null) GSRStats.addScreenTime(player.getUuid(), id.toString());
+                    var id = sw.registryAccess().lookupOrThrow(Registries.MENU).getId(sh.getType());
+                    if (id != null) GSRStats.addScreenTime(player.getUUID(), id.toString());
                 } catch (Exception ignored) {}
             }
         }

@@ -24,7 +24,7 @@ public final class GSRMenuComponents {
      */
     public static Button button(String label, Runnable action, int x, int y, int width, int height) {
         return Button.builder(GSRButtonParameters.literal(label), b -> action.run())
-                .dimensions(x, y, width, height)
+                .bounds(x, y, width, height)
                 .build();
     }
 

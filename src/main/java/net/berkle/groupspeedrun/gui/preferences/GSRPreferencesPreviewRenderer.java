@@ -97,7 +97,7 @@ public final class GSRPreferencesPreviewRenderer {
             context.fill(-r, -r, r, r, GSRColorHelper.applyAlpha(colors[i] & 0x00FFFFFF, 1f));
             context.fill(-inner, -inner, inner, inner, GSRColorHelper.applyAlpha(GSRLocatorParameters.BAR_BG, 1f));
             matrices.scale(iconScale / scale, iconScale / scale);
-            context.drawItem(stacks[i], -inner, -inner);
+            context.item(stacks[i], -inner, -inner);
             matrices.popMatrix();
         }
         matrices.popMatrix();

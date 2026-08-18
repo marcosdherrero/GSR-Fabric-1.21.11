@@ -33,7 +33,7 @@ public final class GSRAdminCommandDerank {
     public static void onCommandExecuted(CommandSourceStack source, String command, MinecraftServer server) {
         if (source == null || command == null || server == null) return;
         if (!(source.getEntity() instanceof ServerPlayer player)) return;
-        if (!Commands.LEVEL_ADMINS.allows(source.getPermissions())) return;
+        if (!Commands.LEVEL_ADMINS.check(source.permissions())) return;
 
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null) return;
@@ -49,6 +49,6 @@ public final class GSRAdminCommandDerank {
         config.locatorDeranked = true;
         config.save(server);
         GSRConfigSync.syncConfigWithAll(server);
-        player.sendMessage(Text.literal(GSRUiParameters.MSG_PREFIX + GSRUiParameters.MSG_ADMIN_COMMAND_DERANKED), false);
+        player.sendSystemMessage(Component.literal(GSRUiParameters.MSG_PREFIX + GSRUiParameters.MSG_ADMIN_COMMAND_DERANKED), false);
     }
 }

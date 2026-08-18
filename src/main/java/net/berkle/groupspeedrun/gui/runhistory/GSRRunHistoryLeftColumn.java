@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import net.minecraft.network.chat.Component;
 
 /**
  * Renders the left column: 6 dropdown triggers stacked vertically (Player Filter, Player Count, Runs,
@@ -231,7 +232,7 @@ public final class GSRRunHistoryLeftColumn {
      *
      * @param model        Screen model with state.
      * @param context      Draw context.
-     * @param textRenderer Text renderer.
+     * @param textRenderer Component renderer.
      * @param tickerState  Ticker state.
      * @param bounds       Two-column layout bounds.
      * @param mouseX       Mouse X.
@@ -281,7 +282,7 @@ public final class GSRRunHistoryLeftColumn {
             var textures = GSRPressableWidgetAccessor.gsr$getTextures();
             var confirmTexture = textures.get(true, confirmHover);
             int confirmWidth = overlayWidth - 2 * GSRRunHistoryParameters.CONTAINER_INSET;
-            context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, confirmTexture, overlayLeft + GSRRunHistoryParameters.CONTAINER_INSET, confirmButtonTop, confirmWidth,
+            context.blitSprite(RenderPipelines.GUI_TEXTURED, confirmTexture, overlayLeft + GSRRunHistoryParameters.CONTAINER_INSET, confirmButtonTop, confirmWidth,
                     GSRRunHistoryParameters.FILTER_MAKE_SELECTION_BUTTON_HEIGHT);
             if (hasPendingChanges) {
                 float breath = (float) ((1 + Math.sin(System.currentTimeMillis() * Math.PI * 2 / GSRRunHistoryParameters.MAKE_SELECTION_BREATHE_PERIOD_MS)) / 2);

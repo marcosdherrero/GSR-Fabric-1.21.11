@@ -1,10 +1,10 @@
 package net.berkle.groupspeedrun.gui;
 
-// Fabric: client networking
+// Fabric: minecraft networking
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
 // Minecraft: GUI, NBT
-import net.minecraft.client.gui.Click;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.nbt.CompoundTag;
@@ -14,7 +14,7 @@ import net.minecraft.nbt.StringTag;
 // LWJGL: key codes
 import org.lwjgl.glfw.GLFW;
 
-// GSR: client state, gui components, network, parameters, util
+// GSR: minecraft state, gui components, network, parameters, util
 import net.berkle.groupspeedrun.GSRClient;
 import net.berkle.groupspeedrun.gui.components.GSRMenuComponents;
 import net.berkle.groupspeedrun.gui.components.GSRMultiSelectDropdown;
@@ -67,16 +67,16 @@ public class GSRRunManagerScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        setWidgetAlpha(1.0f);
+        setAlpha(1.0f);
         dataReceived = false;
         ClientPlayNetworking.send(new GSRRunManagerRequestPayload());
 
         if (runManagerData != null) {
             model.loadFrom(runManagerData);
         }
-        if (model.allPlayers.isEmpty() && client != null) {
-            var p = client.player;
-            if (p != null) model.allPlayers.add(new GSRRunManagerModel.PlayerEntry(p.getUuid(), p.getName().getString()));
+        if (model.allPlayers.isEmpty() && minecraft != null) {
+            var p = minecraft.player;
+            if (p != null) model.allPlayers.add(new GSRRunManagerModel.PlayerEntry(p.getUUID(), p.getName().getString()));
         }
 
         var layout = GSRMenuComponents.singleButtonFooterLayout(width, height);
@@ -85,9 +85,9 @@ public class GSRRunManagerScreen extends Screen {
     }
 
     private void goBack() {
-        if (client == null) return;
-        if (parent != null) client.setScreen(parent);
-        else client.setScreen(null);
+        if (minecraft == null) return;
+        if (parent != null) minecraft.setScreen(parent);
+        else minecraft.setScreen(null);
     }
 
     /** True when changing participants would derank the run (active run + anti-cheat enabled, not already deranked). */
@@ -109,7 +109,7 @@ public class GSRRunManagerScreen extends Screen {
     private static void writeUuidSet(CompoundTag nbt, String key, Set<UUID> set) {
         ListTag list = new ListTag();
         for (UUID u : set) {
-            if (u != null) list.add(StringTag.of(u.toString()));
+            if (u != null) list.add(StringTag.valueOf(u.toString()));
         }
         nbt.put(key, list);
     }
@@ -138,7 +138,7 @@ public class GSRRunManagerScreen extends Screen {
         if (model.deathDropdownOpen || model.healthDropdownOpen) {
             int itemCount = model.getSelectablePlayers().size();
             String header = model.deathDropdownOpen ? content.getDeathDropdown().getHeader() : content.getHealthDropdown().getHeader();
-            int[] bounds = GSRRunManagerLayout.openBounds(textRenderer, header, itemCount, listWidth());
+            int[] bounds = GSRRunManagerLayout.openBounds(font, header, itemCount, listWidth());
             return Math.min(bounds[1], maxBottom);
         }
         return Math.min(containerTop() + GSRRunManagerLayout.closedContentHeight(), maxBottom);
@@ -147,24 +147,24 @@ public class GSRRunManagerScreen extends Screen {
     private int[] openBoundsArray() {
         int itemCount = model.getSelectablePlayers().size();
         String header = model.deathDropdownOpen ? content.getDeathDropdown().getHeader() : content.getHealthDropdown().getHeader();
-        return GSRRunManagerLayout.openBounds(textRenderer, header, itemCount, listWidth());
+        return GSRRunManagerLayout.openBounds(font, header, itemCount, listWidth());
     }
 
     @Override
-    public void render(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         if (runManagerData != null && !dataReceived) {
             dataReceived = true;
         }
         if (runManagerData != null) {
             model.loadFrom(runManagerData);
         }
-        if (model.allPlayers.isEmpty() && client != null && client.player != null) {
-            model.allPlayers.add(new GSRRunManagerModel.PlayerEntry(client.player.getUuid(), client.player.getName().getString()));
+        if (model.allPlayers.isEmpty() && minecraft != null && minecraft.player != null) {
+            model.allPlayers.add(new GSRRunManagerModel.PlayerEntry(minecraft.player.getUUID(), minecraft.player.getName().getString()));
         }
 
         context.fill(0, 0, width, height, GSRUiParameters.SCREEN_BG_DARK);
-        super.render(context, mouseX, mouseY, delta);
-        context.centeredText(textRenderer, getTitle(), width / 2, GSRUiParameters.TITLE_Y, GSRUiParameters.TITLE_COLOR);
+        super.extractRenderState(context, mouseX, mouseY, delta);
+        context.centeredText(font, getTitle(), width / 2, GSRUiParameters.TITLE_Y, GSRUiParameters.TITLE_COLOR);
 
         boolean dropdownOpen = model.deathDropdownOpen || model.healthDropdownOpen;
         if (dropdownOpen) {
@@ -172,7 +172,7 @@ public class GSRRunManagerScreen extends Screen {
         }
 
         if (!dataReceived && runManagerData == null) {
-            context.centeredText(textRenderer, "Loading...", width / 2, height / 2 - GSRUiParameters.RUN_MANAGER_LOADING_Y_OFFSET, GSRUiParameters.RUN_MANAGER_LOADING_COLOR);
+            context.centeredText(font, "Loading...", width / 2, height / 2 - GSRUiParameters.RUN_MANAGER_LOADING_Y_OFFSET, GSRUiParameters.RUN_MANAGER_LOADING_COLOR);
             return;
         }
 
@@ -180,11 +180,11 @@ public class GSRRunManagerScreen extends Screen {
         int w = listWidth();
         int top = containerTop();
         int bottom = containerBottom();
-        content.render(model, context, textRenderer, tickerState, left, w, top, bottom, mouseX, mouseY);
+        content.render(model, context, font, tickerState, left, w, top, bottom, mouseX, mouseY);
     }
 
     @Override
-    public boolean mouseClicked(Click click, boolean captured) {
+    public boolean mouseClicked(MouseButtonEvent click, boolean captured) {
         if (captured) return false;
         if (click.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT) return super.mouseClicked(click, false);
 
@@ -250,8 +250,8 @@ public class GSRRunManagerScreen extends Screen {
                     else model.applyPendingHealth();
                     save();
                 };
-                if (client != null) {
-                    client.setScreen(new GSRRunManagerDerankConfirmScreen(this, onConfirm));
+                if (minecraft != null) {
+                    minecraft.setScreen(new GSRRunManagerDerankConfirmScreen(this, onConfirm));
                 }
             } else {
                 if (model.deathDropdownOpen) {
@@ -268,7 +268,7 @@ public class GSRRunManagerScreen extends Screen {
         }
 
         if (model.deathDropdownOpen && !model.getSelectablePlayers().isEmpty()) {
-            var deathGeom = GSRMultiSelectDropdown.computeGeometry(textRenderer, content.getDeathDropdown().getHeader(), left, overlayTop, overlayBottom, w, content.getDeathDropdown().getItemCount(model));
+            var deathGeom = GSRMultiSelectDropdown.computeGeometry(font, content.getDeathDropdown().getHeader(), left, overlayTop, overlayBottom, w, content.getDeathDropdown().getItemCount(model));
             int itemIdx = GSRMultiSelectDropdown.getItemIndexAt(deathGeom, content.getDeathDropdown().getItemCount(model), model.deathDropdownScroll, left, w, mouseX, mouseY);
             if (itemIdx >= 0) {
                 if (itemIdx == GSRRunHistoryParameters.MULTISELECT_SELECT_ALL_INDEX) {
@@ -284,7 +284,7 @@ public class GSRRunManagerScreen extends Screen {
             }
         }
         if (model.healthDropdownOpen && !model.getSelectablePlayers().isEmpty()) {
-            var healthGeom = GSRMultiSelectDropdown.computeGeometry(textRenderer, content.getHealthDropdown().getHeader(), left, overlayTop, overlayBottom, w, content.getHealthDropdown().getItemCount(model));
+            var healthGeom = GSRMultiSelectDropdown.computeGeometry(font, content.getHealthDropdown().getHeader(), left, overlayTop, overlayBottom, w, content.getHealthDropdown().getItemCount(model));
             int itemIdx = GSRMultiSelectDropdown.getItemIndexAt(healthGeom, content.getHealthDropdown().getItemCount(model), model.healthDropdownScroll, left, w, mouseX, mouseY);
             if (itemIdx >= 0) {
                 if (itemIdx == GSRRunHistoryParameters.MULTISELECT_SELECT_ALL_INDEX) {
@@ -326,13 +326,13 @@ public class GSRRunManagerScreen extends Screen {
         int sbWidth = GSRScrollbarHelper.getScrollbarWidth();
         if (model.deathDropdownOpen && mx >= left && mx < left + w + sbWidth && my >= top && my < bottom) {
             int delta = (int) (verticalAmount * GSRRunHistoryParameters.ROW_HEIGHT);
-            var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, content.getDeathDropdown().getHeader(), left, overlayTop, overlayBottom, w, content.getDeathDropdown().getItemCount(model));
+            var geom = GSRMultiSelectDropdown.computeGeometry(font, content.getDeathDropdown().getHeader(), left, overlayTop, overlayBottom, w, content.getDeathDropdown().getItemCount(model));
             model.deathDropdownScroll = Math.max(0, Math.min(geom.maxScroll(), model.deathDropdownScroll + delta));
             return true;
         }
         if (model.healthDropdownOpen && mx >= left && mx < left + w + sbWidth && my >= top && my < bottom) {
             int delta = (int) (verticalAmount * GSRRunHistoryParameters.ROW_HEIGHT);
-            var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, content.getHealthDropdown().getHeader(), left, overlayTop, overlayBottom, w, content.getHealthDropdown().getItemCount(model));
+            var geom = GSRMultiSelectDropdown.computeGeometry(font, content.getHealthDropdown().getHeader(), left, overlayTop, overlayBottom, w, content.getHealthDropdown().getItemCount(model));
             model.healthDropdownScroll = Math.max(0, Math.min(geom.maxScroll(), model.healthDropdownScroll + delta));
             return true;
         }

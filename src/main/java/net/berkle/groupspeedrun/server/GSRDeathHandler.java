@@ -21,21 +21,21 @@ public final class GSRDeathHandler {
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null || config.startTime <= 0 || config.isVictorious || config.isFailed) return;
         if (!config.groupDeathEnabled) return;
-        if (!config.isInGroupDeath(deadPlayer.getUuid())) return;
+        if (!config.isInGroupDeath(deadPlayer.getUUID())) return;
 
         long elapsed = config.getElapsedTime();
         config.isFailed = true;
         config.isTimerFrozen = true;
         config.frozenTime = elapsed;
-        config.lastSplitTime = server.getOverworld().getGameTime();
+        config.lastSplitTime = server.overworld().getGameTime();
         config.failedByPlayerName = deadPlayer.getName().getString();
         config.failedByDeathMessage = deadPlayer.getDamageTracker().getDeathMessage().getString();
-        config.runParticipantCount = (int) server.getPlayerManager().getPlayerList().stream()
-                .filter(p -> !config.excludedFromRun.contains(p.getUuid())).count();
+        config.runParticipantCount = (int) server.getPlayerList().getPlayers().stream()
+                .filter(p -> !config.excludedFromRun.contains(p.getUUID())).count();
         config.save(server);
         GSRConfigSync.syncConfigWithAll(server);
 
-        for (ServerPlayer p : server.getPlayerManager().getPlayerList()) {
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
             p.changeGameMode(GameType.SPECTATOR);
         }
         var state = GSRDataStore.recordCurrentRun(server);

@@ -18,7 +18,7 @@ public final class GSRLocatorGate {
 
     /** True if the source has permission to bypass time gates (same as ADMINS_CHECK). */
     public static boolean isAdmin(CommandSourceStack source) {
-        return source != null && Commands.LEVEL_ADMINS.allows(source.getPermissions());
+        return source != null && Commands.LEVEL_ADMINS.check(source.permissions());
     }
 
     /**

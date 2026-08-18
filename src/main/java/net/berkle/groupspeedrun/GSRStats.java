@@ -239,8 +239,8 @@ public final class GSRStats {
      */
     public static String getDamageTypeId(ServerLevel world, DamageSource source) {
         if (world == null || source == null) return "unknown";
-        DamageType type = source.getType();
-        return world.getRegistryManager().getOrThrow(Registries.DAMAGE_TYPE).getKey(type).map(k -> k.getValue().toString()).orElse("unknown");
+        DamageType type = source.type();
+        return world.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getResourceKey(type).map(k -> k.identifier().toString()).orElse("unknown");
     }
 
     /** Records damage taken by type; call from damage tracker or Fabric AFTER_DAMAGE. */
@@ -382,7 +382,7 @@ public final class GSRStats {
 
     private static String nameFor(MinecraftServer server, UUID uuid) {
         if (server == null || uuid == null) return null;
-        var player = server.getPlayerManager().getPlayer(uuid);
+        var player = server.getPlayerList().getPlayer(uuid);
         return player != null ? player.getName().getString() : null;
     }
 
@@ -590,7 +590,7 @@ public final class GSRStats {
 
     private static void readMapFloat(CompoundTag root, String key, Map<UUID, Float> out) {
         root.getCompound(key).ifPresent(sub -> {
-            for (String k : sub.getKeys()) {
+            for (String k : sub.keySet()) {
                 try {
                     sub.getFloat(k).ifPresent(v -> out.put(UUID.fromString(k), v));
                 } catch (Exception ignored) {}
@@ -600,7 +600,7 @@ public final class GSRStats {
 
     private static void readMapInt(CompoundTag root, String key, Map<UUID, Integer> out) {
         root.getCompound(key).ifPresent(sub -> {
-            for (String k : sub.getKeys()) {
+            for (String k : sub.keySet()) {
                 try {
                     sub.getInt(k).ifPresent(v -> out.put(UUID.fromString(k), v));
                 } catch (Exception ignored) {}
@@ -618,17 +618,17 @@ public final class GSRStats {
             }
             sub.put(e.getKey().toString(), inner);
         }
-        if (!sub.getKeys().isEmpty()) root.put(key, sub);
+        if (!sub.keySet().isEmpty()) root.put(key, sub);
     }
 
     private static void readMapMapInt(CompoundTag root, String key, Map<UUID, Map<String, Integer>> out) {
         root.getCompound(key).ifPresent(sub -> {
-            for (String k : sub.getKeys()) {
+            for (String k : sub.keySet()) {
                 try {
                     UUID uuid = UUID.fromString(k);
                     Map<String, Integer> inner = new ConcurrentHashMap<>();
                     sub.getCompound(k).ifPresent(innerSub -> {
-                        for (String ik : innerSub.getKeys()) {
+                        for (String ik : innerSub.keySet()) {
                             innerSub.getInt(ik).ifPresent(v -> inner.put(ik, v));
                         }
                     });
@@ -648,17 +648,17 @@ public final class GSRStats {
             }
             sub.put(e.getKey().toString(), inner);
         }
-        if (!sub.getKeys().isEmpty()) root.put(key, sub);
+        if (!sub.keySet().isEmpty()) root.put(key, sub);
     }
 
     private static void readMapMapFloat(CompoundTag root, String key, Map<UUID, Map<String, Float>> out) {
         root.getCompound(key).ifPresent(sub -> {
-            for (String k : sub.getKeys()) {
+            for (String k : sub.keySet()) {
                 try {
                     UUID uuid = UUID.fromString(k);
                     Map<String, Float> inner = new ConcurrentHashMap<>();
                     sub.getCompound(k).ifPresent(innerSub -> {
-                        for (String ik : innerSub.getKeys()) {
+                        for (String ik : innerSub.keySet()) {
                             innerSub.getFloat(ik).ifPresent(v -> inner.put(ik, v));
                         }
                     });
@@ -678,7 +678,7 @@ public final class GSRStats {
 
     private static void readMapLong(CompoundTag root, String key, Map<UUID, Long> out) {
         root.getCompound(key).ifPresent(sub -> {
-            for (String k : sub.getKeys()) {
+            for (String k : sub.keySet()) {
                 try {
                     sub.getLong(k).ifPresent(v -> out.put(UUID.fromString(k), v));
                 } catch (Exception ignored) {}
@@ -696,17 +696,17 @@ public final class GSRStats {
             }
             sub.put(e.getKey().toString(), inner);
         }
-        if (!sub.getKeys().isEmpty()) root.put(key, sub);
+        if (!sub.keySet().isEmpty()) root.put(key, sub);
     }
 
     private static void readMapMapLong(CompoundTag root, String key, Map<UUID, Map<String, Long>> out) {
         root.getCompound(key).ifPresent(sub -> {
-            for (String k : sub.getKeys()) {
+            for (String k : sub.keySet()) {
                 try {
                     UUID uuid = UUID.fromString(k);
                     Map<String, Long> inner = new ConcurrentHashMap<>();
                     sub.getCompound(k).ifPresent(innerSub -> {
-                        for (String ik : innerSub.getKeys()) {
+                        for (String ik : innerSub.keySet()) {
                             innerSub.getLong(ik).ifPresent(v -> inner.put(ik, v));
                         }
                     });

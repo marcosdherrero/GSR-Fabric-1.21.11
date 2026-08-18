@@ -41,9 +41,9 @@ public final class GSRRunLifecycle {
         config.frozenTime = 0;
         config.lowestDifficultyOrdinal = -1;
         config.clearSplitsOnly();
-        config.lastSplitTime = server.getOverworld().getGameTime();
-        Difficulty prevDifficulty = server.getSaveProperties().getDifficulty();
-        server.getSaveProperties().setDifficulty(Difficulty.HARD);
+        config.lastSplitTime = server.overworld().getGameTime();
+        Difficulty prevDifficulty = server.getWorldData().getDifficulty();
+        server.getWorldData().setDifficulty(Difficulty.HARD);
         config.save(server);
         GSRConfigSync.syncConfigWithAll(server);
         sendTimerStartEffect(server);
@@ -51,7 +51,7 @@ public final class GSRRunLifecycle {
         if (prevDifficulty != Difficulty.HARD) {
             msg += " §7(Difficulty set to Hard)";
         }
-        Text message = Text.literal(msg);
+        Component message = Component.literal(msg);
         server.execute(() -> GSRBroadcastManager.broadcastToRunParticipants(server, message));
     }
 
@@ -84,7 +84,7 @@ public final class GSRRunLifecycle {
 
     /** When the last player disconnects, freeze the timer so it auto-resumes when someone rejoins. */
     public static void tryFreezeOnLastPlayerDisconnect(MinecraftServer server) {
-        if (server.getPlayerManager().getCurrentPlayerCount() > 0) return;
+        if (server.getPlayerCount() > 0) return;
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null) return;
         if (config.startTime <= 0 || config.isVictorious || config.isFailed) return;
@@ -105,11 +105,11 @@ public final class GSRRunLifecycle {
         if (config.frozenTime > 0) {
             config.startTime = System.currentTimeMillis() - config.frozenTime;
         }
-        config.lastSplitTime = server.getOverworld().getGameTime();
+        config.lastSplitTime = server.overworld().getGameTime();
         config.save(server);
         GSRConfigSync.syncConfigWithAll(server);
         sendTimerStartEffect(server);
-        GSRBroadcastManager.broadcastToRunParticipants(server, Text.literal("§6§l[GSR] Run resumed!"));
+        GSRBroadcastManager.broadcastToRunParticipants(server, Component.literal("§6§l[GSR] Run resumed!"));
     }
 
     /** Sends split-achieved payload to run participants so timer HUD shows split effect (sound + priority window). */
@@ -117,8 +117,8 @@ public final class GSRRunLifecycle {
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null) return;
         var payload = new GSRSplitAchievedPayload("Start", 0L);
-        for (ServerPlayer p : server.getPlayerManager().getPlayerList()) {
-            if (!config.excludedFromRun.contains(p.getUuid())) {
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+            if (!config.excludedFromRun.contains(p.getUUID())) {
                 ServerPlayNetworking.send(p, payload);
             }
         }
@@ -137,10 +137,10 @@ public final class GSRRunLifecycle {
         config.resetRunData();
         GSRStats.reset();
 
-        ServerLevel overworld = server.getOverworld();
+        ServerLevel overworld = server.overworld();
         BlockPos spawnPos = overworld.getSpawnPoint().getPos();
 
-        for (ServerPlayer player : server.getPlayerManager().getPlayerList()) {
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             player.stopRiding();
             player.changeGameMode(GameType.SURVIVAL);
             player.getInventory().clear();
@@ -165,7 +165,7 @@ public final class GSRRunLifecycle {
         GSRWorldSnapshotManager.setRestoreFromSnapshotOnNextLoad(server);
         config.save(server);
         GSRConfigSync.syncConfigWithAll(server);
-        GSRBroadcastManager.broadcastToRunParticipants(server, Text.literal("§6§l[GSR] Run reset."));
+        GSRBroadcastManager.broadcastToRunParticipants(server, Component.literal("§6§l[GSR] Run reset."));
     }
 
     private static void revokeAllAdvancements(ServerPlayer player, MinecraftServer server) {

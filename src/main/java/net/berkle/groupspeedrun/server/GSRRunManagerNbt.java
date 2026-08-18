@@ -18,7 +18,7 @@ public final class GSRRunManagerNbt {
     public static void writeUuidSet(CompoundTag nbt, String key, Set<UUID> set) {
         ListTag list = new ListTag();
         for (UUID u : set) {
-            if (u != null) list.add(StringTag.of(u.toString()));
+            if (u != null) list.add(StringTag.valueOf(u.toString()));
         }
         nbt.put(key, list);
     }

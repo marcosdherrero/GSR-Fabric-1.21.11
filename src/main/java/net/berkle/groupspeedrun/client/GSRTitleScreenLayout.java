@@ -30,7 +30,7 @@ public final class GSRTitleScreenLayout {
                         btn -> {
                             if (client != null) client.setScreen(new net.berkle.groupspeedrun.gui.GSRControlsScreen(screen));
                         })
-                .dimensions(x, layout.row3Y, w, layout.btnH)
+                .bounds(x, layout.row3Y, w, layout.btnH)
                 .build();
     }
 
@@ -40,11 +40,11 @@ public final class GSRTitleScreenLayout {
 
         if (layout.singleplayerButton != null) {
             layout.singleplayerButton.setPosition(layout.fullX, layout.row1Y);
-            layout.singleplayerButton.setDimensions(layout.fullW, layout.btnH);
+            layout.singleplayerButton.setSize(layout.fullW, layout.btnH);
         }
         if (layout.multiplayerButton != null) {
             layout.multiplayerButton.setPosition(layout.fullX, layout.row2Y);
-            layout.multiplayerButton.setDimensions(layout.fullW, layout.btnH);
+            layout.multiplayerButton.setSize(layout.fullW, layout.btnH);
         }
         AbstractWidget gsrBtn = findGsrMainMenuButton(screen);
         boolean row3HasGsr = gsrBtn != null;
@@ -54,18 +54,18 @@ public final class GSRTitleScreenLayout {
             int x = (!row3HasRealms) ? layout.fullX : layout.gsrX;
             int w = (!row3HasRealms) ? layout.fullW : layout.halfW;
             gsrBtn.setPosition(x, layout.row3Y);
-            gsrBtn.setDimensions(w, layout.btnH);
+            gsrBtn.setSize(w, layout.btnH);
         }
         if (layout.realmsButton != null) {
             // If alone in row, center; else use right column
             int x = (!row3HasGsr) ? layout.fullX : layout.realmsX;
             int w = (!row3HasGsr) ? layout.fullW : layout.halfW;
             layout.realmsButton.setPosition(x, layout.row3Y);
-            layout.realmsButton.setDimensions(w, layout.btnH);
+            layout.realmsButton.setSize(w, layout.btnH);
         }
         if (layout.modsButton != null) {
             layout.modsButton.setPosition(layout.fullX, layout.row4Y);
-            layout.modsButton.setDimensions(layout.fullW, layout.btnH);
+            layout.modsButton.setSize(layout.fullW, layout.btnH);
         }
         boolean optionsQuitHasOptions = layout.optionsButton != null;
         boolean optionsQuitHasQuit = layout.quitButton != null;
@@ -74,14 +74,14 @@ public final class GSRTitleScreenLayout {
             int x = (!optionsQuitHasQuit) ? layout.fullX : layout.optionsX;
             int w = (!optionsQuitHasQuit) ? layout.fullW : layout.halfW;
             layout.optionsButton.setPosition(x, layout.optionsQuitY);
-            layout.optionsButton.setDimensions(w, layout.btnH);
+            layout.optionsButton.setSize(w, layout.btnH);
         }
         if (layout.quitButton != null) {
             // If alone in row, center; else use right column
             int x = (!optionsQuitHasOptions) ? layout.fullX : layout.quitX;
             int w = (!optionsQuitHasOptions) ? layout.fullW : layout.halfW;
             layout.quitButton.setPosition(x, layout.optionsQuitY);
-            layout.quitButton.setDimensions(w, layout.btnH);
+            layout.quitButton.setSize(w, layout.btnH);
         }
     }
 
@@ -205,12 +205,12 @@ public final class GSRTitleScreenLayout {
         return out;
     }
 
-    private static void collectClickableWidgetsRecursive(Element parent, List<AbstractWidget> out) {
+    private static void collectClickableWidgetsRecursive(GuiEventListener parent, List<AbstractWidget> out) {
         if (parent instanceof AbstractWidget cw) {
             out.add(cw);
         }
-        if (parent instanceof ParentElement pe) {
-            for (Element child : pe.children()) {
+        if (parent instanceof ContainerEventHandler pe) {
+            for (GuiEventListener child : pe.children()) {
                 collectClickableWidgetsRecursive(child, out);
             }
         }

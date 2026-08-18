@@ -33,7 +33,7 @@ public final class GSRRunManagerLayout {
         int containerTop = GSRUiParameters.RUN_MANAGER_CONTAINER_TOP + GSRRunHistoryParameters.SELECTION_CONTAINER_MARGIN;
 
         int headerMaxWidth = listWidth - 2 * GSRRunHistoryParameters.LIST_TEXT_INSET;
-        int headerHeight = textRenderer.wrapLines(Text.literal(header), Math.max(1, headerMaxWidth)).size() * textRenderer.lineHeight;
+        int headerHeight = textRenderer.split(Component.literal(header), Math.max(1, headerMaxWidth)).size() * textRenderer.lineHeight;
         int listTop = containerTop + GSRRunHistoryParameters.LIST_VERTICAL_GAP + headerHeight + GSRRunHistoryParameters.LIST_VERTICAL_GAP;
 
         int listAreaHeight = Math.min(

@@ -69,11 +69,11 @@ public final class GSRHudParameters {
     public static final int BG_OPACITY_PAUSED = 0x60;
     /** Background opacity when running (0x00–0xFF). */
     public static final int BG_OPACITY_RUNNING = 0x90;
-    /** Text color when paused (ARGB). Used with GSRColorHelper.applyAlpha. */
+    /** Component color when paused (ARGB). Used with GSRColorHelper.applyAlpha. */
     public static final int TEXT_COLOR_PAUSED = 0xFFB0B0B0;
-    /** Text color when freeze (soft blue, ARGB). Used with GSRColorHelper.applyAlpha. */
+    /** Component color when freeze (soft blue, ARGB). Used with GSRColorHelper.applyAlpha. */
     public static final int TEXT_COLOR_FREEZE = 0xFFB0D4E8;
-    /** Text color when running (ARGB). Used with GSRColorHelper.applyAlpha. */
+    /** Component color when running (ARGB). Used with GSRColorHelper.applyAlpha. */
     public static final int TEXT_COLOR_RUNNING = 0xFFFFFFFF;
     /** Gap between title row and split rows (pixels). */
     public static final int TITLE_SPLIT_GAP = 4;

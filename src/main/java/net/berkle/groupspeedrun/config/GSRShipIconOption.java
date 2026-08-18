@@ -26,8 +26,8 @@ public enum GSRShipIconOption {
         return registryId;
     }
 
-    public Text getDisplayName() {
-        return Text.literal(label);
+    public Component getDisplayName() {
+        return Component.literal(label);
     }
 
     public static GSRShipIconOption from(String stored) {

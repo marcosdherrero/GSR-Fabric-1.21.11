@@ -29,12 +29,12 @@ public final class GSRProfileManager {
 
     public static GSRConfigPlayer getPlayerConfig(ServerPlayer player) {
         if (player == null) return new GSRConfigPlayer();
-        return PLAYER_CONFIGS.computeIfAbsent(player.getUuid(), u -> new GSRConfigPlayer());
+        return PLAYER_CONFIGS.computeIfAbsent(player.getUUID(), u -> new GSRConfigPlayer());
     }
 
     public static void updatePlayerSettings(ServerPlayer player, GSRConfigPlayer config) {
         if (player != null && config != null) {
-            PLAYER_CONFIGS.put(player.getUuid(), config);
+            PLAYER_CONFIGS.put(player.getUUID(), config);
         }
     }
 
@@ -64,7 +64,7 @@ public final class GSRProfileManager {
         if (!Files.exists(path)) return;
         try {
             CompoundTag root = GSRJsonUtil.readNbtFromFile(path);
-            root.getKeys().forEach(k -> {
+            root.keySet().forEach(k -> {
                 try {
                     UUID uuid = UUID.fromString(k);
                     root.getCompound(k).ifPresent(sub -> {

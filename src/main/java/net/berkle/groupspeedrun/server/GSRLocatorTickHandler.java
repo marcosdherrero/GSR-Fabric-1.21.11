@@ -24,7 +24,7 @@ public final class GSRLocatorTickHandler {
     public static void checkLocatorEnterAndFade(MinecraftServer server) {
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null) return;
-        long worldTime = server.getOverworld().getGameTime();
+        long worldTime = server.overworld().getGameTime();
 
         if (config.locatorFadeStartTime > 0) {
             long elapsed = worldTime - config.locatorFadeStartTime;
@@ -37,21 +37,21 @@ public final class GSRLocatorTickHandler {
             }
         }
 
-        if (server.getTicks() % GSRServerParameters.LOCATOR_CHECK_INTERVAL != 0) return;
+        if (server.getTickCount() % GSRServerParameters.LOCATOR_CHECK_INTERVAL != 0) return;
 
-        for (ServerPlayer player : server.getPlayerManager().getPlayerList()) {
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             if (!(player.level() instanceof ServerLevel sw)) continue;
-            BlockPos pos = player.getBlockPos();
+            BlockPos pos = player.blockPosition();
             GSRConfigPlayer pc = GSRProfileManager.getPlayerConfig(player);
             if (pc == null) continue;
 
-            if (sw.dimension() == World.OVERWORLD && config.strongholdLocated && pc.strongholdLocatorOn) {
+            if (sw.dimension() == Level.OVERWORLD && config.strongholdLocated && pc.strongholdLocatorOn) {
                 if (GSRLocateHelper.isInTrackedStructure(sw, pos, "stronghold", config.strongholdX, config.strongholdZ)) {
                     turnOffLocator(config, pc, "stronghold", worldTime, server);
                     return;
                 }
             }
-            if (sw.dimension() == World.NETHER) {
+            if (sw.dimension() == Level.NETHER) {
                 if (config.fortressLocated && pc.fortressLocatorOn && GSRLocateHelper.isInTrackedStructure(sw, pos, "fortress", config.fortressX, config.fortressZ)) {
                     turnOffLocator(config, pc, "fortress", worldTime, server);
                     return;
@@ -61,7 +61,7 @@ public final class GSRLocatorTickHandler {
                     return;
                 }
             }
-            if (sw.dimension() == World.END && config.shipLocated && pc.shipLocatorOn) {
+            if (sw.dimension() == Level.END && config.shipLocated && pc.shipLocatorOn) {
                 if (GSRLocateHelper.isInTrackedStructure(sw, pos, "ship", config.shipX, config.shipY, config.shipZ)) {
                     turnOffLocator(config, pc, "ship", worldTime, server);
                     return;

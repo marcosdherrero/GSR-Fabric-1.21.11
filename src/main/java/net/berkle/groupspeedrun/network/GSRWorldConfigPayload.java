@@ -15,7 +15,7 @@ public record GSRWorldConfigPayload(CompoundTag nbt) implements CustomPacketPayl
     public static final Type<GSRWorldConfigPayload> ID = new Type<>(Identifier.fromNamespaceAndPath("gsr", "world_config"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, GSRWorldConfigPayload> CODEC = StreamCodec.composite(
-            ByteBufCodecs.COMPOUND_TAG_COMPOUND, GSRWorldConfigPayload::nbt,
+            ByteBufCodecs.COMPOUND_TAG, GSRWorldConfigPayload::nbt,
             GSRWorldConfigPayload::new
     );
 

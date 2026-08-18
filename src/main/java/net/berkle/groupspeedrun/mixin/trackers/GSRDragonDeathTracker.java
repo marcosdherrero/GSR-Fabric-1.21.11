@@ -23,7 +23,7 @@ public abstract class GSRDragonDeathTracker {
     @Inject(method = "aiStep", at = @At("HEAD"))
     private void groupspeedrun$onDragonTick(CallbackInfo ci) {
         EnderDragon dragon = (EnderDragon) (Object) this;
-        if (dragon.level().isClient() || GSRMain.CONFIG == null) return;
+        if (dragon.level().isClientSide() || GSRMain.CONFIG == null) return;
         if (dragon.getHealth() > MECHANICAL_DEATH_THRESHOLD) return;
         if (GSRMain.CONFIG.isVictorious || GSRMain.CONFIG.isFailed || GSRMain.CONFIG.startTime <= 0) return;
 

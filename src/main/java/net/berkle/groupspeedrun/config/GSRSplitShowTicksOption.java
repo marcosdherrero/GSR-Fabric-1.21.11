@@ -18,8 +18,8 @@ public enum GSRSplitShowTicksOption {
         return ticks;
     }
 
-    public Text getDisplayName() {
-        return Text.literal((ticks / 20) + " s");
+    public Component getDisplayName() {
+        return Component.literal((ticks / 20) + " s");
     }
 
     public static GSRSplitShowTicksOption from(int ticks) {

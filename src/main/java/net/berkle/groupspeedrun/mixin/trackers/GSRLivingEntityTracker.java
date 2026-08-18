@@ -25,10 +25,10 @@ public abstract class GSRLivingEntityTracker {
         if (GSRMain.CONFIG == null || GSRMain.CONFIG.startTime <= 0 || GSRMain.CONFIG.isTimerFrozen) return;
         LivingEntity target = (LivingEntity) (Object) this;
         String typeId = GSRStats.getDamageTypeId(world, source);
-        if (source.getAttacker() instanceof ServerPlayer attacker) {
-            GSRStats.addDamageDealtByType(attacker.getUuid(), typeId, amount);
+        if (source.getEntity() instanceof ServerPlayer attacker) {
+            GSRStats.addDamageDealtByType(attacker.getUUID(), typeId, amount);
             if (target instanceof EnderDragon) {
-                GSRStats.addFloat(GSRStats.DRAGON_DAMAGE_MAP, attacker.getUuid(), amount);
+                GSRStats.addFloat(GSRStats.DRAGON_DAMAGE_MAP, attacker.getUUID(), amount);
             }
         }
     }

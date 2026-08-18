@@ -5,7 +5,6 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -14,7 +13,6 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.Level;
 
 // GSR: config, managers, payloads, parameters, server
 import net.berkle.groupspeedrun.config.GSRConfigPayload;
@@ -70,26 +68,26 @@ public class GSRMain implements ModInitializer {
     public void onInitialize() {
         LOGGER.info("[GSR] Initializing Group Speed Run...");
 
-        PayloadTypeRegistry.playS2C().register(GSRConfigPayload.ID, GSRConfigPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(GSRConfigPayload.ID, GSRConfigPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(GSROpenScreenPayload.ID, GSROpenScreenPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(GSRRunActionPayload.ID, GSRRunActionPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(GSRLocatorActionPayload.ID, GSRLocatorActionPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(GSRScreenTimePayload.ID, GSRScreenTimePayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(GSRPlayerListPayload.ID, GSRPlayerListPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(GSRRunCompletePayload.ID, GSRRunCompletePayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(GSRSplitAchievedPayload.ID, GSRSplitAchievedPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(GSRVictoryCelebrationPayload.ID, GSRVictoryCelebrationPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(GSRRunIdsPayload.ID, GSRRunIdsPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(GSRRunIdsPayload.ID, GSRRunIdsPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(GSRRunIdsRequestPayload.ID, GSRRunIdsRequestPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(GSRRunRequestPayload.ID, GSRRunRequestPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(GSRRunRequestBroadcastPayload.ID, GSRRunRequestBroadcastPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(GSRRunDataPayload.ID, GSRRunDataPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(GSRRunDataPayload.ID, GSRRunDataPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(GSRRunManagerRequestPayload.ID, GSRRunManagerRequestPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(GSRRunManagerUpdatePayload.ID, GSRRunManagerUpdatePayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(GSRWorldConfigPayload.ID, GSRWorldConfigPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(GSRConfigPayload.ID, GSRConfigPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(GSRConfigPayload.ID, GSRConfigPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(GSROpenScreenPayload.ID, GSROpenScreenPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(GSRRunActionPayload.ID, GSRRunActionPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(GSRLocatorActionPayload.ID, GSRLocatorActionPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(GSRScreenTimePayload.ID, GSRScreenTimePayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(GSRPlayerListPayload.ID, GSRPlayerListPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(GSRRunCompletePayload.ID, GSRRunCompletePayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(GSRSplitAchievedPayload.ID, GSRSplitAchievedPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(GSRVictoryCelebrationPayload.ID, GSRVictoryCelebrationPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(GSRRunIdsPayload.ID, GSRRunIdsPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(GSRRunIdsPayload.ID, GSRRunIdsPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(GSRRunIdsRequestPayload.ID, GSRRunIdsRequestPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(GSRRunRequestPayload.ID, GSRRunRequestPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(GSRRunRequestBroadcastPayload.ID, GSRRunRequestBroadcastPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(GSRRunDataPayload.ID, GSRRunDataPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(GSRRunDataPayload.ID, GSRRunDataPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(GSRRunManagerRequestPayload.ID, GSRRunManagerRequestPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(GSRRunManagerUpdatePayload.ID, GSRRunManagerUpdatePayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(GSRWorldConfigPayload.ID, GSRWorldConfigPayload.CODEC);
         GSRNetworking.registerC2SReceiver();
         GSRNetworking.registerWorldConfigReceiver();
         GSRNetworking.registerRunActionReceiver();
@@ -109,9 +107,9 @@ public class GSRMain implements ModInitializer {
                 if (GSRMain.CONFIG != null && GSRMain.CONFIG.startTime > 0 && !GSRMain.CONFIG.isTimerFrozen
                         && entity.level() instanceof ServerLevel world) {
                     String typeId = GSRStats.getDamageTypeId(world, source);
-                    GSRStats.addDamageTakenByType(player.getUuid(), typeId, damageTaken);
-                    if (source.isOf(DamageTypes.FALL) || "minecraft:fall".equals(typeId)) {
-                        GSRStats.addFloat(GSRStats.FALL_DAMAGE_TAKEN, player.getUuid(), damageTaken);
+                    GSRStats.addDamageTakenByType(player.getUUID(), typeId, damageTaken);
+                    if (source.is(DamageTypes.FALL) || "minecraft:fall".equals(typeId)) {
+                        GSRStats.addFloat(GSRStats.FALL_DAMAGE_TAKEN, player.getUUID(), damageTaken);
                     }
                 }
             }
@@ -119,11 +117,11 @@ public class GSRMain implements ModInitializer {
 
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> {
             if (entity instanceof net.minecraft.server.level.ServerPlayer) return;
-            var attacker = damageSource.getAttacker();
-            if (attacker instanceof ServerPlayer player && GSRStats.shouldRecordForPlayer(player.getUuid())) {
+            var attacker = damageSource.getEntity();
+            if (attacker instanceof ServerPlayer player && GSRStats.shouldRecordForPlayer(player.getUUID())) {
                 if (GSRMain.CONFIG != null && GSRMain.CONFIG.startTime > 0 && !GSRMain.CONFIG.isTimerFrozen) {
-                    String entityTypeId = entity.getType().getRegistryEntry().getKey().map(k -> k.getValue().toString()).orElse(null);
-                    if (entityTypeId != null) GSRStats.addEntityKill(player.getUuid(), entityTypeId);
+                    String entityTypeId = entity.getType().builtInRegistryHolder().unwrapKey().map(k -> k.identifier().toString()).orElse(null);
+                    if (entityTypeId != null) GSRStats.addEntityKill(player.getUUID(), entityTypeId);
                 }
             }
         });
@@ -139,23 +137,17 @@ public class GSRMain implements ModInitializer {
             GSRNetworking.addJoinerToGroupDeath(server, player);
         });
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
-            GSRSharedHealthEatAllowance.onPlayerDisconnect(handler.getPlayer().getUuid());
-            GSRRunSyncManager.onPlayerDisconnect(handler.getPlayer().getUuid());
+            GSRSharedHealthEatAllowance.onPlayerDisconnect(handler.getPlayer().getUUID());
+            GSRRunSyncManager.onPlayerDisconnect(handler.getPlayer().getUUID());
             getTimer().tryFreezeOnLastPlayerDisconnect(server);
         });
 
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
             GSRWorldSnapshotManager.checkAndRestoreIfNeeded(server);
         });
-        ServerWorldEvents.LOAD.register((server, world) -> {
-            // Load config when overworld loads so save path is definitely available
-            if (world.dimension() == World.OVERWORLD) {
-                CONFIG = GSRConfigWorld.load(server);
-                // Prime armed state immediately so auto-start works even if LOAD fires after SERVER_STARTED
-                getTimer().primeRunIfArmed(server);
-            }
-        });
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
+            // Overworld is available here; Fabric 26.1 dropped ServerWorldEvents.LOAD
+            CONFIG = GSRConfigWorld.load(server);
             GSRStats.load(server);
             GSRProfileManager.load(server);
             getTimer().primeRunIfArmed(server);
@@ -191,11 +183,11 @@ public class GSRMain implements ModInitializer {
         });
 
         ServerTickEvents.START_SERVER_TICK.register(server -> {
-            if (server.getTicks() == GSRServerParameters.SNAPSHOT_DEFER_TICKS) {
+            if (server.getTickCount() == GSRServerParameters.SNAPSHOT_DEFER_TICKS) {
                 GSRWorldSnapshotManager.takeSnapshotIfNeeded(server);
             }
             GSREvents.onTick(server);
-            if (server.getTicks() % GSRServerParameters.SAVE_INTERVAL_TICKS == 0) {
+            if (server.getTickCount() % GSRServerParameters.SAVE_INTERVAL_TICKS == 0) {
                 if (CONFIG != null) {
                     CONFIG.save(server);
                     GSRNetworking.syncConfigWithAll(server);

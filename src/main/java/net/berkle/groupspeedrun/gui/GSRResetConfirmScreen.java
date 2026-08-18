@@ -20,7 +20,7 @@ public class GSRResetConfirmScreen extends Screen {
     private final Screen parent;
 
     public GSRResetConfirmScreen(Screen parent) {
-        super(Text.literal("Reset Run?"));
+        super(Component.literal("Reset Run?"));
         this.parent = parent;
     }
 
@@ -34,32 +34,32 @@ public class GSRResetConfirmScreen extends Screen {
         int y = height / 2 + GSRUiParameters.CONTROLS_PADDING;
 
         addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.RESET_CONFIRM), btn -> confirm())
-                .dimensions(centerX - buttonWidth - gap / 2, y, buttonWidth, buttonHeight).build());
+                .bounds(centerX - buttonWidth - gap / 2, y, buttonWidth, buttonHeight).build());
         addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.RESET_CANCEL), btn -> cancel())
-                .dimensions(centerX + gap / 2, y, buttonWidth, buttonHeight).build());
+                .bounds(centerX + gap / 2, y, buttonWidth, buttonHeight).build());
     }
 
     private void confirm() {
         ClientPlayNetworking.send(new GSRRunActionPayload(GSRRunActionPayload.ACTION_RESET));
-        if (client != null) {
-            client.setScreen(parent);
+        if (minecraft != null) {
+            minecraft.setScreen(parent);
         }
     }
 
     private void cancel() {
-        if (client != null) {
-            client.setScreen(parent);
+        if (minecraft != null) {
+            minecraft.setScreen(parent);
         }
     }
 
     @Override
-    public void render(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, width, height, GSRUiParameters.STATUS_BG_COLOR);
-        super.render(context, mouseX, mouseY, delta);
+        super.extractRenderState(context, mouseX, mouseY, delta);
 
-        context.centeredText(textRenderer, getTitle(), width / 2,
+        context.centeredText(font, getTitle(), width / 2,
                 height / 2 - GSRUiParameters.RESET_CONFIRM_TITLE_OFFSET, GSRUiParameters.NEW_WORLD_TITLE_COLOR);
-        context.centeredText(textRenderer, GSRButtonParameters.RESET_CONFIRM_MESSAGE,
+        context.centeredText(font, GSRButtonParameters.RESET_CONFIRM_MESSAGE,
                 width / 2, height / 2 - GSRUiParameters.RESET_CONFIRM_MESSAGE_OFFSET, GSRUiParameters.NEW_WORLD_LINE1_COLOR);
     }
 

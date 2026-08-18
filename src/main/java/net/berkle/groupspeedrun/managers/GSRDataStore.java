@@ -263,7 +263,7 @@ public final class GSRDataStore {
         long startMs = config.startTime > 0 ? config.startTime : System.currentTimeMillis();
         long endMs = startMs + config.frozenTime;
         String runId = UUID.randomUUID().toString();
-        String worldName = server.getSaveProperties().getLevelName();
+        String worldName = server.getWorldData().getLevelName();
         String startDateIso = ISO_FORMAT.format(Instant.ofEpochMilli(startMs));
         String endDateIso = ISO_FORMAT.format(Instant.ofEpochMilli(endMs));
         String status = config.isVictorious ? GSRRunRecord.STATUS_VICTORY : GSRRunRecord.STATUS_FAIL;
@@ -283,7 +283,7 @@ public final class GSRDataStore {
 
         Path baseDir = GSRStoragePaths.getWorldDir(server).resolve(GSRStorageParameters.COMPLETED_RUNS_DIR);
         for (UUID uuid : participantUuids) {
-            ServerPlayer player = server.getPlayerManager().getPlayer(uuid);
+            ServerPlayer player = server.getPlayerList().getPlayer(uuid);
             String name = (player != null) ? player.getName().getString() : uuid.toString();
             if (name == null || name.isEmpty()) name = uuid.toString();
 
@@ -313,7 +313,7 @@ public final class GSRDataStore {
         if (config == null) return null;
 
         String runId = UUID.randomUUID().toString();
-        String worldName = server.getSaveProperties().getLevelName();
+        String worldName = server.getWorldData().getLevelName();
         long startMs = config.startTime > 0 ? config.startTime : System.currentTimeMillis();
         long endMs = config.isTimerFrozen ? startMs + config.frozenTime : System.currentTimeMillis();
         String startDateIso = ISO_FORMAT.format(Instant.ofEpochMilli(startMs));
@@ -346,8 +346,8 @@ public final class GSRDataStore {
         List<GSRRunParticipant> participants = new ArrayList<>();
         List<GSRRunPlayerSnapshot> snapshots = new ArrayList<>();
 
-        for (ServerPlayer player : server.getPlayerManager().getPlayerList()) {
-            UUID uuid = player.getUuid();
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            UUID uuid = player.getUUID();
             String name = player.getName().getString();
             GSRRunParticipant p = new GSRRunParticipant(runId, uuid.toString(), name);
             appendRunParticipant(server, p);

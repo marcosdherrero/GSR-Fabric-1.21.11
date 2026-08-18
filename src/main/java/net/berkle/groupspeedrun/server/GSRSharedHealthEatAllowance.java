@@ -34,9 +34,9 @@ public final class GSRSharedHealthEatAllowance {
     public static void recordExhaustion(ServerPlayer player, float exhaustion) {
         if (player == null || exhaustion <= 0) return;
         GSRConfigWorld config = GSRMain.CONFIG;
-        if (config == null || !config.sharedHealthEnabled || !config.isInSharedHealth(player.getUuid())) return;
+        if (config == null || !config.sharedHealthEnabled || !config.isInSharedHealth(player.getUUID())) return;
 
-        EAT_ALLOWANCE.merge(player.getUuid(), exhaustion, (a, b) -> Math.min(GSRSharedHealthParameters.MAX_EAT_ALLOWANCE, a + b));
+        EAT_ALLOWANCE.merge(player.getUUID(), exhaustion, (a, b) -> Math.min(GSRSharedHealthParameters.MAX_EAT_ALLOWANCE, a + b));
     }
 
     /**
@@ -48,9 +48,9 @@ public final class GSRSharedHealthEatAllowance {
     public static void recordDamage(ServerPlayer player, long worldTick) {
         if (player == null) return;
         GSRConfigWorld config = GSRMain.CONFIG;
-        if (config == null || !config.sharedHealthEnabled || !config.isInSharedHealth(player.getUuid())) return;
+        if (config == null || !config.sharedHealthEnabled || !config.isInSharedHealth(player.getUUID())) return;
 
-        LAST_DAMAGE_TICK.put(player.getUuid(), worldTick);
+        LAST_DAMAGE_TICK.put(player.getUUID(), worldTick);
     }
 
     /**
@@ -64,15 +64,15 @@ public final class GSRSharedHealthEatAllowance {
     public static boolean canEat(ServerPlayer player, int nutrition, long worldTick) {
         if (player == null || nutrition <= 0) return true;
         GSRConfigWorld config = GSRMain.CONFIG;
-        if (config == null || !config.sharedHealthEnabled || !config.isInSharedHealth(player.getUuid())) return true;
+        if (config == null || !config.sharedHealthEnabled || !config.isInSharedHealth(player.getUUID())) return true;
 
-        Long lastDamage = LAST_DAMAGE_TICK.get(player.getUuid());
+        Long lastDamage = LAST_DAMAGE_TICK.get(player.getUUID());
         if (lastDamage != null && (worldTick - lastDamage) < GSRSharedHealthParameters.DAMAGE_EXEMPT_TICKS) {
             return true;
         }
 
         float cost = nutrition * GSRSharedHealthParameters.EXHAUSTION_PER_NUTRITION;
-        Float allowance = EAT_ALLOWANCE.get(player.getUuid());
+        Float allowance = EAT_ALLOWANCE.get(player.getUUID());
         float current = allowance != null ? allowance : 0f;
         return current >= cost;
     }
@@ -86,10 +86,10 @@ public final class GSRSharedHealthEatAllowance {
     public static void deductAllowance(ServerPlayer player, int nutrition) {
         if (player == null || nutrition <= 0) return;
         GSRConfigWorld config = GSRMain.CONFIG;
-        if (config == null || !config.sharedHealthEnabled || !config.isInSharedHealth(player.getUuid())) return;
+        if (config == null || !config.sharedHealthEnabled || !config.isInSharedHealth(player.getUUID())) return;
 
         float cost = nutrition * GSRSharedHealthParameters.EXHAUSTION_PER_NUTRITION;
-        EAT_ALLOWANCE.compute(player.getUuid(), (uuid, a) -> {
+        EAT_ALLOWANCE.compute(player.getUUID(), (uuid, a) -> {
             float current = a != null ? a : 0f;
             float next = Math.max(0f, current - cost);
             return next <= 0 ? null : next;
@@ -101,7 +101,7 @@ public final class GSRSharedHealthEatAllowance {
      */
     public static void sendNeedActivityMessage(ServerPlayer player) {
         if (player != null) {
-            player.sendMessage(net.minecraft.network.chat.Component.literal(GSRUiParameters.MSG_PREFIX + GSRSharedHealthParameters.MSG_NEED_ACTIVITY), false);
+            player.sendSystemMessage(net.minecraft.network.chat.Component.literal(GSRUiParameters.MSG_PREFIX + GSRSharedHealthParameters.MSG_NEED_ACTIVITY), false);
         }
     }
 

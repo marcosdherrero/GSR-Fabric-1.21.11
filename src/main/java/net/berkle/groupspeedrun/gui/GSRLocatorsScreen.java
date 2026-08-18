@@ -1,9 +1,9 @@
 package net.berkle.groupspeedrun.gui;
 
-// Fabric: client networking
+// Fabric: minecraft networking
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 // Minecraft: screen, GUI, input, items
-import net.minecraft.client.gui.Click;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.Button;
@@ -14,7 +14,7 @@ import net.minecraft.util.Mth;
 // LWJGL: key codes
 import org.lwjgl.glfw.GLFW;
 
-// GSR: client state, config, network, parameters, UI helpers
+// GSR: minecraft state, config, network, parameters, UI helpers
 import net.berkle.groupspeedrun.GSRClient;
 import net.berkle.groupspeedrun.config.GSRConfigPlayer;
 import net.berkle.groupspeedrun.config.GSRConfigWorld;
@@ -28,6 +28,7 @@ import net.berkle.groupspeedrun.parameter.GSRUiParameters;
 import net.berkle.groupspeedrun.util.GSRColorHelper;
 import net.berkle.groupspeedrun.util.GSRLocatorIconHelper;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
 
 /**
  * GSR Locators menu: Clear Locators plus ON/OFF toggles for Fortress, Bastion, Stronghold, Wings.
@@ -76,12 +77,12 @@ public class GSRLocatorsScreen extends Screen {
 
             addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.LOCATORS_CLEAR), b ->
                     ClientPlayNetworking.send(new GSRLocatorActionPayload(GSRLocatorActionPayload.ACTION_CLEAR)))
-                    .dimensions(width / 2 - fullWidth / 2, y, fullWidth, BUTTON_HEIGHT).build());
+                    .bounds(width / 2 - fullWidth / 2, y, fullWidth, BUTTON_HEIGHT).build());
         } else {
             int centerX = width / 2 - BUTTON_WIDTH / 2;
             addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.LOCATORS_CLEAR), b ->
                     ClientPlayNetworking.send(new GSRLocatorActionPayload(GSRLocatorActionPayload.ACTION_CLEAR)))
-                    .dimensions(centerX, contentY, BUTTON_WIDTH, BUTTON_HEIGHT).build());
+                    .bounds(centerX, contentY, BUTTON_WIDTH, BUTTON_HEIGHT).build());
         }
 
         var footer = GSRMenuComponents.singleButtonFooterLayout(width, height);
@@ -90,9 +91,9 @@ public class GSRLocatorsScreen extends Screen {
     }
 
     private void goBack() {
-        if (client != null) {
-            if (parent != null) client.setScreen(parent);
-            else client.setScreen(null);
+        if (minecraft != null) {
+            if (parent != null) minecraft.setScreen(parent);
+            else minecraft.setScreen(null);
         }
     }
 
@@ -125,10 +126,10 @@ public class GSRLocatorsScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, width, height, GSRUiParameters.SCREEN_BG_DARK);
-        super.render(context, mouseX, mouseY, delta);
-        context.centeredText(textRenderer, getTitle(), width / 2, GSRUiParameters.TITLE_Y, GSRUiParameters.TITLE_COLOR);
+        super.extractRenderState(context, mouseX, mouseY, delta);
+        context.centeredText(font, getTitle(), width / 2, GSRUiParameters.TITLE_Y, GSRUiParameters.TITLE_COLOR);
 
         GSRConfigWorld wc = GSRClient.clientWorldConfig;
         GSRConfigPlayer pc = GSRClient.PLAYER_CONFIG;
@@ -156,7 +157,7 @@ public class GSRLocatorsScreen extends Screen {
         matrices.pushMatrix();
         matrices.translate(labelX, labelY);
         matrices.scale(LABEL_SCALE, LABEL_SCALE);
-        context.drawTextWithShadow(textRenderer, net.minecraft.network.chat.Component.literal(label), 0, 0, GSRRunHistoryParameters.LABEL_COLOR);
+        context.text(font, net.minecraft.network.chat.Component.literal(label), 0, 0, GSRRunHistoryParameters.LABEL_COLOR, true);
         matrices.popMatrix();
 
         int barTop = top + (int) (GSRUiParameters.PREFERENCES_LABEL_AREA_HEIGHT * LABEL_SCALE) + GSRRunHistoryParameters.LIST_VERTICAL_GAP;
@@ -164,7 +165,7 @@ public class GSRLocatorsScreen extends Screen {
         var textures = GSRPressableWidgetAccessor.gsr$getTextures();
         var tex = textures.get(true, hovered);
         int barDrawWidth = width - GSRRunHistoryParameters.CONTAINER_INSET * 2;
-        context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, tex, left + GSRRunHistoryParameters.CONTAINER_INSET, barTop, barDrawWidth, barHeight);
+        context.blitSprite(RenderPipelines.GUI_TEXTURED, tex, left + GSRRunHistoryParameters.CONTAINER_INSET, barTop, barDrawWidth, barHeight);
 
         int iconSize = GSRUiParameters.PREFERENCES_TOGGLE_ICON_SIZE;
         int iconMargin = GSRUiParameters.PREFERENCES_TOGGLE_ICON_MARGIN;
@@ -174,14 +175,14 @@ public class GSRLocatorsScreen extends Screen {
         matrices.pushMatrix();
         matrices.translate(iconX + iconMargin, iconY + iconMargin);
         matrices.scale(scale, scale);
-        context.drawItem(icon, 0, 0);
+        context.item(icon, 0, 0);
         matrices.popMatrix();
 
         int textColor = value ? TOGGLE_ON_COLOR : TOGGLE_OFF_COLOR;
         String display = value ? "ON" : "OFF";
         int textLeft = iconX + iconSize + iconMargin + GSRRunHistoryParameters.LIST_TEXT_INSET;
-        int textY = barTop + (barHeight - textRenderer.lineHeight) / 2;
-        context.drawTextWithShadow(textRenderer, net.minecraft.network.chat.Component.literal(display), textLeft, textY, textColor);
+        int textY = barTop + (barHeight - font.lineHeight) / 2;
+        context.text(font, net.minecraft.network.chat.Component.literal(display), textLeft, textY, textColor, true);
     }
 
     /** True if turning on a locator would invalidate the run (active run + anti-cheat enabled, not already deranked). */
@@ -213,7 +214,7 @@ public class GSRLocatorsScreen extends Screen {
                     case 3 -> GSRButtonParameters.LOCATORS_WINGS;
                     default -> "";
                 };
-                if (client != null) client.setScreen(new GSRLocatorInvalidateConfirmScreen(this, label, () -> gsr$sendToggle(index)));
+                if (minecraft != null) minecraft.setScreen(new GSRLocatorInvalidateConfirmScreen(this, label, () -> gsr$sendToggle(index)));
             } else {
                 gsr$sendToggle(index);
             }
@@ -234,7 +235,7 @@ public class GSRLocatorsScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(Click click, boolean captured) {
+    public boolean mouseClicked(MouseButtonEvent click, boolean captured) {
         if (captured) return false;
         if (click.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT) return super.mouseClicked(click, false);
         int mx = (int) click.x();
@@ -294,7 +295,7 @@ public class GSRLocatorsScreen extends Screen {
         drawPreviewIconOnBar(context, centerX + (int) (positions[3] * halfW), iconCenterY, GSRLocatorIconHelper.getItemStack(shipItem, Items.ELYTRA), pc.shipColor, shipActive, "Wings");
 
         if (wc.antiCheatEnabled && wc.locatorDeranked) {
-            context.centeredText(textRenderer, GSRUiParameters.LOCATORS_DERANKED_MESSAGE, centerX, PREVIEW_Y - GSRUiParameters.LOCATORS_DERANKED_LABEL_OFFSET, GSRUiParameters.LOCATORS_DERANKED_COLOR);
+            context.centeredText(font, GSRUiParameters.LOCATORS_DERANKED_MESSAGE, centerX, PREVIEW_Y - GSRUiParameters.LOCATORS_DERANKED_LABEL_OFFSET, GSRUiParameters.LOCATORS_DERANKED_COLOR);
         }
     }
 
@@ -315,7 +316,7 @@ public class GSRLocatorsScreen extends Screen {
         return (a << 24) | (r << 16) | (g << 8) | b;
     }
 
-    /** Draws one icon on the bar: theme color box (as if looking directly at), dark inner, centered item. Text uses structure color. */
+    /** Draws one icon on the bar: theme color box (as if looking directly at), dark inner, centered item. Component uses structure color. */
     private void drawPreviewIconOnBar(GuiGraphicsExtractor context, int iconCenterX, int iconCenterY, ItemStack stack, int themeColor, boolean active, String label) {
         int r = PREVIEW_ICON_RADIUS; // 9
         int inner = GSRLocatorParameters.ICON_INNER_RADIUS;
@@ -323,9 +324,9 @@ public class GSRLocatorsScreen extends Screen {
         context.fill(iconCenterX - r, iconCenterY - r, iconCenterX + r, iconCenterY + r, GSRColorHelper.applyAlpha(themeColor & 0x00FFFFFF, 1.0f));
         context.fill(iconCenterX - inner, iconCenterY - inner, iconCenterX + inner, iconCenterY + inner, GSRColorHelper.applyAlpha(GSRLocatorParameters.BAR_BG, 1.0f));
         // Item centered: drawItem uses top-left, so (centerX - 8, centerY - 8) centers 16x16 item
-        context.drawItem(stack, iconCenterX - inner, iconCenterY - inner);
+        context.item(stack, iconCenterX - inner, iconCenterY - inner);
         int textColor = active ? (0xFF000000 | (themeColor & 0x00FFFFFF)) : GSRUiParameters.LOCATORS_INACTIVE_LABEL;
-        context.centeredText(textRenderer, label, iconCenterX, iconCenterY + r + 2, textColor);
+        context.centeredText(font, label, iconCenterX, iconCenterY + r + 2, textColor);
     }
 
     @Override

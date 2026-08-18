@@ -30,7 +30,7 @@ public abstract class GSRClothConfigScreenMixin {
     @Inject(method = "tick", at = @At("TAIL"))
     private void gsr$tickImmediateEnumApply(CallbackInfo ci) {
         AbstractConfigScreen self = (AbstractConfigScreen) (Object) this;
-        Text title = self.getTitle();
+        Component title = self.getTitle();
         if (title == null || !GSR_TITLE.equals(title.getString())) return;
 
         for (var category : self.getCategorizedEntries().values()) {

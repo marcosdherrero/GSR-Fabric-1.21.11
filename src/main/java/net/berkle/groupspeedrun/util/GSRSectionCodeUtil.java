@@ -45,9 +45,9 @@ public final class GSRSectionCodeUtil {
             char c = line.charAt(i);
             if (c == '§' && i + 1 < line.length()) {
                 if (segment.length() > 0) {
-                    FormattedCharSequence ordered = Text.literal(segment.toString()).asOrderedText();
-                    context.drawTextWithShadow(textRenderer, ordered, x, y, currentColor);
-                    x += textRenderer.getWidth(ordered);
+                    FormattedCharSequence ordered = Component.literal(segment.toString()).asOrderedText();
+                    context.text(textRenderer, ordered, x, y, currentColor, true);
+                    x += textRenderer.width(ordered);
                     segment.setLength(0);
                 }
                 char code = line.charAt(++i);
@@ -57,8 +57,8 @@ public final class GSRSectionCodeUtil {
             segment.append(c);
         }
         if (segment.length() > 0) {
-            FormattedCharSequence ordered = Text.literal(segment.toString()).asOrderedText();
-            context.drawTextWithShadow(textRenderer, ordered, x, y, currentColor);
+            FormattedCharSequence ordered = Component.literal(segment.toString()).asOrderedText();
+            context.text(textRenderer, ordered, x, y, currentColor, true);
         }
     }
 }

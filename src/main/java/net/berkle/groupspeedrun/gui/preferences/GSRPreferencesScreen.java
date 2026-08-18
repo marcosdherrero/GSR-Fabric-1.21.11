@@ -2,7 +2,7 @@ package net.berkle.groupspeedrun.gui.preferences;
 
 // Minecraft: screen, GUI, input
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Click;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.screens.options.controls.KeyBindsScreen;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -12,7 +12,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
-// Fabric: client networking
+// Fabric: minecraft networking
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
 // GSR: config, network, parameters, components
@@ -155,9 +155,9 @@ public final class GSRPreferencesScreen extends Screen {
 
     /** Plays the vanilla button click sound for custom-handled clicks (dropdowns, toggles). Uses same sound as Minecraft menu buttons. */
     private void gsr$playClickSound() {
-        var client = Minecraft.getInstance();
-        if (client != null && backButton != null) {
-            ((GSRClickableWidgetAccessor) backButton).gsr$playDownSound(client.getSoundManager());
+        var minecraft = Minecraft.getInstance();
+        if (minecraft != null && backButton != null) {
+            ((GSRClickableWidgetAccessor) backButton).gsr$playDownSound(minecraft.getSoundManager());
         }
     }
 
@@ -373,11 +373,11 @@ public final class GSRPreferencesScreen extends Screen {
 
     /** Returns display name for default option label. Uses registry ID if non-null, else fallback item. */
     private String gsr$itemDisplayName(String registryId, net.minecraft.world.item.Item fallbackItem) {
-        if (client == null) return "Default";
+        if (minecraft == null) return "Default";
         ItemStack stack = registryId != null
                 ? GSRLocatorIconHelper.getItemStack(registryId, fallbackItem)
                 : new ItemStack(fallbackItem);
-        return stack.getName().getString();
+        return stack.getHoverName().getString();
     }
 
     /** Returns ItemStack for icon dropdown at index. Uses registry ID for enum value; fallback for out-of-range. */
@@ -408,10 +408,10 @@ public final class GSRPreferencesScreen extends Screen {
 
     private static String gsr$visibilityLabel(GSRHudVisibilityMode m) {
         if (m == GSRHudVisibilityMode.PRESSED) {
-            String key = GSRKeyBindings.pressToShowGsrHudKey != null ? GSRKeyBindings.pressToShowGsrHudKey.getBoundKeyLocalizedText().getString() : "Tab";
+            String key = GSRKeyBindings.pressToShowGsrHudKey != null ? GSRKeyBindings.pressToShowGsrHudKey.getTranslatedKeyMessage().getString() : "Tab";
             return "Hold (" + key + ")";
         }
-        String key = GSRKeyBindings.toggleGsrHudKey != null ? GSRKeyBindings.toggleGsrHudKey.getBoundKeyLocalizedText().getString() : "V";
+        String key = GSRKeyBindings.toggleGsrHudKey != null ? GSRKeyBindings.toggleGsrHudKey.getTranslatedKeyMessage().getString() : "V";
         return "Toggle (" + key + ")";
     }
 
@@ -421,13 +421,13 @@ public final class GSRPreferencesScreen extends Screen {
         CompoundTag nbt = new CompoundTag();
         config.writeNbt(nbt);
         GSRClient.PLAYER_CONFIG.readNbt(nbt);
-        if (client != null && client.player != null) {
+        if (minecraft != null && minecraft.player != null) {
             ClientPlayNetworking.send(new GSRConfigPayload(nbt));
         }
     }
 
     private void gsr$syncWorldConfig() {
-        if (client != null && client.player != null) {
+        if (minecraft != null && minecraft.player != null) {
             ClientPlayNetworking.send(new GSRWorldConfigPayload(GSRWorldConfigPayload.fromConfig()));
         }
     }
@@ -444,23 +444,23 @@ public final class GSRPreferencesScreen extends Screen {
         super.init();
         var footer = GSRMenuComponents.footerLayout(width, height);
         backButton = Button.builder(GSRButtonParameters.literal(GSRButtonParameters.FOOTER_BACK), b -> goBack())
-                .dimensions(footer.leftX(), footer.footerY(), footer.buttonWidth(), footer.buttonHeight()).build();
+                .bounds(footer.leftX(), footer.footerY(), footer.buttonWidth(), footer.buttonHeight()).build();
         keybindsButton = Button.builder(GSRButtonParameters.literal(GSRButtonParameters.PREFERENCES_KEYBINDS), b -> {
-            if (client != null && client.options != null) client.setScreen(new KeyBindsScreen(this, client.options));
-        }).dimensions(footer.rightX(), footer.footerY(), footer.buttonWidth(), footer.buttonHeight()).build();
+            if (minecraft != null && minecraft.options != null) minecraft.setScreen(new KeyBindsScreen(this, minecraft.options));
+        }).bounds(footer.rightX(), footer.footerY(), footer.buttonWidth(), footer.buttonHeight()).build();
         addRenderableWidget(backButton);
         addRenderableWidget(keybindsButton);
     }
 
     private void goBack() {
-        if (client != null) {
-            if (parent != null) client.setScreen(parent);
-            else client.setScreen(null);
+        if (minecraft != null) {
+            if (parent != null) minecraft.setScreen(parent);
+            else minecraft.setScreen(null);
         }
     }
 
     @Override
-    public void render(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         boolean dropdownOpen = model.openDropdownId != GSRPreferencesScreenModel.DROPDOWN_NONE;
         if (backButton != null) ((GSRClickableWidgetAccessor) backButton).gsr$setActive(!dropdownOpen);
         if (keybindsButton != null) ((GSRClickableWidgetAccessor) keybindsButton).gsr$setActive(!dropdownOpen);
@@ -468,21 +468,21 @@ public final class GSRPreferencesScreen extends Screen {
         // Timer drawn behind all content (blurred/faded) as in GSR Controls screen. Hides splits when HUD Look is Condensed.
         GSRConfigWorld wc = GSRClient.clientWorldConfig;
         GSRConfigPlayer pc = GSRClient.PLAYER_CONFIG;
-        if (wc != null && pc != null && client != null) {
+        if (wc != null && pc != null && minecraft != null) {
             boolean showSplits;
             if (model.openDropdownId == ID_HUD_LOOK && model.pendingIndex >= 0 && model.pendingIndex < GSRHudLookMode.values().length) {
                 showSplits = GSRHudLookMode.values()[model.pendingIndex] == GSRHudLookMode.FULL;
             } else {
                 showSplits = GSRHudLookMode.from(pc.hudMode) == GSRHudLookMode.FULL;
             }
-            int[] size = GSRTimerHudRenderer.getTimerBoxScaledSize(textRenderer, wc, pc, showSplits);
+            int[] size = GSRTimerHudRenderer.getTimerBoxScaledSize(font, wc, pc, showSplits);
             int scaledH = size[1];
             int anchorX = pc.timerHudOnRight ? (width - GSRTimerHudRenderer.EDGE_MARGIN) : GSRTimerHudRenderer.EDGE_MARGIN;
             int anchorY = (int) ((height / 2f) - (scaledH / 2f) - (height * GSRTimerHudRenderer.VERTICAL_OFFSET_FACTOR));
-            GSRTimerHudRenderer.drawTimerBox(context, textRenderer, pc.timerHudOnRight, anchorX, anchorY, wc, pc, true, 1f, showSplits, GSRUiParameters.CONTROLS_TIMER_ALPHA);
+            GSRTimerHudRenderer.drawTimerBox(context, font, pc.timerHudOnRight, anchorX, anchorY, wc, pc, true, 1f, showSplits, GSRUiParameters.CONTROLS_TIMER_ALPHA);
         }
-        super.render(context, mouseX, mouseY, delta);
-        context.centeredText(textRenderer, getTitle(), width / 2, GSRUiParameters.TITLE_Y, GSRUiParameters.TITLE_COLOR);
+        super.extractRenderState(context, mouseX, mouseY, delta);
+        context.centeredText(font, getTitle(), width / 2, GSRUiParameters.TITLE_Y, GSRUiParameters.TITLE_COLOR);
 
         int contentLeft = CONTENT_MARGIN;
         int contentWidth = width - 2 * CONTENT_MARGIN;
@@ -500,15 +500,15 @@ public final class GSRPreferencesScreen extends Screen {
         gsr$updateHoverState(contentLeft, contentTop, contentWidth, contentBottom, mouseX, mouseY);
 
         if (model.openDropdownId == GSRPreferencesScreenModel.DROPDOWN_NONE) {
-            Text tooltip = gsr$getHoveredTooltip(contentLeft, contentTop, contentWidth, contentBottom, mouseX, mouseY);
+            Component tooltip = gsr$getHoveredTooltip(contentLeft, contentTop, contentWidth, contentBottom, mouseX, mouseY);
             if (tooltip != null) {
-                context.drawTooltip(textRenderer, List.of(tooltip), mouseX, mouseY);
+                context.setComponentTooltipForNextFrame(font, List.of(tooltip), mouseX, mouseY);
             }
         }
     }
 
     /** Returns tooltip for the hovered button, or null if none. Only shows when hovering over the actual selection button, not the label. */
-    private Text gsr$getHoveredTooltip(int contentLeft, int contentTop, int contentWidth, int contentBottom, int mouseX, int mouseY) {
+    private Component gsr$getHoveredTooltip(int contentLeft, int contentTop, int contentWidth, int contentBottom, int mouseX, int mouseY) {
         int listHeight = contentBottom - contentTop;
         int totalHeight = gsr$contentHeight();
         int maxScroll = Math.max(0, totalHeight - listHeight);
@@ -524,19 +524,19 @@ public final class GSRPreferencesScreen extends Screen {
         int rowId = hit[1];
         if (rowType == 1) {
             GSRPreferencesDropdownEntry entry = gsr$getEntry(rowId);
-            return entry != null && entry.tooltip != null ? Text.literal(entry.tooltip) : null;
+            return entry != null && entry.tooltip != null ? Component.literal(entry.tooltip) : null;
         }
         if (rowType == 2) {
             return switch (rowId) {
-                case 0 -> Text.literal("Timer on right (→) or left (←) side of screen.");
-                case 1 -> Text.literal("When on, the structure compass bar is at the top of the screen; when off, at the bottom.");
-                case 2 -> Text.literal("When ON (host only): using locators invalidates the run for ranking. When OFF: locator use does not invalidate.");
-                case 3 -> Text.literal("When ON (host only): allows the New World key before run ends. When OFF: New World key only works after victory or fail.");
+                case 0 -> Component.literal("Timer on right (→) or left (←) side of screen.");
+                case 1 -> Component.literal("When on, the structure compass bar is at the top of the screen; when off, at the bottom.");
+                case 2 -> Component.literal("When ON (host only): using locators invalidates the run for ranking. When OFF: locator use does not invalidate.");
+                case 3 -> Component.literal("When ON (host only): allows the New World key before run ends. When OFF: New World key only works after victory or fail.");
                 default -> null;
             };
         }
         if (rowType == 4 && rowId == 0) {
-            return Text.literal(GSRButtonParameters.PREFERENCES_RESET_CONFIRM_MESSAGE);
+            return Component.literal(GSRButtonParameters.PREFERENCES_RESET_CONFIRM_MESSAGE);
         }
         return null;
     }
@@ -686,9 +686,9 @@ public final class GSRPreferencesScreen extends Screen {
     /** Draws category title. When showLocatorPreview, draws mini locator bar with icons next to "Locator HUD". */
     private int gsr$drawCategory(GuiGraphicsExtractor context, String title, int y, int left, int width, boolean showLocatorPreview) {
         int labelX = left + GSRRunHistoryParameters.LIST_TEXT_INSET;
-        context.drawTextWithShadow(textRenderer, Text.literal(title), labelX, y, GSRUiParameters.TITLE_COLOR);
+        context.text(font, Component.literal(title), labelX, y, GSRUiParameters.TITLE_COLOR, true);
         if (showLocatorPreview) {
-            int labelW = textRenderer.getWidth(title);
+            int labelW = font.width(title);
             int previewX = labelX + labelW + GSRUiParameters.PREFERENCES_LOCATOR_PREVIEW_LABEL_GAP;
             GSRPreferencesPreviewRenderer.drawLocatorPreview(context, model, previewX, y, CATEGORY_HEADER);
         }
@@ -702,7 +702,7 @@ public final class GSRPreferencesScreen extends Screen {
         int barTop = y + LABEL_AREA_HEIGHT;
         boolean hovered = mouseX >= colLeft && mouseX < colLeft + colWidth && mouseY >= sectionTop && mouseY < sectionTop + ROW_HEIGHT;
         GSRMultiSelectDropdown<GSRPreferencesScreenModel> dd = entry.getDropdown();
-        dd.renderTrigger(model, context, textRenderer, tickerState, colLeft, sectionTop, barTop, colWidth, BAR_HEIGHT, LABEL_SCALE, model.openDropdownId == id, hovered);
+        dd.renderTrigger(model, context, font, tickerState, colLeft, sectionTop, barTop, colWidth, BAR_HEIGHT, LABEL_SCALE, model.openDropdownId == id, hovered);
         return y + ROW_HEIGHT;
     }
 
@@ -718,13 +718,13 @@ public final class GSRPreferencesScreen extends Screen {
         matrices.pushMatrix();
         matrices.translate(labelX, labelY);
         matrices.scale(LABEL_SCALE, LABEL_SCALE);
-        context.drawTextWithShadow(textRenderer, Text.literal(label), 0, 0, GSRRunHistoryParameters.LABEL_COLOR);
+        context.text(font, Component.literal(label), 0, 0, GSRRunHistoryParameters.LABEL_COLOR, true);
         matrices.popMatrix();
         var textures = GSRPressableWidgetAccessor.gsr$getTextures();
         boolean hovered = mouseX >= colLeft && mouseX < colLeft + colWidth && mouseY >= sectionTop && mouseY < sectionTop + ROW_HEIGHT;
         var tex = textures.get(true, hovered);
         int barDrawWidth = colWidth - GSRRunHistoryParameters.CONTAINER_INSET * 2;
-        context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, tex, colLeft + GSRRunHistoryParameters.CONTAINER_INSET, barTop, barDrawWidth, BAR_HEIGHT);
+        context.blitSprite(RenderPipelines.GUI_TEXTURED, tex, colLeft + GSRRunHistoryParameters.CONTAINER_INSET, barTop, barDrawWidth, BAR_HEIGHT);
         ItemStack icon = value ? iconOn : iconOff;
         int textColor = (value ? colorOn : colorOff) != -1 ? (value ? colorOn : colorOff) : GSRRunHistoryParameters.TEXT_COLOR;
         int textLeft = colLeft + GSRRunHistoryParameters.LIST_TEXT_INSET;
@@ -737,8 +737,8 @@ public final class GSRPreferencesScreen extends Screen {
             textLeft = iconX + iconSize + iconMargin + GSRRunHistoryParameters.DROPDOWN_ITEM_ICON_TEXT_GAP;
         }
         String display = value ? displayOn : displayOff;
-        int textY = barTop + (BAR_HEIGHT - textRenderer.lineHeight) / 2;
-        context.drawTextWithShadow(textRenderer, Text.literal(display), textLeft, textY, textColor);
+        int textY = barTop + (BAR_HEIGHT - font.lineHeight) / 2;
+        context.text(font, Component.literal(display), textLeft, textY, textColor, true);
         return y + ROW_HEIGHT;
     }
 
@@ -750,10 +750,10 @@ public final class GSRPreferencesScreen extends Screen {
         boolean hovered = mouseX >= colLeft && mouseX < colLeft + colWidth && mouseY >= sectionTop && mouseY < sectionTop + ROW_HEIGHT;
         var textures = GSRPressableWidgetAccessor.gsr$getTextures();
         var tex = textures.get(true, hovered);
-        context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, tex, colLeft + GSRRunHistoryParameters.CONTAINER_INSET, barTop, barDrawWidth, BAR_HEIGHT);
+        context.blitSprite(RenderPipelines.GUI_TEXTURED, tex, colLeft + GSRRunHistoryParameters.CONTAINER_INSET, barTop, barDrawWidth, BAR_HEIGHT);
         int textX = colLeft + GSRRunHistoryParameters.CONTAINER_INSET + GSRRunHistoryParameters.LIST_TEXT_INSET;
-        int textY = barTop + (BAR_HEIGHT - textRenderer.lineHeight) / 2;
-        context.drawTextWithShadow(textRenderer, Text.literal(label), textX, textY, GSRRunHistoryParameters.TEXT_COLOR);
+        int textY = barTop + (BAR_HEIGHT - font.lineHeight) / 2;
+        context.text(font, Component.literal(label), textX, textY, GSRRunHistoryParameters.TEXT_COLOR, true);
         return y + ROW_HEIGHT;
     }
 
@@ -766,7 +766,7 @@ public final class GSRPreferencesScreen extends Screen {
         matrices.pushMatrix();
         matrices.translate(x + margin, y + margin);
         matrices.scale(scale, scale);
-        context.drawItem(stack, 0, 0);
+        context.item(stack, 0, 0);
         matrices.popMatrix();
     }
 
@@ -788,7 +788,7 @@ public final class GSRPreferencesScreen extends Screen {
         int m = GSRRunHistoryParameters.SELECTION_CONTAINER_MARGIN;
         context.fill(overlayLeft - m, overlayTop - m, overlayLeft + listW + m, overlayBottom + m, GSRUiParameters.CONTENT_BOX_BG);
         int listBottomExtended = delimiterTop + GSRRunHistoryParameters.SELECTION_DELIMITER_BAR_HEIGHT;
-        dd.renderOverlay(model, context, textRenderer, tickerState, overlayLeft, overlayTop, listBottomExtended, listW, model.dropdownScroll, mouseX, mouseY);
+        dd.renderOverlay(model, context, font, tickerState, overlayLeft, overlayTop, listBottomExtended, listW, model.dropdownScroll, mouseX, mouseY);
         context.fill(overlayLeft, delimiterTop, overlayLeft + listW,
                 delimiterTop + GSRRunHistoryParameters.SELECTION_DELIMITER_BAR_HEIGHT,
                 GSRRunHistoryParameters.SELECTION_DELIMITER_BAR_COLOR);
@@ -796,9 +796,9 @@ public final class GSRPreferencesScreen extends Screen {
         boolean confirmHover = mouseX >= overlayLeft && mouseX < overlayLeft + listW && mouseY >= confirmTop && mouseY < confirmTop + GSRRunHistoryParameters.FILTER_MAKE_SELECTION_BUTTON_HEIGHT;
         var textures = GSRPressableWidgetAccessor.gsr$getTextures();
         var confirmTexture = textures.get(true, confirmHover);
-        context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, confirmTexture, overlayLeft, confirmTop, listW, GSRRunHistoryParameters.FILTER_MAKE_SELECTION_BUTTON_HEIGHT);
-        int confirmTextY = confirmTop + (GSRRunHistoryParameters.FILTER_MAKE_SELECTION_BUTTON_HEIGHT - textRenderer.lineHeight) / 2;
-        context.centeredText(textRenderer, GSRMultiSelectDropdown.CONFIRM_BUTTON_TEXT, overlayLeft + listW / 2, confirmTextY, GSRRunHistoryParameters.TEXT_COLOR);
+        context.blitSprite(RenderPipelines.GUI_TEXTURED, confirmTexture, overlayLeft, confirmTop, listW, GSRRunHistoryParameters.FILTER_MAKE_SELECTION_BUTTON_HEIGHT);
+        int confirmTextY = confirmTop + (GSRRunHistoryParameters.FILTER_MAKE_SELECTION_BUTTON_HEIGHT - font.lineHeight) / 2;
+        context.centeredText(font, GSRMultiSelectDropdown.CONFIRM_BUTTON_TEXT, overlayLeft + listW / 2, confirmTextY, GSRRunHistoryParameters.TEXT_COLOR);
     }
 
     private GSRPreferencesDropdownEntry gsr$getEntry(int id) {
@@ -916,7 +916,7 @@ public final class GSRPreferencesScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(Click click, boolean captured) {
+    public boolean mouseClicked(MouseButtonEvent click, boolean captured) {
         int mx = (int) click.x();
         int my = (int) click.y();
         long now = System.currentTimeMillis();
@@ -951,7 +951,7 @@ public final class GSRPreferencesScreen extends Screen {
                     model.lastClickHandledTimeMs = now;
                     return true;
                 }
-                var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, entry.getDropdown().getHeader(), overlayLeft, overlayTop, listBottomForGeom, listW, entry.getDropdown().getItemCount(model));
+                var geom = GSRMultiSelectDropdown.computeGeometry(font, entry.getDropdown().getHeader(), overlayLeft, overlayTop, listBottomForGeom, listW, entry.getDropdown().getItemCount(model));
                 int itemWidth = listW;
                 int itemIdx = GSRMultiSelectDropdown.getItemIndexAt(geom, entry.getDropdown().getItemCount(model), model.dropdownScroll, overlayLeft, itemWidth, mx, my);
                 if (itemIdx >= 0) {
@@ -1029,8 +1029,8 @@ public final class GSRPreferencesScreen extends Screen {
                 return true;
             } else if (rowType == 4 && rowId == 0) {
                 gsr$playClickSound();
-                if (client != null) {
-                    client.setScreen(new GSRResetModSettingsConfirmScreen(this));
+                if (minecraft != null) {
+                    minecraft.setScreen(new GSRResetModSettingsConfirmScreen(this));
                 }
                 model.lastClickHandledTimeMs = now;
                 return true;
@@ -1057,7 +1057,7 @@ public final class GSRPreferencesScreen extends Screen {
                     int listBottomForGeom = delimiterTop + GSRRunHistoryParameters.SELECTION_DELIMITER_BAR_HEIGHT;
                     int sbW = GSRScrollbarHelper.getScrollbarWidth();
                     if (mouseX >= overlayLeft && mouseX < overlayLeft + listW + sbW && mouseY >= overlayTop && mouseY < listBottomForGeom) {
-                        var geom = GSRMultiSelectDropdown.computeGeometry(textRenderer, entry.getDropdown().getHeader(), overlayLeft, overlayTop, listBottomForGeom, listW, entry.getDropdown().getItemCount(model));
+                        var geom = GSRMultiSelectDropdown.computeGeometry(font, entry.getDropdown().getHeader(), overlayLeft, overlayTop, listBottomForGeom, listW, entry.getDropdown().getItemCount(model));
                         int delta = (int) (-verticalAmount * GSRRunHistoryParameters.FILTER_DROPDOWN_SCROLL_AMOUNT);
                         model.dropdownScroll = Math.max(0, Math.min(geom.maxScroll(), model.dropdownScroll + delta));
                     }
@@ -1076,7 +1076,7 @@ public final class GSRPreferencesScreen extends Screen {
     }
 
     @Override
-    public boolean mouseDragged(Click click, double offsetX, double offsetY) {
+    public boolean mouseDragged(MouseButtonEvent click, double offsetX, double offsetY) {
         if (contentScrollbarDragging) {
             int contentTop = CONTENT_TOP;
             int contentBottom = GSRMenuComponents.singleButtonFooterLayout(width, height).footerY() - GSRUiParameters.FOOTER_CONTENT_GAP;
@@ -1094,7 +1094,7 @@ public final class GSRPreferencesScreen extends Screen {
     }
 
     @Override
-    public boolean mouseReleased(Click click) {
+    public boolean mouseReleased(MouseButtonEvent click) {
         if (contentScrollbarDragging) {
             contentScrollbarDragging = false;
             return true;

@@ -15,7 +15,7 @@ public abstract class GSRBaseScreen extends Screen {
     /** Parent screen for back navigation. Null when this is the root. */
     protected final Screen parent;
 
-    protected GSRBaseScreen(Text title, Screen parent) {
+    protected GSRBaseScreen(Component title, Screen parent) {
         super(title);
         this.parent = parent;
     }
@@ -27,11 +27,11 @@ public abstract class GSRBaseScreen extends Screen {
 
     /** Returns to parent or closes screen if root. Override for custom back behavior. */
     protected void goBack() {
-        if (client != null) {
+        if (minecraft != null) {
             if (parent != null) {
-                client.setScreen(parent);
+                minecraft.setScreen(parent);
             } else {
-                client.setScreen(null);
+                minecraft.setScreen(null);
             }
         }
     }

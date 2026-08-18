@@ -28,7 +28,7 @@ public final class GSRCelebrationHandler {
         var player = client.player;
         var world = client.level;
         if (player == null || world == null) return;
-        world.playSound(player, player.getX(), player.getY(), player.getZ(), SoundEvents.ENTITY_PLAYER_LEVELUP, SoundSource.PLAYERS, 1f, 1f);
+        world.playSound(player, player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1f, 1f);
     }
 
     /**
@@ -43,10 +43,10 @@ public final class GSRCelebrationHandler {
 
         double px = player.getX(), py = player.getY(), pz = player.getZ();
         world.playSound(player, px, py, pz, SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.MASTER, 1f, 1f);
-        world.playSound(player, px, py, pz, SoundEvents.ENTITY_PLAYER_LEVELUP, SoundSource.PLAYERS, 1f, 1f);
-        world.playSound(player, px, py, pz, SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 1f, 1f);
-        world.playSound(player, px, py, pz, SoundEvents.ENTITY_FIREWORK_ROCKET_BLAST, SoundSource.AMBIENT, 1f, 1f);
-        world.playSound(player, px, py, pz, SoundEvents.ENTITY_FIREWORK_ROCKET_TWINKLE, SoundSource.AMBIENT, 0.8f, 1f);
+        world.playSound(player, px, py, pz, SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1f, 1f);
+        world.playSound(player, px, py, pz, SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 1f, 1f);
+        world.playSound(player, px, py, pz, SoundEvents.FIREWORK_ROCKET_BLAST, SoundSource.AMBIENT, 1f, 1f);
+        world.playSound(player, px, py, pz, SoundEvents.FIREWORK_ROCKET_TWINKLE, SoundSource.AMBIENT, 0.8f, 1f);
 
         victoryCelebrationEndTick = world.getGameTime() + GSRBroadcastParameters.VICTORY_CELEBRATION_TICKS;
     }
@@ -64,31 +64,31 @@ public final class GSRCelebrationHandler {
         }
         if (world.getGameTime() % GSRBroadcastParameters.VICTORY_FIREWORK_INTERVAL_TICKS != 0) return;
 
-        var players = world.getPlayers();
+        var players = world.players();
         if (players.isEmpty()) return;
 
-        Random r = world.getRandom();
+        RandomSource r = world.getRandom();
         var target = players.get(r.nextInt(players.size()));
         double x = target.getX();
-        double y = target.getY() + target.getHeight() * 0.5;
+        double y = target.getY() + target.getBbHeight() * 0.5;
         double z = target.getZ();
 
-        var pm = client.particleManager;
+        var pm = client.particleEngine;
         int choice = r.nextInt(4);
         if (choice == 0) {
             double vx = (r.nextDouble() - 0.5) * 0.4;
             double vy = 0.2 + r.nextDouble() * 0.3;
             double vz = (r.nextDouble() - 0.5) * 0.4;
-            pm.addParticle(ParticleTypes.FIREWORK, x, y, z, vx, vy, vz);
+            pm.createParticle(ParticleTypes.FIREWORK, x, y, z, vx, vy, vz);
         } else if (choice == 1) {
-            pm.addParticle(ParticleTypes.EXPLOSION, x, y, z, 0, 0, 0);
+            pm.createParticle(ParticleTypes.EXPLOSION, x, y, z, 0, 0, 0);
         } else if (choice == 2) {
-            pm.addParticle(ParticleTypes.EXPLOSION_EMITTER, x, y, z, 0, 0, 0);
+            pm.createParticle(ParticleTypes.EXPLOSION_EMITTER, x, y, z, 0, 0, 0);
         } else {
             double vx = (r.nextDouble() - 0.5) * 0.3;
             double vy = 0.15 + r.nextDouble() * 0.25;
             double vz = (r.nextDouble() - 0.5) * 0.3;
-            pm.addParticle(ParticleTypes.FLAME, x, y, z, vx, vy, vz);
+            pm.createParticle(ParticleTypes.FLAME, x, y, z, vx, vy, vz);
         }
     }
 }

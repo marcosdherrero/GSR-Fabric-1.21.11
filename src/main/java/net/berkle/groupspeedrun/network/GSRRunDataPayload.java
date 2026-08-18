@@ -18,7 +18,7 @@ public record GSRRunDataPayload(net.minecraft.nbt.CompoundTag nbt) implements Cu
     public static final Type<GSRRunDataPayload> ID = new Type<>(Identifier.fromNamespaceAndPath("gsr", "run_data"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, GSRRunDataPayload> CODEC = StreamCodec.composite(
-            ByteBufCodecs.COMPOUND_TAG_COMPOUND, GSRRunDataPayload::nbt,
+            ByteBufCodecs.COMPOUND_TAG, GSRRunDataPayload::nbt,
             GSRRunDataPayload::new
     );
 

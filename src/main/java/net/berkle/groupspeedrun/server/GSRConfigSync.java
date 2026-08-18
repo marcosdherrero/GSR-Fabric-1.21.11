@@ -62,9 +62,9 @@ public final class GSRConfigSync {
         var world = player.level();
         MinecraftServer server = world instanceof ServerLevel sw ? sw.getServer() : null;
         CommandSourceStack src = server != null
-                ? server.getCommandSource().withEntity(player).withWorld((ServerLevel) world)
+                ? server.createCommandSourceStack().withEntity(player).withLevel((ServerLevel) world)
                 : null;
-        boolean canUseAdmin = src != null && Commands.LEVEL_ADMINS.allows(src.getPermissions());
+        boolean canUseAdmin = src != null && Commands.LEVEL_ADMINS.check(src.permissions());
         nbt.putBoolean(GSRPlayerConfigParameters.K_CAN_USE_ADMIN, canUseAdmin);
     }
 }

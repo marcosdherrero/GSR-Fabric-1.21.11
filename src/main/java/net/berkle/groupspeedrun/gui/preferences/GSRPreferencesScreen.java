@@ -52,7 +52,6 @@ import net.berkle.groupspeedrun.parameter.GSRLocatorParameters;
 import net.berkle.groupspeedrun.parameter.GSRRunHistoryParameters;
 import net.berkle.groupspeedrun.timer.hud.GSRTimerHudRenderer;
 import net.berkle.groupspeedrun.parameter.GSRUiParameters;
-import net.berkle.groupspeedrun.gui.widget.GSRItemTintToggleButton;
 import net.berkle.groupspeedrun.util.GSRLocatorIconHelper;
 import net.berkle.groupspeedrun.util.GSRItemStacks;
 import net.berkle.groupspeedrun.util.GSRScrollbarHelper;
@@ -626,7 +625,9 @@ public final class GSRPreferencesScreen extends Screen {
             gsr$syncPlayerConfig();
         }, toggleIconOn(), toggleIconOff(), GSRUiParameters.PREFERENCES_TOGGLE_NEWWORLD_ON, GSRUiParameters.PREFERENCES_TOGGLE_NEWWORLD_OFF, "ON", "OFF (default)");
         y += ROW_HEIGHT;
-        gsr$drawSeedFilterRow(context, y, leftCol, colWidth, mouseX, mouseY);
+        gsr$drawToggleRow(context, "Seed Filter", gsr$isSeedFilterEnabled(), y, leftCol, colWidth, mouseX, mouseY,
+                this::gsr$toggleSeedFilter, seedFilterIcon(), seedFilterIcon(),
+                GSRUiParameters.PREFERENCES_SEED_FILTER_ON, GSRUiParameters.PREFERENCES_SEED_FILTER_OFF, "ON (default)", "OFF", true);
         y += ROW_HEIGHT;
         gsr$drawButtonRow(context, GSRButtonParameters.PREFERENCES_RESET_MOD_SETTINGS, y, centeredCol, colWidth, mouseX, mouseY);
         y += ROW_HEIGHT;
@@ -735,6 +736,14 @@ public final class GSRPreferencesScreen extends Screen {
                                    int mouseX, int mouseY, Runnable onToggle,
                                    ItemStack iconOn, ItemStack iconOff, int colorOn, int colorOff,
                                    String displayOn, String displayOff) {
+        return gsr$drawToggleRow(context, label, value, y, colLeft, colWidth, mouseX, mouseY, onToggle,
+                iconOn, iconOff, colorOn, colorOff, displayOn, displayOff, false);
+    }
+
+    private int gsr$drawToggleRow(GuiGraphicsExtractor context, String label, boolean value, int y, int colLeft, int colWidth,
+                                   int mouseX, int mouseY, Runnable onToggle,
+                                   ItemStack iconOn, ItemStack iconOff, int colorOn, int colorOff,
+                                   String displayOn, String displayOff, boolean overlayStatusOnIcon) {
         int sectionTop = y;
         int barTop = y + LABEL_AREA_HEIGHT;
         int labelX = colLeft + GSRRunHistoryParameters.LIST_TEXT_INSET;
@@ -759,6 +768,9 @@ public final class GSRPreferencesScreen extends Screen {
             int iconX = colLeft + GSRRunHistoryParameters.CONTAINER_INSET + iconMargin;
             int iconY = barTop + (BAR_HEIGHT - iconSize) / 2;
             gsr$drawToggleIcon(context, icon, iconX, iconY, iconSize, iconMargin);
+            if (overlayStatusOnIcon) {
+                gsr$drawStatusMark(context, iconX, iconY, iconSize, value);
+            }
             textLeft = iconX + iconSize + iconMargin + GSRRunHistoryParameters.DROPDOWN_ITEM_ICON_TEXT_GAP;
         }
         String display = value ? displayOn : displayOff;
@@ -783,30 +795,6 @@ public final class GSRPreferencesScreen extends Screen {
         }
     }
 
-    private int[] gsr$seedFilterSquare(int colLeft, int y) {
-        int size = GSRUiParameters.PREFERENCES_SEED_FILTER_BUTTON_SIZE;
-        int barTop = y + LABEL_AREA_HEIGHT;
-        int x = colLeft + GSRRunHistoryParameters.CONTAINER_INSET;
-        int buttonY = barTop + Math.max(0, (BAR_HEIGHT - size) / 2);
-        return new int[] { x, buttonY, size, size };
-    }
-
-    private int gsr$drawSeedFilterRow(GuiGraphicsExtractor context, int y, int colLeft, int colWidth, int mouseX, int mouseY) {
-        int sectionTop = y;
-        int labelX = colLeft + GSRRunHistoryParameters.LIST_TEXT_INSET;
-        int labelY = sectionTop + GSRRunHistoryParameters.LIST_VERTICAL_GAP;
-        var matrices = context.pose();
-        matrices.pushMatrix();
-        matrices.translate(labelX, labelY);
-        matrices.scale(LABEL_SCALE, LABEL_SCALE);
-        context.text(font, Component.literal("Seed Filter"), 0, 0, GSRRunHistoryParameters.LABEL_COLOR, true);
-        matrices.popMatrix();
-        int[] box = gsr$seedFilterSquare(colLeft, y);
-        boolean hovered = mouseX >= box[0] && mouseX < box[0] + box[2] && mouseY >= box[1] && mouseY < box[1] + box[3];
-        GSRItemTintToggleButton.extractFace(context, box[0], box[1], box[2], gsr$isSeedFilterEnabled(), hovered, seedFilterIcon());
-        return y + ROW_HEIGHT;
-    }
-
     /** Draws a button in one column (e.g. Reset All to Default in right column). Uses same bar style as toggle/dropdown rows. */
     private int gsr$drawButtonRow(GuiGraphicsExtractor context, String label, int y, int colLeft, int colWidth, int mouseX, int mouseY) {
         int sectionTop = y;
@@ -820,6 +808,55 @@ public final class GSRPreferencesScreen extends Screen {
         int textY = barTop + (BAR_HEIGHT - font.lineHeight) / 2;
         context.text(font, Component.literal(label), textX, textY, GSRRunHistoryParameters.TEXT_COLOR, true);
         return y + ROW_HEIGHT;
+    }
+
+    /** Green check or red X drawn over a toggle item icon. */
+    private void gsr$drawStatusMark(GuiGraphicsExtractor context, int x, int y, int size, boolean on) {
+        int pad = 2;
+        int x0 = x + pad;
+        int y0 = y + pad;
+        int x1 = x + size - pad - 1;
+        int y1 = y + size - pad - 1;
+        int color = on ? GSRUiParameters.PREFERENCES_SEED_FILTER_ON : GSRUiParameters.PREFERENCES_SEED_FILTER_OFF;
+        int outline = 0xFF000000;
+        if (on) {
+            int midX = x0 + (x1 - x0) / 3;
+            int midY = y1;
+            int leftY = (y0 + y1) / 2;
+            gsr$drawThickLine(context, x0, leftY, midX, midY, outline, 3);
+            gsr$drawThickLine(context, midX, midY, x1, y0, outline, 3);
+            gsr$drawThickLine(context, x0, leftY, midX, midY, color, 2);
+            gsr$drawThickLine(context, midX, midY, x1, y0, color, 2);
+        } else {
+            gsr$drawThickLine(context, x0, y0, x1, y1, outline, 3);
+            gsr$drawThickLine(context, x1, y0, x0, y1, outline, 3);
+            gsr$drawThickLine(context, x0, y0, x1, y1, color, 2);
+            gsr$drawThickLine(context, x1, y0, x0, y1, color, 2);
+        }
+    }
+
+    private void gsr$drawThickLine(GuiGraphicsExtractor context, int x0, int y0, int x1, int y1, int color, int thickness) {
+        int dx = Math.abs(x1 - x0);
+        int dy = Math.abs(y1 - y0);
+        int sx = x0 < x1 ? 1 : -1;
+        int sy = y0 < y1 ? 1 : -1;
+        int err = dx - dy;
+        int x = x0;
+        int y = y0;
+        int t = Math.max(1, thickness);
+        while (true) {
+            context.fill(x, y, x + t, y + t, color);
+            if (x == x1 && y == y1) break;
+            int e2 = 2 * err;
+            if (e2 > -dy) {
+                err -= dy;
+                x += sx;
+            }
+            if (e2 < dx) {
+                err += dx;
+                y += sy;
+            }
+        }
     }
 
     /** Draws a scaled item icon for toggle buttons. */
@@ -907,10 +944,8 @@ public final class GSRPreferencesScreen extends Screen {
             if (inRightCol) return new int[] { 2, 3 };
         }
         y += ROW_HEIGHT;
-        int[] seedFilter = gsr$seedFilterSquare(leftCol, y);
-        if (mx >= seedFilter[0] && mx < seedFilter[0] + seedFilter[2]
-                && my >= seedFilter[1] && my < seedFilter[1] + seedFilter[3]) {
-            return new int[] { 2, 4 };
+        if (my >= y + barTopOffset && my < y + barBottomOffset) {
+            if (inLeftCol) return new int[] { 2, 4 };
         }
         y += ROW_HEIGHT;
         if (my >= y + barTopOffset && my < y + barBottomOffset) {

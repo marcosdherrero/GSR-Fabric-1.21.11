@@ -1,6 +1,7 @@
 package net.berkle.groupspeedrun.gui.widget;
 
 import net.berkle.groupspeedrun.parameter.GSRButtonParameters;
+import net.berkle.groupspeedrun.util.GSRColorHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -18,6 +19,7 @@ public class GSRTitleScreenButton extends Button {
     @Override
     protected void extractContents(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         extractDefaultSprite(context);
+        if (getAlpha() <= 0.01f) return;
         drawLabelWithPaddingAndScale(context);
     }
 
@@ -39,7 +41,7 @@ public class GSRTitleScreenButton extends Button {
             getMessage(),
             centerX,
             centerY - 4,
-            color
+            GSRColorHelper.applyAlpha(color, getAlpha())
         );
         matrices.popMatrix();
     }

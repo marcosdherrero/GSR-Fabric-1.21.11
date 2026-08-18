@@ -1,6 +1,7 @@
 package net.berkle.groupspeedrun.gui.widget;
 
 import net.berkle.groupspeedrun.parameter.GSRButtonParameters;
+import net.berkle.groupspeedrun.util.GSRColorHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -21,6 +22,8 @@ public class GSRSquareMenuButton extends Button {
     @Override
     protected void extractContents(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         extractDefaultSprite(context);
+        float fade = getAlpha();
+        if (fade <= 0.01f) return;
         Font font = Minecraft.getInstance().font;
         String label = getMessage().getString();
         int padding = GSRButtonParameters.SQUARE_BUTTON_LABEL_PADDING;
@@ -36,7 +39,7 @@ public class GSRSquareMenuButton extends Button {
         matrices.translate(centerX, centerY);
         matrices.scale(scale, scale);
         int color = active ? GSRButtonParameters.TITLE_BUTTON_TEXT_ACTIVE : GSRButtonParameters.TITLE_BUTTON_TEXT_INACTIVE;
-        context.centeredText(font, getMessage(), 0, -font.lineHeight / 2, color);
+        context.centeredText(font, getMessage(), 0, -font.lineHeight / 2, GSRColorHelper.applyAlpha(color, fade));
         matrices.popMatrix();
     }
 }

@@ -169,7 +169,6 @@ public final class GSRNetworking {
                     case GSRRunActionPayload.ACTION_RESET -> {
                         if (!Commands.LEVEL_ADMINS.check(src.permissions())) return;
                         GSREvents.resetRun(context.server());
-                        GSRConfigSync.syncConfigWithAll(context.server());
                     }
                     default -> {}
                 }

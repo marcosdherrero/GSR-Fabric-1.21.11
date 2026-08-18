@@ -468,6 +468,11 @@ public final class GSRPreferencesScreen extends Screen {
     }
 
     @Override
+    public boolean isPauseScreen() {
+        return true;
+    }
+
+    @Override
     public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         boolean dropdownOpen = model.openDropdownId != GSRPreferencesScreenModel.DROPDOWN_NONE;
         if (backButton != null) ((GSRClickableWidgetAccessor) backButton).gsr$setActive(!dropdownOpen);

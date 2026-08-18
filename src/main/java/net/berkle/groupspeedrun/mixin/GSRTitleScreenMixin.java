@@ -1,6 +1,7 @@
 package net.berkle.groupspeedrun.mixin;
 
 import net.berkle.groupspeedrun.GSRClient;
+import net.berkle.groupspeedrun.managers.GSRWorldSnapshotManager;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
@@ -29,7 +30,8 @@ public abstract class GSRTitleScreenMixin extends Screen {
         if (GSRClient.pendingWorldReloadId != null && !GSRClient.pendingWorldReloadId.isEmpty()) {
             String id = GSRClient.pendingWorldReloadId;
             GSRClient.pendingWorldReloadId = null;
-            minecraft.createWorldOpenFlows().openWorld(id, () -> minecraft.gui.setScreen(new TitleScreen()));
+            GSRWorldSnapshotManager.restoreFromSnapshotOnClient(minecraft, id);
+            minecraft.createWorldOpenFlows().openWorld(id, () -> minecraft.setScreen(new TitleScreen()));
             return;
         }
         if (GSRClient.nextGsrWorldName != null && !GSRClient.nextGsrWorldName.isEmpty()) {

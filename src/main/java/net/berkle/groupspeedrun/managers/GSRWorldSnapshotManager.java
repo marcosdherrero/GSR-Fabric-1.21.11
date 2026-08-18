@@ -6,8 +6,10 @@ import net.berkle.groupspeedrun.mixin.accessors.GSRMinecraftServerAccessor;
 import net.berkle.groupspeedrun.parameter.GSRStorageParameters;
 import net.berkle.groupspeedrun.util.GSRJsonUtil;
 import net.berkle.groupspeedrun.util.GSRStoragePaths;
+import net.minecraft.client.Minecraft;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.level.storage.LevelStorageSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,8 +35,11 @@ public final class GSRWorldSnapshotManager {
 
     /** True when a usable original-world backup exists (must include {@code level.dat}). */
     public static boolean hasValidSnapshot(MinecraftServer server) {
-        Path snapshotDir = GSRStoragePaths.getSnapshotDir(server);
-        return Files.isDirectory(snapshotDir) && Files.isRegularFile(snapshotDir.resolve(LEVEL_DAT));
+        return isValidSnapshotDir(resolveSnapshotDir(server));
+    }
+
+    private static boolean isValidSnapshotDir(Path snapshotDir) {
+        return snapshotDir != null && Files.isDirectory(snapshotDir) && Files.isRegularFile(snapshotDir.resolve(LEVEL_DAT));
     }
 
     /** Canonical save folder id for {@code WorldOpenFlows.openWorld}. */
@@ -61,16 +66,15 @@ public final class GSRWorldSnapshotManager {
         Path flagFile = worldDir.resolve(GSRStorageParameters.RESTORE_FLAG_FILE);
         if (!Files.exists(flagFile)) return;
 
-        Path snapshotDir = GSRStoragePaths.getSnapshotDir(server);
-        if (!hasValidSnapshot(server)) {
+        Path snapshotDir = resolveSnapshotDir(server);
+        if (!isValidSnapshotDir(snapshotDir)) {
             LOGGER.error("[GSR] Restore flag set but snapshot missing or incomplete at {}", snapshotDir);
             try { Files.deleteIfExists(flagFile); } catch (IOException e) { LOGGER.warn("[GSR] Could not remove flag", e); }
             return;
         }
 
         try {
-            clearDirectory(worldRoot);
-            copyDirectoryContents(snapshotDir, worldRoot);
+            restoreIntoWorldRoot(server, worldRoot, snapshotDir);
             Files.deleteIfExists(flagFile);
             GSRConfigWorld config = GSRConfigWorld.load(server);
             if (config.isRunNotStarted()) {
@@ -82,6 +86,37 @@ public final class GSRWorldSnapshotManager {
         } catch (IOException e) {
             LOGGER.error("[GSR] Failed to restore world from snapshot", e);
         }
+    }
+
+    /**
+     * Copy snapshot over the save folder after the integrated server has released {@code session.lock}
+     * (TitleScreen, before {@code openWorld}). Preferred path — no lock, no Saving World wait.
+     */
+    public static void restoreFromSnapshotOnClient(Minecraft client, String levelId) {
+        if (client == null || levelId == null || levelId.isEmpty()) return;
+        Path worldRoot = client.getLevelSource().getLevelPath(levelId);
+        Path snapshotDir = findClientSnapshotDir(levelId, worldRoot);
+        if (!isValidSnapshotDir(snapshotDir)) {
+            LOGGER.warn("[GSR] Client restore skipped: no snapshot for {} at {}", levelId, snapshotDir);
+            return;
+        }
+        try {
+            clearDirectory(worldRoot);
+            copyDirectoryContents(snapshotDir, worldRoot);
+            Path flagFile = worldRoot.resolve("data").resolve("gsr").resolve(GSRStorageParameters.RESTORE_FLAG_FILE);
+            Files.deleteIfExists(flagFile);
+            LOGGER.info("[GSR] Restored snapshot into {} before reopen.", worldRoot);
+        } catch (IOException e) {
+            LOGGER.error("[GSR] Client snapshot restore failed for {}", levelId, e);
+        }
+    }
+
+    private static void restoreIntoWorldRoot(MinecraftServer server, Path worldRoot, Path snapshotDir) throws IOException {
+        LevelStorageSource.LevelStorageAccess access = ((GSRMinecraftServerAccessor) server).gsr$getStorageSource();
+        access.releaseTemporarilyAndRun(() -> {
+            clearDirectory(worldRoot);
+            copyDirectoryContents(snapshotDir, worldRoot);
+        });
     }
 
     private static void clearDirectory(Path dir) throws IOException {
@@ -137,9 +172,13 @@ public final class GSRWorldSnapshotManager {
             if (Files.exists(snapshotDir)) {
                 deleteRecursively(snapshotDir);
             }
-            server.saveAllChunks(true, false, false);
+            try {
+                server.saveAllChunks(true, false, false);
+            } catch (Exception e) {
+                LOGGER.warn("[GSR] saveAllChunks failed while snapshotting; copying files anyway", e);
+            }
             copyDirectoryContents(worldRoot, snapshotDir);
-            if (!hasValidSnapshot(server)) {
+            if (!isValidSnapshotDir(snapshotDir)) {
                 LOGGER.error("[GSR] Snapshot incomplete at {} (missing level.dat)", snapshotDir);
                 if (Files.exists(snapshotDir)) deleteRecursively(snapshotDir);
                 return;
@@ -165,6 +204,25 @@ public final class GSRWorldSnapshotManager {
         } catch (IOException e) {
             LOGGER.error("[GSR] Failed to set restore flag", e);
         }
+    }
+
+    private static Path resolveSnapshotDir(MinecraftServer server) {
+        Path primary = GSRStoragePaths.getSnapshotDir(server);
+        if (isValidSnapshotDir(primary)) return primary;
+        Path byLevelId = GSRStoragePaths.getSnapshotDir(getLevelId(server));
+        if (isValidSnapshotDir(byLevelId)) return byLevelId;
+        return primary;
+    }
+
+    private static Path findClientSnapshotDir(String levelId, Path worldRoot) {
+        Path byId = GSRStoragePaths.getSnapshotDir(levelId);
+        if (isValidSnapshotDir(byId)) return byId;
+        Path name = worldRoot.getFileName();
+        if (name != null) {
+            Path byFolder = GSRStoragePaths.getSnapshotDir(name.toString());
+            if (isValidSnapshotDir(byFolder)) return byFolder;
+        }
+        return byId;
     }
 
     private static boolean shouldSkip(Path path) {

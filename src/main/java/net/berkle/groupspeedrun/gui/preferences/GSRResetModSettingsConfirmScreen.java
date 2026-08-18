@@ -9,8 +9,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.List;
-
 // Fabric: minecraft networking
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
@@ -22,6 +20,7 @@ import net.berkle.groupspeedrun.config.GSRConfigWorld;
 import net.berkle.groupspeedrun.config.GSRLocatorNonAdminMode;
 import net.berkle.groupspeedrun.config.GSRSeedFilterSettings;
 import net.berkle.groupspeedrun.network.GSRWorldConfigPayload;
+import net.berkle.groupspeedrun.gui.GSRConfirmLayout;
 import net.berkle.groupspeedrun.parameter.GSRButtonParameters;
 import net.berkle.groupspeedrun.parameter.GSRHudParameters;
 import net.berkle.groupspeedrun.parameter.GSRUiParameters;
@@ -46,7 +45,7 @@ public class GSRResetModSettingsConfirmScreen extends Screen {
         int buttonHeight = GSRUiParameters.CONTROLS_BUTTON_HEIGHT;
         int gap = Math.max(GSRUiParameters.NEW_WORLD_BUTTON_GAP, GSRUiParameters.NEW_WORLD_MIN_BUTTON_GAP);
         int centerX = width / 2;
-        int y = height / 2 + GSRUiParameters.CONTROLS_PADDING;
+        int y = GSRConfirmLayout.buttonY(font, GSRButtonParameters.PREFERENCES_RESET_CONFIRM_MESSAGE, width, height);
 
         addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.PREFERENCES_RESET_CONFIRM), btn -> confirm())
                 .bounds(centerX - buttonWidth - gap / 2, y, buttonWidth, buttonHeight).build());
@@ -104,21 +103,8 @@ public class GSRResetModSettingsConfirmScreen extends Screen {
         context.fill(0, 0, width, height, GSRUiParameters.STATUS_BG_COLOR);
         super.extractRenderState(context, mouseX, mouseY, delta);
 
-        int centerX = width / 2;
-        int msgMaxW = Math.min(GSRUiParameters.RESET_CONFIRM_MESSAGE_MAX_WIDTH, width - 80);
-        List<net.minecraft.util.FormattedCharSequence> lines = font.split(
-                Component.literal(GSRButtonParameters.PREFERENCES_RESET_CONFIRM_MESSAGE), msgMaxW);
-
-        context.centeredText(font, getTitle(), centerX,
-                height / 2 - GSRUiParameters.RESET_CONFIRM_TITLE_OFFSET, GSRUiParameters.NEW_WORLD_TITLE_COLOR);
-
-        int lineHeight = font.lineHeight + 2;
-        int totalMsgHeight = lines.size() * lineHeight;
-        int msgTop = height / 2 - GSRUiParameters.RESET_CONFIRM_MESSAGE_OFFSET - totalMsgHeight / 2;
-        for (int i = 0; i < lines.size(); i++) {
-            context.centeredText(font, lines.get(i), centerX,
-                    msgTop + i * lineHeight, GSRUiParameters.NEW_WORLD_LINE1_COLOR);
-        }
+        GSRConfirmLayout.drawTitleAndMessage(context, font, getTitle(),
+                GSRButtonParameters.PREFERENCES_RESET_CONFIRM_MESSAGE, width, height);
     }
 
     @Override

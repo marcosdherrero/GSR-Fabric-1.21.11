@@ -149,7 +149,8 @@ public final class GSRRunLifecycle {
         GSRConfigSync.syncConfigWithAll(server);
         GSRBroadcastManager.broadcastToRunParticipants(server, Component.literal(
                 "§6§l[GSR] Run reset. Reloading original world backup…"));
-        requestWorldReload(server);
+        String levelId = GSRWorldSnapshotManager.getLevelId(server);
+        server.execute(() -> requestWorldReload(server, levelId));
     }
 
     /** Spawn, empty inventory, survival, revoke advancements. Applied in-memory; snapshot restore reloads files. */
@@ -181,8 +182,7 @@ public final class GSRRunLifecycle {
         }
     }
 
-    private static void requestWorldReload(MinecraftServer server) {
-        String levelId = GSRWorldSnapshotManager.getLevelId(server);
+    private static void requestWorldReload(MinecraftServer server, String levelId) {
         if (!server.isDedicatedServer()) {
             var payload = new GSRReloadWorldPayload(levelId);
             for (ServerPlayer p : server.getPlayerList().getPlayers()) {

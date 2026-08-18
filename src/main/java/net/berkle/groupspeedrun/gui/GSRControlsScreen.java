@@ -90,7 +90,7 @@ public class GSRControlsScreen extends GSRBaseScreen {
             if (minecraft != null) minecraft.setScreen(new GSRRunHistoryScreen(this, true));
         }).bounds(leftX, row3Y, halfW, btnH).build());
         addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.CONTROLS_PREFERENCES), b -> {
-            if (minecraft != null) minecraft.setScreen(new net.berkle.groupspeedrun.gui.preferences.GSRPreferencesScreen(this));
+            net.berkle.groupspeedrun.client.GSRScreens.openConfig(this);
         }).bounds(rightX, row3Y, halfW, btnH).build());
 
         var footer = GSRMenuComponents.singleButtonFooterLayout(width, height);

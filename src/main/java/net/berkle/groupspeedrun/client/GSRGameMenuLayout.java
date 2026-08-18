@@ -1,15 +1,18 @@
 package net.berkle.groupspeedrun.client;
 
 // Minecraft: GUI
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.components.events.ContainerEventHandler;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.SpriteIconButton;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.screens.PauseScreen;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.network.chat.Component;
 
 // GSR: GUI, mixin accessors, parameters
-import net.berkle.groupspeedrun.gui.GSRControlsScreen;
-import net.berkle.groupspeedrun.mixin.accessors.GSRGameMenuScreenAccessor;
+import net.berkle.groupspeedrun.gui.widget.GSRSquareMenuButton;
 import net.berkle.groupspeedrun.parameter.GSRButtonParameters;
 
 // Java collections
@@ -18,105 +21,136 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Pause menu layout. Splits the Save and Quit to Title row into two columns:
- * Save and Quit to Title | GSR Controls. Row width matches the rest of the page (200px).
- * Gap between buttons matches the Advancements | Statistics row.
+ * Pause menu layout. Adds a square GSR button to the vanilla 20×20 icon row
+ * (report / accessibility / friends / etc.) and re-centers the whole row with equal gaps.
  */
 public final class GSRGameMenuLayout {
+
+    private static final int SQUARE_SIZE = GSRSquareMenuButton.SIZE;
+    private static final int SQUARE_GAP = 4;
 
     private GSRGameMenuLayout() {}
 
     /**
-     * Applies two-column layout to the exit row. Repositions exit button left; creates and returns GSR Controls button for right column.
-     * Uses vanilla grid position and dimensions so Save and Quit | GSR Controls match the buttons above exactly.
-     * Gap matches the Advancements | Statistics row by measuring adjacent buttons in the same row.
-     * Caller (mixin) must add the returned button via addRenderableWidget.
+     * Creates the square GSR button (caller adds it via addRenderableWidget, then calls reapplyLayout).
      */
-    public static Button applyLayout(net.minecraft.client.gui.screens.PauseScreen screen) {
-        Button exitBtn = ((GSRGameMenuScreenAccessor) screen).gsr$getExitButton();
-        if (exitBtn == null) return null;
-
-        int leftX = exitBtn.getX();
-        int totalW = exitBtn.getWidth();
-        int rowY = exitBtn.getY();
-        int btnH = exitBtn.getHeight();
-        int gap = measureGridColumnGap(screen);
-        int halfW = (totalW - gap) / 2;
-        int rightX = leftX + halfW + gap;
-
-        exitBtn.setMessage(GSRButtonParameters.literal(GSRButtonParameters.GAME_MENU_SAVE_QUIT));
-        exitBtn.setPosition(leftX, rowY);
-        exitBtn.setSize(halfW, btnH);
-
-        Minecraft client = Minecraft.getInstance();
-        return Button.builder(GSRButtonParameters.literal(GSRButtonParameters.TITLE_GSR_CONTROLS),
-                        b -> {
-                            if (client != null) {
-                                client.setScreen(new GSRControlsScreen(screen));
-                            }
-                        })
-                .bounds(rightX, rowY, halfW, btnH)
-                .build();
+    public static Button createSquareButton(PauseScreen screen) {
+        Button button = new GSRSquareMenuButton(0, 0,
+                GSRButtonParameters.literal(GSRButtonParameters.TITLE_GSR_SQUARE),
+                b -> GSRScreens.openControls(screen));
+        button.setTooltip(Tooltip.create(Component.literal(GSRButtonParameters.TITLE_GSR_CONTROLS)));
+        return button;
     }
 
     /**
-     * Re-applies layout positions after repositionElements. Use when vanilla layout has run and button positions are final.
-     * Repositions exit button and GSR Controls button to match the measured grid gap.
+     * 26.2 {@code getChildAt} returns the first overlapping child, so a vanilla icon or
+     * full-width layout cell can steal the square GSR hit. Prefer the GSR button when the
+     * cursor is on it.
      */
-    public static void reapplyLayout(net.minecraft.client.gui.screens.PauseScreen screen) {
-        Button exitBtn = ((GSRGameMenuScreenAccessor) screen).gsr$getExitButton();
-        if (exitBtn == null) return;
-
-        Button gsrBtn = findGsrControlsButton(screen);
-        if (gsrBtn == null) return;
-
-        int leftX = exitBtn.getX();
-        int totalW = exitBtn.getWidth();
-        int rowY = exitBtn.getY();
-        int btnH = exitBtn.getHeight();
-        int gap = measureGridColumnGap(screen);
-        int halfW = (totalW - gap) / 2;
-        int rightX = leftX + halfW + gap;
-
-        exitBtn.setPosition(leftX, rowY);
-        exitBtn.setSize(halfW, btnH);
-        gsrBtn.setPosition(rightX, rowY);
-        gsrBtn.setSize(halfW, btnH);
+    public static boolean handleSquareClick(net.minecraft.client.gui.screens.Screen screen, MouseButtonEvent click, boolean captured) {
+        AbstractWidget gsr = findGsrSquareButton(screen);
+        if (gsr == null || !gsr.isMouseOver(click.x(), click.y())) return false;
+        return gsr.mouseClicked(click, captured);
     }
 
-    private static Button findGsrControlsButton(net.minecraft.client.gui.screens.Screen screen) {
+    /**
+     * Inserts GSR into the existing square-button row and re-centers the group with vanilla spacing.
+     */
+    public static void reapplyLayout(PauseScreen screen) {
+        recenterSquareRow(screen);
+    }
+
+    static void recenterSquareRow(net.minecraft.client.gui.screens.Screen screen) {
+        List<AbstractWidget> vanilla = collectSquareRow(screen);
+        if (vanilla.isEmpty()) return;
+        vanilla.sort(Comparator.comparingInt(AbstractWidget::getX));
+
+        AbstractWidget gsr = findGsrSquareButton(screen);
+        int size = SQUARE_SIZE;
+        int gap = measureSquareGap(vanilla);
+        int minX = vanilla.get(0).getX();
+        int maxX = vanilla.get(vanilla.size() - 1).getX() + vanilla.get(vanilla.size() - 1).getWidth();
+        int centerX = (minX + maxX) / 2;
+        int y = vanilla.get(0).getY();
+
+        List<AbstractWidget> row = new ArrayList<>(vanilla);
+        if (gsr != null && !row.contains(gsr)) {
+            row.add(gsr);
+        }
+        int n = row.size();
+        int totalW = n * size + Math.max(0, n - 1) * gap;
+        int startX = centerX - totalW / 2;
+
+        for (int i = 0; i < n; i++) {
+            AbstractWidget w = row.get(i);
+            w.setPosition(startX + i * (size + gap), y);
+            w.setSize(size, size);
+        }
+    }
+
+    private static int measureSquareGap(List<AbstractWidget> squares) {
+        if (squares.size() < 2) return SQUARE_GAP;
+        List<AbstractWidget> ordered = squares.stream()
+                .sorted(Comparator.comparingInt(AbstractWidget::getX))
+                .toList();
+        for (int i = 1; i < ordered.size(); i++) {
+            int gap = ordered.get(i).getX() - (ordered.get(i - 1).getX() + ordered.get(i - 1).getWidth());
+            if (gap > 0 && gap <= 8) return gap;
+        }
+        return SQUARE_GAP;
+    }
+
+    private static List<AbstractWidget> collectSquareRow(net.minecraft.client.gui.screens.Screen screen) {
+        List<AbstractWidget> all = collectClickableWidgets(screen);
+        List<AbstractWidget> candidates = new ArrayList<>();
+        for (AbstractWidget w : all) {
+            if (isSquareIconButton(w)) candidates.add(w);
+        }
+        if (candidates.isEmpty()) return candidates;
+
+        candidates.sort(Comparator.comparingInt(AbstractWidget::getY).thenComparingInt(AbstractWidget::getX));
+        int bestY = candidates.get(0).getY();
+        int bestCount = 0;
+        int currentY = candidates.get(0).getY();
+        int currentCount = 0;
+        for (AbstractWidget w : candidates) {
+            if (w.getY() == currentY) {
+                currentCount++;
+            } else {
+                if (currentCount > bestCount) {
+                    bestCount = currentCount;
+                    bestY = currentY;
+                }
+                currentY = w.getY();
+                currentCount = 1;
+            }
+        }
+        if (currentCount > bestCount) {
+            bestY = currentY;
+        }
+
+        List<AbstractWidget> row = new ArrayList<>();
+        for (AbstractWidget w : candidates) {
+            if (w.getY() == bestY) row.add(w);
+        }
+        return row;
+    }
+
+    private static boolean isSquareIconButton(AbstractWidget w) {
+        if (w.getWidth() != w.getHeight()) return false;
+        if (w.getWidth() < 16 || w.getWidth() > 24) return false;
+        return w instanceof SpriteIconButton || w instanceof GSRSquareMenuButton;
+    }
+
+    private static AbstractWidget findGsrSquareButton(net.minecraft.client.gui.screens.Screen screen) {
         for (AbstractWidget cw : collectClickableWidgets(screen)) {
-            if (cw instanceof Button bw
-                    && bw.getMessage().getString().equals(GSRButtonParameters.TITLE_GSR_CONTROLS)) {
-                return bw;
+            if (cw instanceof GSRSquareMenuButton
+                    || (cw instanceof Button bw
+                    && bw.getMessage().getString().equals(GSRButtonParameters.TITLE_GSR_SQUARE))) {
+                return cw;
             }
         }
         return null;
-    }
-
-    /**
-     * Measures the gap between adjacent buttons in the same row (e.g. Advancements | Statistics).
-     * Uses the first such pair found; falls back to GRID_MARGIN if none found.
-     */
-    private static int measureGridColumnGap(net.minecraft.client.gui.screens.PauseScreen screen) {
-        List<AbstractWidget> buttons = collectClickableWidgets(screen);
-        List<AbstractWidget> buttonList = buttons.stream()
-                .filter(Button.class::isInstance)
-                .sorted(Comparator.comparingInt(AbstractWidget::getY).thenComparingInt(AbstractWidget::getX))
-                .toList();
-
-        int lastY = Integer.MIN_VALUE;
-        AbstractWidget prev = null;
-        for (AbstractWidget btn : buttonList) {
-            int y = btn.getY();
-            if (y == lastY && prev != null) {
-                int gap = btn.getX() - (prev.getX() + prev.getWidth());
-                if (gap >= 0) return gap;
-            }
-            lastY = y;
-            prev = btn;
-        }
-        return ((GSRGameMenuScreenAccessor) screen).gsr$getGridMargin();
     }
 
     private static List<AbstractWidget> collectClickableWidgets(GuiEventListener parent) {

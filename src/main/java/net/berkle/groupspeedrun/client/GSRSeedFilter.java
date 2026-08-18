@@ -146,7 +146,7 @@ public final class GSRSeedFilter {
 
     private static void applyAndCreate(CreateWorldScreen screen, WorldCreationUiState uiState, long seed, int tried) {
         try {
-            if (Minecraft.getInstance().gui.screen() != screen) {
+            if (Minecraft.getInstance().screen != screen) {
                 searching.set(false);
                 activeScreen = null;
                 return;

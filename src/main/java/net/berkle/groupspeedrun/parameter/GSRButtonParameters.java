@@ -15,6 +15,8 @@ public final class GSRButtonParameters {
     public static final String TITLE_RUN_HISTORY = "GSR Run History";
     /** GSR Controls button on main menu. Opens GSR controls screen (Run Manager, Locators, etc.). */
     public static final String TITLE_GSR_CONTROLS = "GSR Controls";
+    /** Label drawn on the square pause/title icon-row button. */
+    public static final String TITLE_GSR_SQUARE = "GSR";
     /** New World button on main menu. Opens create world screen. */
     public static final String TITLE_NEW_WORLD = "New World";
     /** GSR Options button on main menu. Opens GSR controls screen. */

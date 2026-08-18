@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Re-applies GSR Run History + Realms layout after Screen.repositionElements.
+ * Re-centers the title-screen square GSR icon row after Screen.repositionElements.
  * Targets Screen (not TitleScreen) because TitleScreen inherits this method.
  */
 @Mixin(Screen.class)

@@ -22,6 +22,7 @@ import net.berkle.groupspeedrun.managers.GSRLocatorGate;
 import net.berkle.groupspeedrun.managers.GSRProfileManager;
 import net.berkle.groupspeedrun.managers.GSRRunSyncManager;
 import net.berkle.groupspeedrun.network.GSRLocatorActionPayload;
+import net.berkle.groupspeedrun.network.GSRLocatorFeedbackPayload;
 import net.berkle.groupspeedrun.network.GSRScreenTimePayload;
 import net.berkle.groupspeedrun.network.GSROpenScreenPayload;
 import net.berkle.groupspeedrun.network.GSRPlayerListPayload;
@@ -255,11 +256,14 @@ public final class GSRNetworking {
                 };
                 if (world == null) {
                     player.sendSystemMessage(net.minecraft.network.chat.Component.literal(GSRUiParameters.MSG_PREFIX + "Dimension not loaded."), false);
+                    ServerPlayNetworking.send(player, new GSRLocatorFeedbackPayload(type, GSRLocateHelper.MISS_DIMENSION_UNLOADED));
                     return;
                 }
+                boolean playerInTargetDimension = player.level().dimension().equals(world.dimension());
                 BlockPos from = player.blockPosition();
-                BlockPos found = GSRLocateHelper.locate(world, type, from);
-                if (found == null) {
+                GSRLocateHelper.LocateResult result = GSRLocateHelper.locate(world, type, from, playerInTargetDimension);
+                BlockPos found = result.pos();
+                if (!result.found()) {
                     GSRConfigPlayer pc = GSRProfileManager.getPlayerConfig(player);
                     if (pc != null) {
                         switch (type) {
@@ -272,7 +276,9 @@ public final class GSRNetworking {
                         GSRProfileManager.save(server);
                         GSRConfigSync.syncConfigWithPlayer(player);
                     }
+                    String reason = result.missReason() != null ? result.missReason() : GSRLocateHelper.MISS_NOT_FOUND;
                     player.sendSystemMessage(net.minecraft.network.chat.Component.literal(GSRUiParameters.MSG_PREFIX + String.format(GSRUiParameters.MSG_LOCATOR_NOT_FOUND, type)), false);
+                    ServerPlayNetworking.send(player, new GSRLocatorFeedbackPayload(type, reason));
                     return;
                 }
                 int x = found.getX();

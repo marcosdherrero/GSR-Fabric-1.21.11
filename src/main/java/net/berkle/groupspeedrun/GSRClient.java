@@ -16,8 +16,10 @@ import net.minecraft.client.gui.components.Button;
 // GSR: client, config, data, gui, network, util
 import net.berkle.groupspeedrun.client.GSRCelebrationHandler;
 import net.berkle.groupspeedrun.client.GSRKeyBindings;
+import net.berkle.groupspeedrun.client.GSRLocatorToast;
 import net.berkle.groupspeedrun.client.GSRSharedRunLoader;
 import net.berkle.groupspeedrun.client.GSRTitleScreenLayout;
+import net.berkle.groupspeedrun.parameter.GSRUiParameters;
 import net.berkle.groupspeedrun.config.GSRConfigPayload;
 import net.berkle.groupspeedrun.config.GSRConfigPlayer;
 import net.berkle.groupspeedrun.config.GSRConfigWorld;
@@ -29,6 +31,7 @@ import net.berkle.groupspeedrun.gui.GSRNewWorldConfirmScreen;
 import net.berkle.groupspeedrun.gui.GSRRunManagerScreen;
 import net.berkle.groupspeedrun.network.GSRRunActionPayload;
 import net.berkle.groupspeedrun.network.GSRScreenTimePayload;
+import net.berkle.groupspeedrun.network.GSRLocatorFeedbackPayload;
 import net.berkle.groupspeedrun.network.GSROpenScreenPayload;
 import net.berkle.groupspeedrun.network.GSRPlayerListPayload;
 import net.berkle.groupspeedrun.network.GSRRunCompletePayload;
@@ -114,6 +117,13 @@ public class GSRClient implements ClientModInitializer {
                 if (client.gui.screen() instanceof net.berkle.groupspeedrun.gui.preferences.GSRPreferencesScreen prefs) {
                     client.gui.setScreen(new net.berkle.groupspeedrun.gui.preferences.GSRPreferencesScreen(prefs.getParent(), prefs.getContentScroll()));
                 }
+            });
+        });
+        ClientPlayNetworking.registerGlobalReceiver(GSRLocatorFeedbackPayload.ID, (payload, context) -> {
+            context.client().execute(() -> {
+                String title = GSRUiParameters.locatorToastTitle(payload.structureType());
+                String body = GSRUiParameters.locatorToastBody(payload.structureType(), payload.missReason());
+                GSRLocatorToast.show(context.client(), title, body);
             });
         });
         ClientPlayNetworking.registerGlobalReceiver(GSROpenScreenPayload.ID, (payload, context) -> {

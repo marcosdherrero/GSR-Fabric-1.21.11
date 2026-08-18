@@ -1,6 +1,5 @@
 package net.berkle.groupspeedrun.client;
 
-import net.berkle.groupspeedrun.gui.GSRControlsScreen;
 import net.berkle.groupspeedrun.gui.widget.GSRSquareMenuButton;
 import net.berkle.groupspeedrun.parameter.GSRButtonParameters;
 import net.minecraft.client.gui.components.Button;
@@ -20,10 +19,8 @@ public final class GSRTitleScreenLayout {
     public static Button createControlsButton(net.minecraft.client.Minecraft client, Screen screen, int width, int height) {
         Button button = new GSRSquareMenuButton(0, 0,
                 GSRButtonParameters.literal(GSRButtonParameters.TITLE_GSR_SQUARE),
-                btn -> {
-                    if (client != null) client.gui.setScreen(new GSRControlsScreen(screen));
-                });
-        button.setTooltip(Tooltip.create(Component.literal(GSRButtonParameters.TITLE_GSR_CONTROLS)));
+                btn -> GSRScreens.openConfig(screen));
+        button.setTooltip(Tooltip.create(Component.literal(GSRButtonParameters.TITLE_GSR_CONFIG)));
         return button;
     }
 

@@ -37,7 +37,12 @@ public final class GSRStoragePaths {
     /** Snapshot folder for a world (gsr_folder/snapshots/&lt;worldName&gt;/). */
     public static Path getSnapshotDir(MinecraftServer server) {
         String worldName = getWorldName(server);
-        return getGsrRoot().resolve("snapshots").resolve(worldName);
+        return getSnapshotDir(worldName);
+    }
+
+    /** Snapshot folder keyed by save id or display name (client restore uses the level id). */
+    public static Path getSnapshotDir(String worldKey) {
+        return getGsrRoot().resolve("snapshots").resolve(sanitizeForPath(worldKey));
     }
 
     /** Canonical world name for storage paths. Prefers level name; falls back to save path folder name. */
@@ -56,7 +61,7 @@ public final class GSRStoragePaths {
     }
 
     /** Replaces path-invalid characters and spaces with underscore for consistent paths. */
-    private static String sanitizeForPath(String name) {
+    public static String sanitizeForPath(String name) {
         if (name == null) return "world";
         return name.replaceAll("[\\\\/:*?\"<>|\\s]", "_");
     }

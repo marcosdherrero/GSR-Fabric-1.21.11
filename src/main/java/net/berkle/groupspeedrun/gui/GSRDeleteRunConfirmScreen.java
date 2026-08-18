@@ -44,7 +44,7 @@ public class GSRDeleteRunConfirmScreen extends Screen {
         int buttonHeight = GSRUiParameters.CONTROLS_BUTTON_HEIGHT;
         int gap = Math.max(GSRUiParameters.NEW_WORLD_BUTTON_GAP, GSRUiParameters.NEW_WORLD_MIN_BUTTON_GAP);
         int centerX = width / 2;
-        int y = height / 2 + GSRUiParameters.CONTROLS_PADDING;
+        int y = GSRConfirmLayout.buttonY(font, confirmMessage(), width, height);
 
         if (onConfirmAll != null) {
             int totalWidth = 3 * buttonWidth + 2 * gap;
@@ -82,11 +82,13 @@ public class GSRDeleteRunConfirmScreen extends Screen {
         context.fill(0, 0, width, height, GSRUiParameters.STATUS_BG_COLOR);
         super.extractRenderState(context, mouseX, mouseY, delta);
 
-        context.centeredText(font, getTitle(), width / 2, height / 2 - GSRUiParameters.LOCATOR_CONFIRM_TITLE_OFFSET, GSRUiParameters.NEW_WORLD_TITLE_COLOR);
-        String message = onConfirmAll != null
+        GSRConfirmLayout.drawTitleAndMessage(context, font, getTitle(), confirmMessage(), width, height);
+    }
+
+    private String confirmMessage() {
+        return onConfirmAll != null
                 ? "Delete the displayed run, or delete all selected runs from your personal and shared lists."
                 : "This will remove the run from your personal and shared lists.";
-        context.centeredText(font, message, width / 2, height / 2 - GSRUiParameters.LOCATOR_CONFIRM_MESSAGE_OFFSET, GSRUiParameters.NEW_WORLD_LINE1_COLOR);
     }
 
     @Override

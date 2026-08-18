@@ -31,7 +31,7 @@ public class GSRResetConfirmScreen extends Screen {
         int buttonHeight = GSRUiParameters.CONTROLS_BUTTON_HEIGHT;
         int gap = Math.max(GSRUiParameters.NEW_WORLD_BUTTON_GAP, GSRUiParameters.NEW_WORLD_MIN_BUTTON_GAP);
         int centerX = width / 2;
-        int y = height / 2 + GSRUiParameters.CONTROLS_PADDING;
+        int y = GSRConfirmLayout.buttonY(font, GSRButtonParameters.RESET_CONFIRM_MESSAGE, width, height);
 
         addRenderableWidget(Button.builder(GSRButtonParameters.literal(GSRButtonParameters.RESET_CONFIRM), btn -> confirm())
                 .bounds(centerX - buttonWidth - gap / 2, y, buttonWidth, buttonHeight).build());
@@ -57,10 +57,12 @@ public class GSRResetConfirmScreen extends Screen {
         context.fill(0, 0, width, height, GSRUiParameters.STATUS_BG_COLOR);
         super.extractRenderState(context, mouseX, mouseY, delta);
 
-        context.centeredText(font, getTitle(), width / 2,
-                height / 2 - GSRUiParameters.RESET_CONFIRM_TITLE_OFFSET, GSRUiParameters.NEW_WORLD_TITLE_COLOR);
-        context.centeredText(font, GSRButtonParameters.RESET_CONFIRM_MESSAGE,
-                width / 2, height / 2 - GSRUiParameters.RESET_CONFIRM_MESSAGE_OFFSET, GSRUiParameters.NEW_WORLD_LINE1_COLOR);
+        GSRConfirmLayout.drawTitleAndMessage(context, font, getTitle(), GSRButtonParameters.RESET_CONFIRM_MESSAGE, width, height);
+    }
+
+    @Override
+    public boolean isPauseScreen() {
+        return true;
     }
 
     @Override

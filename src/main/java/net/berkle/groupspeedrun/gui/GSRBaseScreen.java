@@ -31,6 +31,11 @@ public abstract class GSRBaseScreen extends Screen {
     }
 
     @Override
+    public boolean isPauseScreen() {
+        return true;
+    }
+
+    @Override
     public void onClose() {
         if (minecraft == null) return;
         if (parent != null) {

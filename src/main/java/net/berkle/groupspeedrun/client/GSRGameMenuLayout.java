@@ -1,7 +1,6 @@
 package net.berkle.groupspeedrun.client;
 
 // Minecraft: GUI
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.components.events.ContainerEventHandler;
 import net.minecraft.client.gui.components.Button;
@@ -9,10 +8,10 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.SpriteIconButton;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.PauseScreen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
 // GSR: GUI, mixin accessors, parameters
-import net.berkle.groupspeedrun.gui.GSRControlsScreen;
 import net.berkle.groupspeedrun.gui.widget.GSRSquareMenuButton;
 import net.berkle.groupspeedrun.parameter.GSRButtonParameters;
 
@@ -36,16 +35,22 @@ public final class GSRGameMenuLayout {
      * Creates the square GSR button (caller adds it via addRenderableWidget, then calls reapplyLayout).
      */
     public static Button createSquareButton(PauseScreen screen) {
-        Minecraft client = Minecraft.getInstance();
         Button button = new GSRSquareMenuButton(0, 0,
                 GSRButtonParameters.literal(GSRButtonParameters.TITLE_GSR_SQUARE),
-                b -> {
-                    if (client != null) {
-                        client.gui.setScreen(new GSRControlsScreen(screen));
-                    }
-                });
-        button.setTooltip(Tooltip.create(Component.literal(GSRButtonParameters.TITLE_GSR_CONTROLS)));
+                b -> GSRScreens.openConfig(screen));
+        button.setTooltip(Tooltip.create(Component.literal(GSRButtonParameters.TITLE_GSR_CONFIG)));
         return button;
+    }
+
+    /**
+     * 26.2 {@code getChildAt} returns the first overlapping child, so a vanilla icon or
+     * full-width layout cell can steal the square GSR hit. Prefer the GSR button when the
+     * cursor is on it.
+     */
+    public static boolean handleSquareClick(net.minecraft.client.gui.screens.Screen screen, MouseButtonEvent click, boolean captured) {
+        AbstractWidget gsr = findGsrSquareButton(screen);
+        if (gsr == null || !gsr.isMouseOver(click.x(), click.y())) return false;
+        return gsr.mouseClicked(click, captured);
     }
 
     /**

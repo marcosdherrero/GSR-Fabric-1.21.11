@@ -7,6 +7,8 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
 // Minecraft: screens, widgets
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
@@ -25,12 +27,14 @@ import net.berkle.groupspeedrun.config.GSRConfigPlayer;
 import net.berkle.groupspeedrun.config.GSRConfigWorld;
 import net.berkle.groupspeedrun.config.GSRSeedFilterSettings;
 import net.berkle.groupspeedrun.data.GSRRunSaveStateNbt;
+import net.berkle.groupspeedrun.client.GSRScreens;
 import net.berkle.groupspeedrun.gui.preferences.GSRPreferencesScreen;
 import net.berkle.groupspeedrun.gui.GSRBaseScreen;
 import net.berkle.groupspeedrun.gui.GSRControlsScreen;
-import net.berkle.groupspeedrun.gui.GSRLocatorsScreen;
 import net.berkle.groupspeedrun.gui.GSRNewWorldConfirmScreen;
 import net.berkle.groupspeedrun.gui.GSRRunManagerScreen;
+import net.berkle.groupspeedrun.mixin.accessors.GSRButtonWidgetAccessor;
+import net.berkle.groupspeedrun.mixin.accessors.GSRGameMenuScreenAccessor;
 import net.berkle.groupspeedrun.network.GSRRunActionPayload;
 import net.berkle.groupspeedrun.network.GSRScreenTimePayload;
 import net.berkle.groupspeedrun.network.GSRLocatorFeedbackPayload;
@@ -63,8 +67,11 @@ public class GSRClient implements ClientModInitializer {
     /** When set, the next opened CreateWorldScreen will have this name pre-filled. Cleared when used. */
     public static volatile String nextGsrWorldName = null;
 
-    /** When set, TitleScreen reopens this save after a snapshot restore disconnect. */
+    /** When set, TitleScreen restores the snapshot then reopens this save. */
     public static volatile String pendingWorldReloadId = null;
+
+    /** True after a reload payload: disconnect like Save and Quit on the next client tick. */
+    public static volatile boolean pendingDisconnectForReload = false;
 
     /** When >= 0, single-player pause screen is open: display this elapsed ms and auto-resume when closed. */
     private static long clientPausedElapsedMs = -1;
@@ -113,18 +120,8 @@ public class GSRClient implements ClientModInitializer {
                     hudToggledVisible = true;
                 }
                 previousHudVisibility = newVisibility;
-                // Refresh controls screen so button labels and timer reflect new state
-                if (client.gui.screen() instanceof GSRControlsScreen gsr) {
-                    client.gui.setScreen(new GSRControlsScreen(gsr.getParent()));
-                }
-                // Refresh locators screen so toggles and preview reflect new state
-                if (client.gui.screen() instanceof GSRLocatorsScreen loc) {
-                    client.gui.setScreen(new GSRLocatorsScreen(loc.getParent()));
-                }
-                // Refresh preferences screen so dropdowns reflect new state; preserve scroll position
-                if (client.gui.screen() instanceof net.berkle.groupspeedrun.gui.preferences.GSRPreferencesScreen prefs) {
-                    client.gui.setScreen(new net.berkle.groupspeedrun.gui.preferences.GSRPreferencesScreen(prefs.getParent(), prefs.getContentScroll()));
-                }
+                // Controls.tick and Preferences dropdown suppliers read live config; do not
+                // recreate screens here — that raced with GSR Config opening in 26.2.
             });
         });
         ClientPlayNetworking.registerGlobalReceiver(GSRLocatorFeedbackPayload.ID, (payload, context) -> {
@@ -138,16 +135,16 @@ public class GSRClient implements ClientModInitializer {
             context.client().execute(() -> {
                 var client = context.client();
                 if (payload.screenType() == GSROpenScreenPayload.TYPE_CONFIG) {
-                    client.gui.setScreen(new GSRPreferencesScreen(client.gui.screen()));
+                    GSRScreens.openConfig(client.gui.screen());
                 } else if (payload.screenType() == GSROpenScreenPayload.TYPE_CONTROLS) {
-                    client.gui.setScreen(new GSRControlsScreen(client.gui.screen()));
+                    GSRScreens.openControls(client.gui.screen());
                 }
             });
         });
         ClientPlayNetworking.registerGlobalReceiver(GSRReloadWorldPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
                 pendingWorldReloadId = payload.levelId();
-                context.client().disconnectWithSavingScreen();
+                pendingDisconnectForReload = true;
             });
         });
         ClientPlayNetworking.registerGlobalReceiver(GSRRunCompletePayload.ID, (payload, context) -> {
@@ -216,6 +213,11 @@ public class GSRClient implements ClientModInitializer {
             clientWorldConfig.clearCompletionStateOnly();
         });
         ClientTickEvents.START_CLIENT_TICK.register(client -> {
+            if (pendingDisconnectForReload && client.level != null) {
+                pendingDisconnectForReload = false;
+                disconnectToReloadWorld(client);
+                return;
+            }
             if (client.level == null) {
                 clientPausedElapsedMs = -1;
                 gKeyHeldLastTick = false;
@@ -263,7 +265,7 @@ public class GSRClient implements ClientModInitializer {
                         || current instanceof GSRBaseScreen;
                 boolean gPressed = GSRKeyBindings.openGsrOptionsKey != null && GSRKeyBindings.openGsrOptionsKey.isDown();
                 if (!gsrMenuOpen && GSRKeyBindings.openGsrConfigKey != null && GSRKeyBindings.openGsrConfigKey.consumeClick() && gPressed) {
-                    client.gui.setScreen(new GSRPreferencesScreen(current));
+                    GSRScreens.openConfig(current);
                     openedConfigDuringGHold = true;
                     gKeyHeldLastTick = true;
                     return;
@@ -272,7 +274,7 @@ public class GSRClient implements ClientModInitializer {
                     gKeyHeldLastTick = true;
                 } else {
                     if (!gsrMenuOpen && gKeyHeldLastTick && !openedConfigDuringGHold) {
-                        client.gui.setScreen(new GSRControlsScreen(current));
+                        GSRScreens.openControls(current);
                     }
                     gKeyHeldLastTick = false;
                     openedConfigDuringGHold = false;
@@ -293,6 +295,37 @@ public class GSRClient implements ClientModInitializer {
                 hudToggledVisible = !hudToggledVisible;
             }
         });
+    }
+
+    /**
+     * Same path as vanilla Save and Quit: open the pause menu and press Disconnect.
+     * Must not run inside a play-packet handler — that deadlocks the integrated server on
+     * "Saving world" ({@code halt} never reaches {@code isShutdown}).
+     */
+    private static void disconnectToReloadWorld(Minecraft client) {
+        if (client.getSingleplayerServer() == null) {
+            client.disconnectWithProgressScreen();
+            return;
+        }
+        if (client.gui.screen() instanceof PauseScreen pause) {
+            clickSaveAndQuit(pause);
+            return;
+        }
+        client.gui.setScreen(new PauseScreen(true));
+        client.execute(() -> {
+            if (client.gui.screen() instanceof PauseScreen pause) {
+                clickSaveAndQuit(pause);
+            }
+        });
+    }
+
+    private static void clickSaveAndQuit(PauseScreen pause) {
+        Button exitBtn = ((GSRGameMenuScreenAccessor) pause).gsr$getExitButton();
+        if (exitBtn != null) {
+            ((GSRButtonWidgetAccessor) exitBtn).gsr$getOnPress().onPress(exitBtn);
+        } else {
+            Minecraft.getInstance().disconnectWithProgressScreen();
+        }
     }
 
     /** Called when config is saved/synced with Toggle mode so HUD defaults to visible. */

@@ -182,8 +182,14 @@ public final class GSRUiParameters {
     public static final int RESET_CONFIRM_TITLE_OFFSET = 40;
     /** Reset confirm: message line Y offset from center (pixels). */
     public static final int RESET_CONFIRM_MESSAGE_OFFSET = 12;
-    /** Reset confirm: max width for wrapped message text (pixels). */
+    /** Reset confirm: minimum wrap width so confirmation copy stays readable (pixels). */
     public static final int RESET_CONFIRM_MESSAGE_MAX_WIDTH = 280;
+    /** Horizontal inset from each screen edge when wrapping confirmation text (pixels). */
+    public static final int CONFIRM_MESSAGE_SIDE_MARGIN = 40;
+    /** Extra pixels between wrapped confirmation lines. */
+    public static final int CONFIRM_MESSAGE_LINE_GAP = 2;
+    /** Gap between the last confirmation line and the Yes/No row (pixels). */
+    public static final int CONFIRM_BUTTON_GAP_ABOVE = 12;
     /** Locator invalidate confirm: title Y offset from center (pixels). */
     public static final int LOCATOR_CONFIRM_TITLE_OFFSET = 40;
     /** Locator invalidate confirm: message line Y offset from center (pixels). */

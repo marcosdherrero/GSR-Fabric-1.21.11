@@ -27,12 +27,16 @@ public abstract class GSRBaseScreen extends Screen {
 
     /** Returns to parent or closes screen if root. Override for custom back behavior. */
     protected void goBack() {
-        if (minecraft != null) {
-            if (parent != null) {
-                minecraft.gui.setScreen(parent);
-            } else {
-                minecraft.gui.setScreen(null);
-            }
+        onClose();
+    }
+
+    @Override
+    public void onClose() {
+        if (minecraft == null) return;
+        if (parent != null) {
+            minecraft.gui.setScreen(parent);
+        } else {
+            minecraft.gui.setScreen(null);
         }
     }
 }

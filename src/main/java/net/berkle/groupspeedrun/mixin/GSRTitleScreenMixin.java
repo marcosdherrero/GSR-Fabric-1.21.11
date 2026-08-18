@@ -22,10 +22,17 @@ public abstract class GSRTitleScreenMixin extends Screen {
         super(null);
     }
 
-    /** Injects at end of init to open SelectWorld if nextGsrWorldName set, else add GSR buttons. */
+    /** Injects at end of init to reopen a world after snapshot restore, or open SelectWorld if nextGsrWorldName set. */
     @Inject(method = "init", at = @At("TAIL"))
     private void gsr$onInit(CallbackInfo ci) {
-        if (GSRClient.nextGsrWorldName != null && !GSRClient.nextGsrWorldName.isEmpty() && minecraft != null) {
+        if (minecraft == null) return;
+        if (GSRClient.pendingWorldReloadId != null && !GSRClient.pendingWorldReloadId.isEmpty()) {
+            String id = GSRClient.pendingWorldReloadId;
+            GSRClient.pendingWorldReloadId = null;
+            minecraft.createWorldOpenFlows().openWorld(id, () -> minecraft.gui.setScreen(new TitleScreen()));
+            return;
+        }
+        if (GSRClient.nextGsrWorldName != null && !GSRClient.nextGsrWorldName.isEmpty()) {
             TitleScreen self = (TitleScreen) (Object) this;
             minecraft.gui.setScreen(new SelectWorldScreen(self));
         } else {
@@ -33,12 +40,10 @@ public abstract class GSRTitleScreenMixin extends Screen {
             Button gsrControlsBtn = GSRClient.createControlsButton(minecraft, self, width, height);
             addRenderableWidget(gsrControlsBtn);
             GSRClient.applyRunHistoryLayout(this);
-            if (minecraft != null) {
-                minecraft.execute(() -> {
-                    GSRClient.applyRunHistoryLayout(this);
-                    minecraft.execute(() -> GSRClient.applyRunHistoryLayout(this));
-                });
-            }
+            minecraft.execute(() -> {
+                GSRClient.applyRunHistoryLayout(this);
+                minecraft.execute(() -> GSRClient.applyRunHistoryLayout(this));
+            });
         }
     }
 }

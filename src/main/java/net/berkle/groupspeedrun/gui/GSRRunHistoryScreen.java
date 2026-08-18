@@ -479,7 +479,6 @@ public class GSRRunHistoryScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent click, boolean captured) {
-        if (captured) return false;
         double mouseX = click.x();
         double mouseY = click.y();
         long now = System.currentTimeMillis();

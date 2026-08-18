@@ -128,7 +128,7 @@ public final class GSRButtonParameters {
     /** Cancel and return to parent. */
     public static final String RESET_CANCEL = "Cancel";
     /** Reset confirm message: describes what reset does. */
-    public static final String RESET_CONFIRM_MESSAGE = "Wipes run data, teleports players to spawn, restores world from snapshot.";
+    public static final String RESET_CONFIRM_MESSAGE = "Wipes run data and reloads the original world backup (terrain, chests, portals). Aborts if no backup exists.";
 
     // --- GSR Preferences screen ---
     /** Keybinds button. Opens vanilla Controls (keybinds) screen. */

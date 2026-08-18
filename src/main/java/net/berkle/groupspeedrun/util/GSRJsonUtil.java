@@ -18,9 +18,12 @@ import net.minecraft.nbt.LongArrayTag;
 import net.minecraft.nbt.ShortTag;
 import net.minecraft.nbt.StringTag;
 
+import net.berkle.groupspeedrun.parameter.GSRStorageParameters;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 /**
  * Converts between NBT and JSON for file persistence.
@@ -37,6 +40,13 @@ public final class GSRJsonUtil {
         JsonObject json = nbtCompoundToJson(nbt);
         Files.createDirectories(path.getParent());
         Files.writeString(path, GSON.toJson(json));
+    }
+
+    /** Writes NBT as JSON via a temp file then rename, so a crash cannot leave a half-written config. */
+    public static void writeNbtAsJsonAtomic(Path path, CompoundTag nbt) throws IOException {
+        Path tmp = path.resolveSibling(path.getFileName() + GSRStorageParameters.ATOMIC_WRITE_SUFFIX);
+        writeNbtAsJson(tmp, nbt);
+        Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING);
     }
 
     /** Reads JSON from path and returns as NBT. Returns empty compound if file missing or invalid. */

@@ -8,8 +8,10 @@ public final class GSRWorldConfigParameters {
 
     private GSRWorldConfigParameters() {}
 
-    /** Filename under gsr_folder/worlds/&lt;world&gt;/ for the run state. */
+    /** Filename under world/data/gsr/ for the run state. */
     public static final String NBT_FILE = "groupspeedrun_world.json";
+    /** Legacy compressed NBT next to the JSON file (pre-JSON storage). */
+    public static final String LEGACY_NBT_FILE = "groupspeedrun_world.nbt";
 
     // --- NBT keys (run state) ---
     public static final String K_START_TIME = "startTime";
@@ -30,6 +32,8 @@ public final class GSRWorldConfigParameters {
     public static final String K_DRAGON_WARRIOR_DAMAGE = "dragonWarriorDamage";
     /** Lowest difficulty ordinal during run (0–3). -1 = not set. */
     public static final String K_LOWEST_DIFFICULTY_ORDINAL = "lowestDifficultyOrdinal";
+    /** Epoch ms of last explicit Reset. Completed DB rows older than this are history, not HUD. */
+    public static final String K_LAST_RESET_TIME = "lastResetTimeMs";
 
     // --- NBT keys (split times, ms) ---
     public static final String K_T_NETHER = "timeNether";

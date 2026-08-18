@@ -2,6 +2,7 @@ package net.berkle.groupspeedrun.config;
 
 import net.berkle.groupspeedrun.parameter.GSRWorldConfigParameters;
 import net.berkle.groupspeedrun.util.GSRJsonUtil;
+import net.berkle.groupspeedrun.util.GSRNbtUtil;
 import net.berkle.groupspeedrun.util.GSRStoragePaths;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -62,7 +63,20 @@ public class GSRConfigWorld {
 
     /** True when run has not started yet; movement by group death participants should trigger auto-start. */
     public boolean isRunNotStarted() {
-        return !isVictorious && !isFailed && startTime <= 0;
+        return !isVictorious && !isFailed && startTime <= 0 && !hasSplitTimes();
+    }
+
+    /** True if any split time is stored. Auto-start must not wipe these. */
+    public boolean hasSplitTimes() {
+        return timeNether > 0 || timeBastion > 0 || timeFortress > 0 || timeEnd > 0 || timeDragon > 0;
+    }
+
+    /**
+     * Auto-start is only for a fresh primed world. Never overwrite a completed HUD,
+     * in-progress run, or splits that survived reload.
+     */
+    public boolean shouldAllowAutoStart() {
+        return autoStartEnabled && isRunNotStarted();
     }
     public String failedByPlayerName = "";
     public String failedByDeathMessage = "";
@@ -72,6 +86,8 @@ public class GSRConfigWorld {
     public float dragonWarriorDamage = 0f;
     /** Lowest difficulty ordinal during run (0=Peaceful, 1=Easy, 2=Normal, 3=Hard). -1 = not yet set. */
     public int lowestDifficultyOrdinal = -1;
+    /** Epoch ms of last explicit Reset. Used so HUD recovery from run history does not undo a reset. */
+    public long lastResetTimeMs = 0;
 
     // --- Split times (ms) ---
     public long timeNether = 0;
@@ -170,6 +186,7 @@ public class GSRConfigWorld {
         locatorFadeType = "";
         frozenByServerStop = false;
         lowestDifficultyOrdinal = -1;
+        lastResetTimeMs = System.currentTimeMillis();
         groupDeathParticipants.clear();
         sharedHealthParticipants.clear();
         excludedFromRun.clear();
@@ -198,6 +215,7 @@ public class GSRConfigWorld {
         nbt.putString(GSRWorldConfigParameters.K_DRAGON_WARRIOR_NAME, dragonWarriorName != null ? dragonWarriorName : "");
         nbt.putFloat(GSRWorldConfigParameters.K_DRAGON_WARRIOR_DAMAGE, dragonWarriorDamage);
         nbt.putInt(GSRWorldConfigParameters.K_LOWEST_DIFFICULTY_ORDINAL, lowestDifficultyOrdinal);
+        nbt.putLong(GSRWorldConfigParameters.K_LAST_RESET_TIME, lastResetTimeMs);
         nbt.putLong(GSRWorldConfigParameters.K_T_NETHER, timeNether);
         nbt.putLong(GSRWorldConfigParameters.K_T_BASTION, timeBastion);
         nbt.putLong(GSRWorldConfigParameters.K_T_FORTRESS, timeFortress);
@@ -241,20 +259,21 @@ public class GSRConfigWorld {
     public void readNbt(CompoundTag nbt) {
         if (nbt == null) return;
         readLong(nbt, GSRWorldConfigParameters.K_START_TIME, v -> this.startTime = v);
-        nbt.getBoolean(GSRWorldConfigParameters.K_IS_FROZEN).ifPresent(v -> this.isTimerFrozen = v);
+        readBoolean(nbt, GSRWorldConfigParameters.K_IS_FROZEN, v -> this.isTimerFrozen = v);
         readLong(nbt, GSRWorldConfigParameters.K_FROZEN_TIME, v -> this.frozenTime = v);
-        nbt.getBoolean(GSRWorldConfigParameters.K_FROZEN_BY_SERVER_STOP).ifPresent(v -> this.frozenByServerStop = v);
-        nbt.getBoolean(GSRWorldConfigParameters.K_MANUAL_PAUSE).ifPresent(v -> this.manualPause = v);
-        nbt.getBoolean(GSRWorldConfigParameters.K_IS_VICTORIOUS).ifPresent(v -> this.isVictorious = v);
-        nbt.getBoolean(GSRWorldConfigParameters.K_IS_FAILED).ifPresent(v -> this.isFailed = v);
-        nbt.getBoolean(GSRWorldConfigParameters.K_GROUP_DEATH).ifPresent(v -> this.groupDeathEnabled = v);
-        nbt.getBoolean(GSRWorldConfigParameters.K_SHARED_HEALTH).ifPresent(v -> this.sharedHealthEnabled = v);
+        readBoolean(nbt, GSRWorldConfigParameters.K_FROZEN_BY_SERVER_STOP, v -> this.frozenByServerStop = v);
+        readBoolean(nbt, GSRWorldConfigParameters.K_MANUAL_PAUSE, v -> this.manualPause = v);
+        readBoolean(nbt, GSRWorldConfigParameters.K_IS_VICTORIOUS, v -> this.isVictorious = v);
+        readBoolean(nbt, GSRWorldConfigParameters.K_IS_FAILED, v -> this.isFailed = v);
+        readBoolean(nbt, GSRWorldConfigParameters.K_GROUP_DEATH, v -> this.groupDeathEnabled = v);
+        readBoolean(nbt, GSRWorldConfigParameters.K_SHARED_HEALTH, v -> this.sharedHealthEnabled = v);
         nbt.getString(GSRWorldConfigParameters.K_FAILED_BY_NAME).ifPresent(v -> this.failedByPlayerName = v);
         nbt.getString(GSRWorldConfigParameters.K_FAILED_BY_MSG).ifPresent(v -> this.failedByDeathMessage = v);
-        nbt.getInt(GSRWorldConfigParameters.K_RUN_PARTICIPANT_COUNT).ifPresent(v -> this.runParticipantCount = v);
+        GSRNbtUtil.getInt(nbt, GSRWorldConfigParameters.K_RUN_PARTICIPANT_COUNT).ifPresent(v -> this.runParticipantCount = v);
         nbt.getString(GSRWorldConfigParameters.K_DRAGON_WARRIOR_NAME).ifPresent(v -> this.dragonWarriorName = v);
-        nbt.getFloat(GSRWorldConfigParameters.K_DRAGON_WARRIOR_DAMAGE).ifPresent(v -> this.dragonWarriorDamage = v);
-        nbt.getInt(GSRWorldConfigParameters.K_LOWEST_DIFFICULTY_ORDINAL).ifPresent(v -> this.lowestDifficultyOrdinal = v);
+        GSRNbtUtil.getFloat(nbt, GSRWorldConfigParameters.K_DRAGON_WARRIOR_DAMAGE).ifPresent(v -> this.dragonWarriorDamage = v);
+        GSRNbtUtil.getInt(nbt, GSRWorldConfigParameters.K_LOWEST_DIFFICULTY_ORDINAL).ifPresent(v -> this.lowestDifficultyOrdinal = v);
+        readLong(nbt, GSRWorldConfigParameters.K_LAST_RESET_TIME, v -> this.lastResetTimeMs = v);
         readLong(nbt, GSRWorldConfigParameters.K_T_NETHER, v -> this.timeNether = v);
         readLong(nbt, GSRWorldConfigParameters.K_T_BASTION, v -> this.timeBastion = v);
         readLong(nbt, GSRWorldConfigParameters.K_T_FORTRESS, v -> this.timeFortress = v);
@@ -262,30 +281,30 @@ public class GSRConfigWorld {
         readLong(nbt, GSRWorldConfigParameters.K_T_DRAGON, v -> this.timeDragon = v);
         readLong(nbt, GSRWorldConfigParameters.K_L_SPLIT, v -> this.lastSplitTime = v);
         readLong(nbt, GSRWorldConfigParameters.K_T_FIRST_ENDER_EYE, v -> this.timeFirstEnderEye = v);
-        nbt.getBoolean(GSRWorldConfigParameters.K_LOCATOR_DERANKED).ifPresent(v -> this.locatorDeranked = v);
-        nbt.getBoolean(GSRWorldConfigParameters.K_ANTI_CHEAT_ENABLED).ifPresent(v -> this.antiCheatEnabled = v);
-        nbt.getBoolean(GSRWorldConfigParameters.K_AUTO_START_ENABLED).ifPresent(v -> this.autoStartEnabled = v);
-        nbt.getInt(GSRWorldConfigParameters.K_LOCATOR_NON_ADMIN_MODE).ifPresent(v -> this.locatorNonAdminMode = Math.max(0, Math.min(2, v)));
-        nbt.getBoolean(GSRWorldConfigParameters.K_EFFECTIVE_ALLOW_NEW_WORLD_BEFORE_RUN_END).ifPresent(v -> this.effectiveAllowNewWorldBeforeRunEnd = v);
+        readBoolean(nbt, GSRWorldConfigParameters.K_LOCATOR_DERANKED, v -> this.locatorDeranked = v);
+        readBoolean(nbt, GSRWorldConfigParameters.K_ANTI_CHEAT_ENABLED, v -> this.antiCheatEnabled = v);
+        readBoolean(nbt, GSRWorldConfigParameters.K_AUTO_START_ENABLED, v -> this.autoStartEnabled = v);
+        GSRNbtUtil.getInt(nbt, GSRWorldConfigParameters.K_LOCATOR_NON_ADMIN_MODE).ifPresent(v -> this.locatorNonAdminMode = Math.max(0, Math.min(2, v)));
+        readBoolean(nbt, GSRWorldConfigParameters.K_EFFECTIVE_ALLOW_NEW_WORLD_BEFORE_RUN_END, v -> this.effectiveAllowNewWorldBeforeRunEnd = v);
         readLong(nbt, GSRWorldConfigParameters.K_T_FIRST_OVERWORLD_RETURN, v -> this.timeFirstOverworldReturnAfterNether = v);
-        nbt.getBoolean(GSRWorldConfigParameters.K_FORT_LOCATED).ifPresent(v -> this.fortressLocated = v);
-        nbt.getBoolean(GSRWorldConfigParameters.K_BAST_LOCATED).ifPresent(v -> this.bastionLocated = v);
-        nbt.getBoolean(GSRWorldConfigParameters.K_STRONGHOLD_LOCATED).ifPresent(v -> this.strongholdLocated = v);
-        nbt.getBoolean(GSRWorldConfigParameters.K_SHIP_LOCATED).ifPresent(v -> this.shipLocated = v);
+        readBoolean(nbt, GSRWorldConfigParameters.K_FORT_LOCATED, v -> this.fortressLocated = v);
+        readBoolean(nbt, GSRWorldConfigParameters.K_BAST_LOCATED, v -> this.bastionLocated = v);
+        readBoolean(nbt, GSRWorldConfigParameters.K_STRONGHOLD_LOCATED, v -> this.strongholdLocated = v);
+        readBoolean(nbt, GSRWorldConfigParameters.K_SHIP_LOCATED, v -> this.shipLocated = v);
         // Backward compat: legacy K_FORT_ACTIVE etc. map to fortressLocated
-        nbt.getBoolean(GSRWorldConfigParameters.K_FORT_ACTIVE).ifPresent(v -> this.fortressLocated = v);
-        nbt.getBoolean(GSRWorldConfigParameters.K_BAST_ACTIVE).ifPresent(v -> this.bastionLocated = v);
-        nbt.getBoolean(GSRWorldConfigParameters.K_STRONGHOLD_ACTIVE).ifPresent(v -> this.strongholdLocated = v);
-        nbt.getBoolean(GSRWorldConfigParameters.K_SHIP_ACTIVE).ifPresent(v -> this.shipLocated = v);
-        nbt.getInt(GSRWorldConfigParameters.K_FORT_X).ifPresent(v -> this.fortressX = v);
-        nbt.getInt(GSRWorldConfigParameters.K_FORT_Z).ifPresent(v -> this.fortressZ = v);
-        nbt.getInt(GSRWorldConfigParameters.K_BAST_X).ifPresent(v -> this.bastionX = v);
-        nbt.getInt(GSRWorldConfigParameters.K_BAST_Z).ifPresent(v -> this.bastionZ = v);
-        nbt.getInt(GSRWorldConfigParameters.K_STRONGHOLD_X).ifPresent(v -> this.strongholdX = v);
-        nbt.getInt(GSRWorldConfigParameters.K_STRONGHOLD_Z).ifPresent(v -> this.strongholdZ = v);
-        nbt.getInt(GSRWorldConfigParameters.K_SHIP_X).ifPresent(v -> this.shipX = v);
-        nbt.getInt(GSRWorldConfigParameters.K_SHIP_Y).ifPresent(v -> this.shipY = v);
-        nbt.getInt(GSRWorldConfigParameters.K_SHIP_Z).ifPresent(v -> this.shipZ = v);
+        readBoolean(nbt, GSRWorldConfigParameters.K_FORT_ACTIVE, v -> this.fortressLocated = v);
+        readBoolean(nbt, GSRWorldConfigParameters.K_BAST_ACTIVE, v -> this.bastionLocated = v);
+        readBoolean(nbt, GSRWorldConfigParameters.K_STRONGHOLD_ACTIVE, v -> this.strongholdLocated = v);
+        readBoolean(nbt, GSRWorldConfigParameters.K_SHIP_ACTIVE, v -> this.shipLocated = v);
+        GSRNbtUtil.getInt(nbt, GSRWorldConfigParameters.K_FORT_X).ifPresent(v -> this.fortressX = v);
+        GSRNbtUtil.getInt(nbt, GSRWorldConfigParameters.K_FORT_Z).ifPresent(v -> this.fortressZ = v);
+        GSRNbtUtil.getInt(nbt, GSRWorldConfigParameters.K_BAST_X).ifPresent(v -> this.bastionX = v);
+        GSRNbtUtil.getInt(nbt, GSRWorldConfigParameters.K_BAST_Z).ifPresent(v -> this.bastionZ = v);
+        GSRNbtUtil.getInt(nbt, GSRWorldConfigParameters.K_STRONGHOLD_X).ifPresent(v -> this.strongholdX = v);
+        GSRNbtUtil.getInt(nbt, GSRWorldConfigParameters.K_STRONGHOLD_Z).ifPresent(v -> this.strongholdZ = v);
+        GSRNbtUtil.getInt(nbt, GSRWorldConfigParameters.K_SHIP_X).ifPresent(v -> this.shipX = v);
+        GSRNbtUtil.getInt(nbt, GSRWorldConfigParameters.K_SHIP_Y).ifPresent(v -> this.shipY = v);
+        GSRNbtUtil.getInt(nbt, GSRWorldConfigParameters.K_SHIP_Z).ifPresent(v -> this.shipZ = v);
         readLong(nbt, GSRWorldConfigParameters.K_LOCATOR_FADE_START, v -> this.locatorFadeStartTime = v);
         nbt.getString(GSRWorldConfigParameters.K_LOCATOR_FADE_TYPE).ifPresent(v -> this.locatorFadeType = v != null ? v : "");
         readUuidSet(nbt, GSRWorldConfigParameters.K_GROUP_DEATH_PARTICIPANTS, groupDeathParticipants);
@@ -293,14 +312,14 @@ public class GSRConfigWorld {
         readUuidSet(nbt, GSRWorldConfigParameters.K_EXCLUDED_FROM_RUN, excludedFromRun);
     }
 
-    /** Reads long from NBT; falls back to double for JSON round-trip (numbers stored as double). */
+    /** Reads long from JSON/NBT; accepts long, int, byte, double, and float tags. */
     private static void readLong(CompoundTag nbt, String key, java.util.function.LongConsumer setter) {
-        var opt = nbt.getLong(key);
-        if (opt.isPresent()) {
-            setter.accept(opt.get());
-            return;
-        }
-        nbt.getDouble(key).ifPresent(v -> setter.accept(v.longValue()));
+        GSRNbtUtil.getLong(nbt, key).ifPresent(setter);
+    }
+
+    /** Reads boolean from JSON/NBT; accepts true/false bytes and 0/1 numbers. */
+    private static void readBoolean(CompoundTag nbt, String key, java.util.function.Consumer<Boolean> setter) {
+        GSRNbtUtil.getBoolean(nbt, key).ifPresent(setter);
     }
 
     private static void readUuidSet(CompoundTag nbt, String key, Set<UUID> out) {
@@ -324,8 +343,9 @@ public class GSRConfigWorld {
             Files.createDirectories(worldDir);
             CompoundTag nbt = new CompoundTag();
             writeNbt(nbt);
-            GSRJsonUtil.writeNbtAsJson(nbtPath, nbt);
-            LOGGER.debug("GSR: Saved world config to {} (startTime={})", nbtPath.toAbsolutePath(), startTime);
+            GSRJsonUtil.writeNbtAsJsonAtomic(nbtPath, nbt);
+            LOGGER.debug("GSR: Saved world config to {} (startTime={}, victory={}, fail={})",
+                    nbtPath.toAbsolutePath(), startTime, isVictorious, isFailed);
         } catch (IOException e) {
             LOGGER.error("GSR: Failed to save world config to {}", nbtPath.toAbsolutePath(), e);
         }
@@ -334,46 +354,51 @@ public class GSRConfigWorld {
     public static GSRConfigWorld load(MinecraftServer server) {
         GSRConfigWorld config = new GSRConfigWorld();
         Path canonicalDir = GSRStoragePaths.getWorldDir(server);
-        Path canonicalPath = canonicalDir.resolve(GSRWorldConfigParameters.NBT_FILE);
-        Path absoluteCanonical = canonicalPath.toAbsolutePath();
-        boolean loaded = false;
-        LOGGER.info("GSR: Loading world config from {} (exists={})", absoluteCanonical, Files.exists(canonicalPath));
-        if (Files.exists(canonicalPath)) {
-            try {
-                CompoundTag nbt = GSRJsonUtil.readNbtFromFile(canonicalPath);
-                config.readNbt(nbt);
-                loaded = true;
-                LOGGER.info("GSR: Loaded world config from {} (startTime={}, frozen={})", canonicalPath, config.startTime, config.isTimerFrozen);
-            } catch (Exception e) {
-                LOGGER.warn("GSR: Failed to load world config from {}", canonicalPath, e);
-            }
+        Path canonicalJson = canonicalDir.resolve(GSRWorldConfigParameters.NBT_FILE);
+        Path canonicalNbt = canonicalDir.resolve(GSRWorldConfigParameters.LEGACY_NBT_FILE);
+        boolean loaded = tryLoadFromPath(config, canonicalJson, false, canonicalJson);
+        if (!loaded) {
+            loaded = tryLoadFromPath(config, canonicalNbt, true, canonicalJson);
         }
         if (!loaded) {
             Path[] legacyCandidates = GSRStoragePaths.getLegacyWorldDirCandidates(server);
             LOGGER.info("GSR: Trying {} legacy paths", legacyCandidates.length);
             for (Path worldDir : legacyCandidates) {
-                Path path = worldDir.resolve(GSRWorldConfigParameters.NBT_FILE);
-                if (Files.exists(path)) {
-                    try {
-                        CompoundTag nbt = GSRJsonUtil.readNbtFromFile(path);
-                        config.readNbt(nbt);
-                        loaded = true;
-                        migrateConfigToCanonicalPath(path, canonicalPath);
-                        LOGGER.info("GSR: Loaded world config from legacy {} (startTime={}, frozen={})", path, config.startTime, config.isTimerFrozen);
-                        break;
-                    } catch (Exception e) {
-                        LOGGER.warn("GSR: Failed to load world config from {}", path, e);
-                    }
+                Path json = worldDir.resolve(GSRWorldConfigParameters.NBT_FILE);
+                Path nbt = worldDir.resolve(GSRWorldConfigParameters.LEGACY_NBT_FILE);
+                if (tryLoadFromPath(config, json, true, canonicalJson)
+                        || tryLoadFromPath(config, nbt, true, canonicalJson)) {
+                    loaded = true;
+                    break;
                 }
             }
         }
         if (!loaded) {
-            LOGGER.warn("GSR: No world config found (primary: {}, tried legacy paths)", canonicalPath);
+            LOGGER.warn("GSR: No world config found (primary: {}, tried legacy json/nbt paths)", canonicalJson);
+        } else {
+            LOGGER.info("GSR: Loaded world config (startTime={}, frozen={}, victory={}, fail={}, nether={})",
+                    config.startTime, config.isTimerFrozen, config.isVictorious, config.isFailed, config.timeNether);
         }
-        if (!config.isVictorious && !config.isFailed && config.startTime <= 0) {
+        if (!config.isVictorious && !config.isFailed && config.startTime <= 0 && !config.hasSplitTimes()) {
             config.startTime = -1;
         }
         return config;
+    }
+
+    private static boolean tryLoadFromPath(GSRConfigWorld config, Path path, boolean migrate, Path canonicalJson) {
+        if (!Files.exists(path)) return false;
+        try {
+            CompoundTag nbt = GSRJsonUtil.readNbtFromFile(path);
+            config.readNbt(nbt);
+            LOGGER.info("GSR: Loaded world config from {} (exists=true)", path.toAbsolutePath());
+            if (migrate && !path.equals(canonicalJson)) {
+                migrateConfigToCanonicalPath(path, canonicalJson);
+            }
+            return true;
+        } catch (Exception e) {
+            LOGGER.warn("GSR: Failed to load world config from {}", path, e);
+            return false;
+        }
     }
 
     /** Copies config from legacy path to canonical path so future loads use the same location. */

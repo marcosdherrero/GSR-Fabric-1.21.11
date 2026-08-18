@@ -23,6 +23,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -30,6 +31,7 @@ import java.util.UUID;
 
 import net.berkle.groupspeedrun.parameter.GSRStorageParameters;
 import net.berkle.groupspeedrun.util.GSRJsonUtil;
+import net.berkle.groupspeedrun.util.GSRNbtUtil;
 import net.berkle.groupspeedrun.util.GSRStoragePaths;
 
 /**
@@ -117,6 +119,42 @@ public final class GSRDataStore {
             if (el instanceof CompoundTag c) out.add(fromNbt(c));
         }
         return out;
+    }
+
+    /**
+     * If the world HUD looks primed but run history has a completed run newer than the last Reset,
+     * restore those times/flags so a jar swap or crash cannot auto-start over a finished PB.
+     *
+     * @return true if the HUD was restored from history
+     */
+    public static boolean restoreHudFromLatestCompletedRun(MinecraftServer server, GSRConfigWorld config) {
+        if (server == null || config == null) return false;
+        if (config.isVictorious || config.isFailed) return false;
+        if (config.startTime > 0) return false;
+        GSRRunRecord latest = loadRuns(server).stream()
+                .filter(r -> GSRRunRecord.STATUS_VICTORY.equals(r.status()) || GSRRunRecord.STATUS_FAIL.equals(r.status()))
+                .max(Comparator.comparingLong(GSRRunRecord::endMs))
+                .orElse(null);
+        if (latest == null || latest.endMs() <= config.lastResetTimeMs) return false;
+        config.startTime = latest.startMs() > 0 ? latest.startMs() : config.startTime;
+        config.frozenTime = Math.max(0L, latest.endMs() - Math.max(0L, latest.startMs()));
+        config.isTimerFrozen = true;
+        config.frozenByServerStop = false;
+        config.manualPause = false;
+        config.isVictorious = GSRRunRecord.STATUS_VICTORY.equals(latest.status());
+        config.isFailed = GSRRunRecord.STATUS_FAIL.equals(latest.status());
+        config.failedByPlayerName = latest.failedByPlayerName() != null ? latest.failedByPlayerName() : "";
+        config.failedByDeathMessage = latest.failedByDeathMessage() != null ? latest.failedByDeathMessage() : "";
+        config.runParticipantCount = latest.participantCount();
+        config.timeNether = latest.timeNether();
+        config.timeBastion = latest.timeBastion();
+        config.timeFortress = latest.timeFortress();
+        config.timeEnd = latest.timeEnd();
+        config.timeDragon = latest.timeDragon();
+        config.locatorDeranked = latest.deranked();
+        config.save(server);
+        LOGGER.info("[GSR] Restored HUD from completed run {} ({})", latest.runId(), latest.status());
+        return true;
     }
 
     /**
@@ -414,20 +452,20 @@ public final class GSRDataStore {
         return new GSRRunRecord(
             c.getString("runId").orElse(""),
             c.getString("worldName").orElse(""),
-            c.getLong("startMs").orElse(0L),
-            c.getLong("endMs").orElse(0L),
+            GSRNbtUtil.getLong(c, "startMs").orElse(0L),
+            GSRNbtUtil.getLong(c, "endMs").orElse(0L),
             c.getString("startDateIso").orElse(""),
             c.getString("endDateIso").orElse(""),
             c.getString("status").orElse(""),
             c.getString("failedByPlayerName").orElse(""),
             c.getString("failedByDeathMessage").orElse(""),
-            c.getInt("participantCount").orElse(0),
-            c.getLong("timeNether").orElse(0L),
-            c.getLong("timeBastion").orElse(0L),
-            c.getLong("timeFortress").orElse(0L),
-            c.getLong("timeEnd").orElse(0L),
-            c.getLong("timeDragon").orElse(0L),
-            c.getBoolean("deranked").orElse(false),
+            GSRNbtUtil.getInt(c, "participantCount").orElse(0),
+            GSRNbtUtil.getLong(c, "timeNether").orElse(0L),
+            GSRNbtUtil.getLong(c, "timeBastion").orElse(0L),
+            GSRNbtUtil.getLong(c, "timeFortress").orElse(0L),
+            GSRNbtUtil.getLong(c, "timeEnd").orElse(0L),
+            GSRNbtUtil.getLong(c, "timeDragon").orElse(0L),
+            GSRNbtUtil.getBoolean(c, "deranked").orElse(false),
             c.getString("runDifficulty").filter(s -> s != null && !s.isEmpty()).orElse("—")
         );
     }

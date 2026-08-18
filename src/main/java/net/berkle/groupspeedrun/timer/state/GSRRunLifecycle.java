@@ -34,7 +34,7 @@ public final class GSRRunLifecycle {
     public static void startTimerNow(MinecraftServer server) {
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null) return;
-        if (config.isVictorious || config.isFailed) return;
+        if (!config.isRunNotStarted()) return;
         config.startTime = System.currentTimeMillis();
         config.isTimerFrozen = false;
         config.manualPause = false;
@@ -56,15 +56,15 @@ public final class GSRRunLifecycle {
     }
 
     /**
-     * Ensures run is armed (startTime = -1) when not started; primes fresh world for movement/block-break auto-start.
+     * Ensures run is armed (startTime = -1) when not started. Does not write to disk:
+     * saving a primed default would wipe a completed HUD if load has not finished.
      */
     public static void primeRunIfArmed(MinecraftServer server) {
         GSRConfigWorld config = GSRMain.CONFIG;
         if (config == null) return;
-        if (config.isVictorious || config.isFailed) return;
+        if (config.isVictorious || config.isFailed || config.hasSplitTimes()) return;
         if (config.startTime <= 0) {
             config.startTime = -1;
-            config.save(server);
         }
     }
 

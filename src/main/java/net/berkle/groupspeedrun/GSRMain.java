@@ -11,6 +11,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 
 // Minecraft: server, world, damage
 import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
 
@@ -20,6 +21,7 @@ import net.berkle.groupspeedrun.server.GSRSharedHealthBroadcast;
 import net.berkle.groupspeedrun.server.GSRSharedHealthEatAllowance;
 import net.berkle.groupspeedrun.config.GSRConfigWorld;
 import net.berkle.groupspeedrun.managers.GSRProfileManager;
+import net.berkle.groupspeedrun.managers.GSRDataStore;
 import net.berkle.groupspeedrun.managers.GSRRunSyncManager;
 import net.berkle.groupspeedrun.timer.GSRTimer;
 import net.berkle.groupspeedrun.managers.GSRWorldSnapshotManager;
@@ -56,6 +58,8 @@ public class GSRMain implements ModInitializer {
 
     /** Global world run configuration. */
     public static GSRConfigWorld CONFIG = new GSRConfigWorld();
+    /** True after this server's world config has been loaded from disk. Prevents primed defaults from overwriting saves. */
+    public static boolean worldConfigLoaded = false;
     /** True when timer is frozen because single-player pause menu is open; cleared on admin pause or server stop. */
     public static boolean frozenByClientPause = false;
 
@@ -130,6 +134,7 @@ public class GSRMain implements ModInitializer {
 
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayer player = handler.getPlayer();
+            ensureWorldConfigLoaded(server);
             getTimer().primeRunIfArmed(server);
             // Resume runs frozen by server stop before syncing so client gets running state, not frozen
             getTimer().tryAutoStartOrResumeOnJoin(server);
@@ -149,9 +154,7 @@ public class GSRMain implements ModInitializer {
         });
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             // Overworld is available here; Fabric 26.1 dropped ServerWorldEvents.LOAD
-            CONFIG = GSRConfigWorld.load(server);
-            GSRStats.load(server);
-            GSRProfileManager.load(server);
+            ensureWorldConfigLoaded(server);
             getTimer().primeRunIfArmed(server);
             // Auto-resume runs frozen by server stop; manual pause stays paused until manual resume
             getTimer().tryAutoStartOrResumeOnJoin(server);
@@ -159,14 +162,16 @@ public class GSRMain implements ModInitializer {
 
         ServerLifecycleEvents.BEFORE_SAVE.register((server, flush, force) -> {
             // Persist run state as part of world save (Save and Quit, autosave). Ensures run data survives restart.
-            if (CONFIG != null) CONFIG.save(server);
-            GSRStats.save(server);
-            GSRProfileManager.save(server);
+            if (worldConfigLoaded && CONFIG != null) CONFIG.save(server);
+            if (worldConfigLoaded) {
+                GSRStats.save(server);
+                GSRProfileManager.save(server);
+            }
         });
 
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
             frozenByClientPause = false;
-            if (CONFIG != null) {
+            if (CONFIG != null && worldConfigLoaded) {
                 if (CONFIG.startTime > 0 && !CONFIG.isVictorious && !CONFIG.isFailed) {
                     if (!CONFIG.isTimerFrozen) {
                         CONFIG.frozenTime = CONFIG.getElapsedTime();
@@ -180,11 +185,15 @@ public class GSRMain implements ModInitializer {
                 }
                 CONFIG.save(server);
             }
-            GSRStats.save(server);
-            GSRProfileManager.save(server);
+            if (worldConfigLoaded) {
+                GSRStats.save(server);
+                GSRProfileManager.save(server);
+            }
+            worldConfigLoaded = false;
         });
 
         ServerTickEvents.START_SERVER_TICK.register(server -> {
+            if (!worldConfigLoaded) return;
             if (server.getTickCount() == GSRServerParameters.SNAPSHOT_DEFER_TICKS) {
                 GSRWorldSnapshotManager.takeSnapshotIfNeeded(server);
             }
@@ -198,5 +207,21 @@ public class GSRMain implements ModInitializer {
                 GSRProfileManager.save(server);
             }
         });
+    }
+
+    /**
+     * Loads world config/stats once per server start. Safe to call from JOIN if it races SERVER_STARTED.
+     * Recovers a completed HUD from run history when the world file looks primed but a later completed run exists.
+     */
+    public static void ensureWorldConfigLoaded(MinecraftServer server) {
+        if (worldConfigLoaded || server == null) return;
+        CONFIG = GSRConfigWorld.load(server);
+        GSRStats.load(server);
+        GSRProfileManager.load(server);
+        if (GSRDataStore.restoreHudFromLatestCompletedRun(server, CONFIG)) {
+            LOGGER.info("[GSR] Restored completed run HUD from history (startTime={}, victory={}, fail={})",
+                    CONFIG.startTime, CONFIG.isVictorious, CONFIG.isFailed);
+        }
+        worldConfigLoaded = true;
     }
 }

@@ -14,11 +14,14 @@
     "modmenu": ["net.berkle.groupspeedrun.GSRModMenuIntegration"]
   },
   "mixins": ["gsrmixins.json"],
-  "depends": {
+    "depends": {
     "fabricloader": ">=0.19.3",
     "minecraft": "~26.2",
     "java": ">=25",
     "fabric-api": "*",
     "cloth-config": "*"
+  },
+  "suggests": {
+    "modmenu": "*"
   }
 }

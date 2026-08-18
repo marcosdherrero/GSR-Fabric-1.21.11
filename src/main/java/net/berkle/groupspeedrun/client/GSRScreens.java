@@ -9,6 +9,8 @@ import net.minecraft.client.gui.screens.Screen;
  * Opens GSR Config / Controls. Defers {@code setScreen} to the next client tick so 26.2
  * {@code getChildAt} (first overlapping widget wins) and PauseScreen click dispatch cannot
  * replace the screen after {@code onPress}.
+ * <p>The square pause/title GSR button uses {@link #openControls}. GSR Config (Preferences)
+ * is {@link #openConfig}, including Mod Menu.
  */
 public final class GSRScreens {
 

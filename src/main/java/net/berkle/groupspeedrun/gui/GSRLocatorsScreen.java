@@ -26,6 +26,7 @@ import net.berkle.groupspeedrun.parameter.GSRRunHistoryParameters;
 import net.berkle.groupspeedrun.parameter.GSRLocatorParameters;
 import net.berkle.groupspeedrun.parameter.GSRUiParameters;
 import net.berkle.groupspeedrun.util.GSRColorHelper;
+import net.berkle.groupspeedrun.util.GSRItemStacks;
 import net.berkle.groupspeedrun.util.GSRLocatorIconHelper;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
@@ -140,7 +141,7 @@ public class GSRLocatorsScreen extends Screen {
         int[][] bars = gsr$toggleBarBounds();
         String[] labels = { GSRButtonParameters.LOCATORS_FORTRESS, GSRButtonParameters.LOCATORS_BASTION, GSRButtonParameters.LOCATORS_STRONGHOLD, GSRButtonParameters.LOCATORS_WINGS };
         boolean[] active = (wc != null && pc != null) ? new boolean[] { wc.fortressLocated && pc.fortressLocatorOn, wc.bastionLocated && pc.bastionLocatorOn, wc.strongholdLocated && pc.strongholdLocatorOn, wc.shipLocated && pc.shipLocatorOn } : new boolean[4];
-        ItemStack[] icons = { new ItemStack(Items.BLAZE_ROD), new ItemStack(Items.PIGLIN_HEAD), new ItemStack(Items.ENDER_EYE), new ItemStack(Items.ELYTRA) };
+        ItemStack[] icons = { GSRItemStacks.of(Items.BLAZE_ROD), GSRItemStacks.of(Items.PIGLIN_HEAD), GSRItemStacks.of(Items.ENDER_EYE), GSRItemStacks.of(Items.ELYTRA) };
 
         for (int i = 0; i < 4; i++) {
             int[] b = bars[i];

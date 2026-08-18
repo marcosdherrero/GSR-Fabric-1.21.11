@@ -19,8 +19,8 @@ public final class GSRTitleScreenLayout {
     public static Button createControlsButton(net.minecraft.client.Minecraft client, Screen screen, int width, int height) {
         Button button = new GSRSquareMenuButton(0, 0,
                 GSRButtonParameters.literal(GSRButtonParameters.TITLE_GSR_SQUARE),
-                btn -> GSRScreens.openConfig(screen));
-        button.setTooltip(Tooltip.create(Component.literal(GSRButtonParameters.TITLE_GSR_CONFIG)));
+                btn -> GSRScreens.openControls(screen));
+        button.setTooltip(Tooltip.create(Component.literal(GSRButtonParameters.TITLE_GSR_CONTROLS)));
         return button;
     }
 

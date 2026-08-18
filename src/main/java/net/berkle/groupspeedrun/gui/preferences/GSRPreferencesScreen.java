@@ -54,6 +54,7 @@ import net.berkle.groupspeedrun.timer.hud.GSRTimerHudRenderer;
 import net.berkle.groupspeedrun.parameter.GSRUiParameters;
 import net.berkle.groupspeedrun.gui.widget.GSRItemTintToggleButton;
 import net.berkle.groupspeedrun.util.GSRLocatorIconHelper;
+import net.berkle.groupspeedrun.util.GSRItemStacks;
 import net.berkle.groupspeedrun.util.GSRScrollbarHelper;
 
 // Minecraft: GUI rendering, items
@@ -85,12 +86,20 @@ public final class GSRPreferencesScreen extends Screen {
     private static final int LIST_WIDTH = GSRUiParameters.PREFERENCES_DROPDOWN_LIST_WIDTH;
     private static final float LABEL_SCALE = GSRRunHistoryParameters.LEFT_COLUMN_LABEL_SCALE;
 
-    /** Cached toggle icon for ON state. */
-    private static final ItemStack TOGGLE_ICON_ON = new ItemStack(Items.LANTERN);
+    /** Cached toggle icon for ON state. Built lazily — 26.2 ItemStacks need bound components. */
+    private static ItemStack toggleIconOn() {
+        return GSRItemStacks.of(Items.LANTERN);
+    }
+
     /** Cached toggle icon for OFF state. */
-    private static final ItemStack TOGGLE_ICON_OFF = new ItemStack(Items.IRON_CHAIN);
+    private static ItemStack toggleIconOff() {
+        return GSRItemStacks.of(Items.IRON_CHAIN);
+    }
+
     /** Seed-filter square button face. */
-    private static final ItemStack SEED_FILTER_ICON = new ItemStack(Items.MAP);
+    private static ItemStack seedFilterIcon() {
+        return GSRItemStacks.of(Items.MAP);
+    }
 
     private static final int ID_HUD_SCALE = 2;
     private static final int ID_HUD_LOOK = 1;
@@ -380,7 +389,7 @@ public final class GSRPreferencesScreen extends Screen {
         if (minecraft == null) return "Default";
         ItemStack stack = registryId != null
                 ? GSRLocatorIconHelper.getItemStack(registryId, fallbackItem)
-                : new ItemStack(fallbackItem);
+                : GSRItemStacks.of(fallbackItem);
         return stack.getHoverName().getString();
     }
 
@@ -390,24 +399,24 @@ public final class GSRPreferencesScreen extends Screen {
         if (idx >= 0 && idx < options.length) {
             return GSRLocatorIconHelper.getItemStack(registryIdGetter.apply(options[idx]), defaultItem);
         }
-        return new ItemStack(defaultItem);
+        return GSRItemStacks.of(defaultItem);
     }
 
     /** Returns ItemStack for Locator Non-Admin dropdown: Never=barrier, Always=compass, Post 30 Mins=clock. */
     private static ItemStack gsr$locatorNonAdminIcon(int idx) {
         return switch (idx) {
-            case 0 -> new ItemStack(Items.BARRIER);
-            case 1 -> new ItemStack(Items.COMPASS);
-            default -> new ItemStack(Items.CLOCK);
+            case 0 -> GSRItemStacks.of(Items.BARRIER);
+            case 1 -> GSRItemStacks.of(Items.COMPASS);
+            default -> GSRItemStacks.of(Items.CLOCK);
         };
     }
 
     /** Returns ItemStack for color dropdown at index. DEFAULT uses glow ink; others use corresponding dye. */
     private static ItemStack gsr$colorIconForIndex(int idx) {
         if (idx >= 0 && idx < GSRLocatorColorOption.values().length) {
-            return new ItemStack(GSRLocatorColorOption.values()[idx].getDisplayItem());
+            return GSRItemStacks.of(GSRLocatorColorOption.values()[idx].getDisplayItem());
         }
-        return new ItemStack(Items.GLOW_INK_SAC);
+        return GSRItemStacks.of(Items.GLOW_INK_SAC);
     }
 
     private static String gsr$visibilityLabel(GSRHudVisibilityMode m) {
@@ -603,19 +612,19 @@ public final class GSRPreferencesScreen extends Screen {
                 GSRClient.clientWorldConfig.antiCheatEnabled = !GSRClient.clientWorldConfig.antiCheatEnabled;
                 gsr$syncWorldConfig();
             }
-        }, TOGGLE_ICON_ON, TOGGLE_ICON_OFF, GSRUiParameters.PREFERENCES_TOGGLE_ANTICHEAT_ON, GSRUiParameters.PREFERENCES_TOGGLE_ANTICHEAT_OFF, "ON (default)", "OFF");
+        }, toggleIconOn(), toggleIconOff(), GSRUiParameters.PREFERENCES_TOGGLE_ANTICHEAT_ON, GSRUiParameters.PREFERENCES_TOGGLE_ANTICHEAT_OFF, "ON (default)", "OFF");
         gsr$drawToggleRow(context, "Auto Start", GSRClient.clientWorldConfig != null && GSRClient.clientWorldConfig.autoStartEnabled, y, rightCol, colWidth, mouseX, mouseY, () -> {
             if (GSRClient.clientWorldConfig != null) {
                 GSRClient.clientWorldConfig.autoStartEnabled = !GSRClient.clientWorldConfig.autoStartEnabled;
                 gsr$syncWorldConfig();
             }
-        }, TOGGLE_ICON_ON, TOGGLE_ICON_OFF, GSRUiParameters.PREFERENCES_TOGGLE_NEUTRAL_ON, GSRUiParameters.PREFERENCES_TOGGLE_NEUTRAL_OFF, "ON (default)", "OFF");
+        }, toggleIconOn(), toggleIconOff(), GSRUiParameters.PREFERENCES_TOGGLE_NEUTRAL_ON, GSRUiParameters.PREFERENCES_TOGGLE_NEUTRAL_OFF, "ON (default)", "OFF");
         y += ROW_HEIGHT;
         gsr$drawDropdownRow(context, ID_LOCATOR_NON_ADMIN, "Locator Non-Admin Mode", y, leftCol, colWidth, mouseX, mouseY);
         gsr$drawToggleRow(context, "New World Before Run Ends", GSRClient.PLAYER_CONFIG.allowNewWorldBeforeRunEnd, y, rightCol, colWidth, mouseX, mouseY, () -> {
             GSRClient.PLAYER_CONFIG.allowNewWorldBeforeRunEnd = !GSRClient.PLAYER_CONFIG.allowNewWorldBeforeRunEnd;
             gsr$syncPlayerConfig();
-        }, TOGGLE_ICON_ON, TOGGLE_ICON_OFF, GSRUiParameters.PREFERENCES_TOGGLE_NEWWORLD_ON, GSRUiParameters.PREFERENCES_TOGGLE_NEWWORLD_OFF, "ON", "OFF (default)");
+        }, toggleIconOn(), toggleIconOff(), GSRUiParameters.PREFERENCES_TOGGLE_NEWWORLD_ON, GSRUiParameters.PREFERENCES_TOGGLE_NEWWORLD_OFF, "ON", "OFF (default)");
         y += ROW_HEIGHT;
         gsr$drawSeedFilterRow(context, y, leftCol, colWidth, mouseX, mouseY);
         y += ROW_HEIGHT;
@@ -627,7 +636,7 @@ public final class GSRPreferencesScreen extends Screen {
         gsr$drawToggleRow(context, "Timer Display Side:", GSRClient.PLAYER_CONFIG.timerHudOnRight, y, leftCol, colWidth, mouseX, mouseY, () -> {
             GSRClient.PLAYER_CONFIG.timerHudOnRight = !GSRClient.PLAYER_CONFIG.timerHudOnRight;
             gsr$syncPlayerConfig();
-        }, new ItemStack(Items.CLOCK), new ItemStack(Items.CLOCK), -1, -1, "\u2192", "\u2190");
+        }, GSRItemStacks.of(Items.CLOCK), GSRItemStacks.of(Items.CLOCK), -1, -1, "\u2192", "\u2190");
         gsr$drawDropdownRow(context, ID_HUD_LOOK, "HUD Look", y, rightCol, colWidth, mouseX, mouseY);
         y += ROW_HEIGHT;
         gsr$drawDropdownRow(context, ID_TIMER_COLOR_RUNNING, "Running Color", y, leftCol, colWidth, mouseX, mouseY);
@@ -645,7 +654,7 @@ public final class GSRPreferencesScreen extends Screen {
         gsr$drawToggleRow(context, "Compass Display Height:", GSRClient.PLAYER_CONFIG.locateHudOnTop, y, leftCol, colWidth, mouseX, mouseY, () -> {
             GSRClient.PLAYER_CONFIG.locateHudOnTop = !GSRClient.PLAYER_CONFIG.locateHudOnTop;
             gsr$syncPlayerConfig();
-        }, new ItemStack(Items.COMPASS), new ItemStack(Items.COMPASS), -1, -1, "\u2191", "\u2193");
+        }, GSRItemStacks.of(Items.COMPASS), GSRItemStacks.of(Items.COMPASS), -1, -1, "\u2191", "\u2193");
         gsr$drawDropdownRow(context, ID_MAX_SCALE_DIST, "Minimum Scale Distance", y, rightCol, colWidth, mouseX, mouseY);
         y += ROW_HEIGHT;
         gsr$drawDropdownRow(context, ID_MIN_ICON_SCALE, "Min Icon Scale", y, leftCol, colWidth, mouseX, mouseY);
@@ -794,7 +803,7 @@ public final class GSRPreferencesScreen extends Screen {
         matrices.popMatrix();
         int[] box = gsr$seedFilterSquare(colLeft, y);
         boolean hovered = mouseX >= box[0] && mouseX < box[0] + box[2] && mouseY >= box[1] && mouseY < box[1] + box[3];
-        GSRItemTintToggleButton.extractFace(context, box[0], box[1], box[2], gsr$isSeedFilterEnabled(), hovered, SEED_FILTER_ICON);
+        GSRItemTintToggleButton.extractFace(context, box[0], box[1], box[2], gsr$isSeedFilterEnabled(), hovered, seedFilterIcon());
         return y + ROW_HEIGHT;
     }
 

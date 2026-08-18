@@ -37,8 +37,8 @@ public final class GSRGameMenuLayout {
     public static Button createSquareButton(PauseScreen screen) {
         Button button = new GSRSquareMenuButton(0, 0,
                 GSRButtonParameters.literal(GSRButtonParameters.TITLE_GSR_SQUARE),
-                b -> GSRScreens.openConfig(screen));
-        button.setTooltip(Tooltip.create(Component.literal(GSRButtonParameters.TITLE_GSR_CONFIG)));
+                b -> GSRScreens.openControls(screen));
+        button.setTooltip(Tooltip.create(Component.literal(GSRButtonParameters.TITLE_GSR_CONTROLS)));
         return button;
     }
 
